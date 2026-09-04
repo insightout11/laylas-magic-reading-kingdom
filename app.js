@@ -110,7 +110,7 @@ function defaultState(){
     v:1, stars:0, rainbowColors:0,
     firstSessionDone:false, firstSessionStep:0,
     unlocked:['s','a','t'],
-    phonemeApproval:{},
+    phonemeApproval:{}, approvalBatch:null,
     mastery:{}, wordsRead:[], wordsCelebrated:[],
     rewards:['dress-pink'], stickers:['layla-name'],
     equipped:{dress:'dress-pink', crown:'crown-flower', shoes:'shoes-ballet', pet:'pet-white', wallpaper:'wall-pink', furniture:'bed-royal', window:'window-rainbow', decor:'decor-flowers', wings:null, necklace:null},
@@ -335,6 +335,11 @@ function loadPhonemeManifest(){
   try{
     fetch(PH_DIR+'manifest.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(m=>{ PHONEME_MANIFEST=m; try{
+      // New audio source batch => prior human approvals no longer apply.
+      const batch = (m._batch&&m._batch.id)||null;
+      if(batch && S.approvalBatch!==batch){
+        S.phonemeApproval={}; S.approvalBatch=batch; save();
+      }
       const bad=Object.keys(m).filter(k=>!m[k].valid);
       if(bad.length){ const miss=S.audioMissing||(S.audioMissing=[]); bad.forEach(b=>{ if(!miss.includes(b)) miss.push(b); }); save(); }
       if(!isPhonemeUsable(S.currentFocus)){ const u=usablePhonemes(S.unlocked.filter(id=>PHONEMES[id])); if(u.length) S.currentFocus=u[0]; }
@@ -2086,7 +2091,7 @@ function renderAudioQA(){
   const approvedFocus = FOCUS_PHONEMES.filter(id=>approvalOf(id).st==='APPROVED').length;
   sum.innerHTML='Focus sounds human-approved: <b>'+approvedFocus+'/6</b> (s a t p i n). '
     +'<br><span style="font-size:12px">Nothing enters Layla\u2019s games until you listen (\u25B6 Hear) and tap \u2705 Approve. '
-    +'Approve upcoming sounds too, so play never stalls. Bundled human recordings: Wikimedia Commons contributors, CC BY-SA 3.0.</span>'
+    +'Approve upcoming sounds too, so play never stalls. Focus-six recordings: s5s5/phonics by Xiaochao Liu, MIT License.</span>'
     +'<br><span id="qa-vw">Checking voice & words…</span>';
   ids.forEach(id=>{
     const row=document.createElement('div'); row.className='qa-row qa-tall';
