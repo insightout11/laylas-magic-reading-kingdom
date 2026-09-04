@@ -51,50 +51,50 @@
     </div>
   </header>
 
-  <div class="kingdom-map" id="kingdom-map">
-    <button class="landmark" data-land="rainbow" id="land-rainbow">
+  <div class="world" id="kingdom-map">
+    <button class="landmark scene-mark" data-land="rainbow" id="land-rainbow">
       <span class="land-emoji">🌈</span><span class="land-label">Rainbow Road</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-rainbow"></span>
     </button>
-    <button class="landmark" data-land="unicorn" id="land-unicorn">
+    <button class="landmark scene-mark" data-land="unicorn" id="land-unicorn">
       <span class="land-emoji">🦄</span><span class="land-label">Unicorn Meadow</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-unicorn"></span>
     </button>
-    <button class="landmark castle-land" data-land="castle" id="land-castle">
+    <button class="landmark scene-mark castle-land" data-land="castle" id="land-castle">
       <span class="land-emoji">🏰</span><span class="land-label">Princess Castle</span>
       <span class="land-glow" aria-hidden="true"></span>
     </button>
-    <button class="landmark" data-land="kitten" id="land-kitten">
+    <button class="landmark scene-mark" data-land="kitten" id="land-kitten">
       <span class="land-emoji">🐱</span><span class="land-label">Kitten Cottage</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-kitten"></span>
     </button>
-    <div class="landmark locked" data-land="ballet" id="land-ballet">
+    <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet">
       <span class="land-emoji">🩰</span><span class="land-label">Ballet Stage 🔒</span>
       <span class="lock-note">Coming soon!</span>
     </div>
-    <div class="landmark locked" data-land="story" id="land-story">
+    <div class="landmark scene-mark locked" data-land="story" id="land-story">
       <span class="land-emoji">📚</span><span class="land-label">Storybook Tower 🔒</span>
       <span class="lock-note" id="story-lock-note">Read 3 words to open!</span>
     </div>
-    <div class="landmark locked" data-land="fairy" id="land-fairy">
+    <div class="landmark scene-mark locked" data-land="fairy" id="land-fairy">
       <span class="land-emoji">🧚</span><span class="land-label">Fairy Garden 🔒</span>
       <span class="lock-note">Coming soon!</span>
     </div>
   </div>
 
   <div class="twinkle-guide" id="twinkle-guide">
-    <div class="twinkle-avatar" id="twinkle-avatar" aria-hidden="true">🐱‍👤</div>
+    <div class="twinkle-avatar" id="twinkle-avatar" aria-hidden="true"></div>
     <div class="speech-bubble" id="twinkle-speech">Hi Layla! Where shall we go today? 💖</div>
     <button class="replay-btn" id="btn-replay-twinkle" aria-label="Hear again">🔊</button>
   </div>
 
   <nav class="kingdom-nav">
     <button class="nav-pill" id="nav-stickers">⭐ Stickers</button>
-    <button class="nav-pill castle-pill" id="nav-castle">👑 Castle</button>
-    <button class="nav-pill" id="nav-parents">⚙️ Parents</button>
+    <button class="nav-pill castle-pill" id="nav-castle">👑 My Castle</button>
+    <button class="nav-mini" id="nav-parents">grown-ups ⚙️</button>
   </nav>
 </section>
 
@@ -213,7 +213,11 @@
     <div class="parent-card">
       <h3>🧪 Test Mode</h3>
       <div class="practice-grid" id="test-grid"></div>
-      <button class="danger-btn" id="btn-reset">Reset all progress</button>
+      <h3 style="margin-top:14px">🔊 Audio Check</h3>
+      <div id="audio-qa-summary" class="parent-summary">Tap “Check all sounds”.</div>
+      <div id="audio-qa"></div>
+      <button class="magic-btn" id="btn-audio-qa" style="margin-top:8px">🔊 Check all sounds</button>
+      <br><button class="danger-btn" id="btn-reset">Reset all progress</button>
     </div>
   </div>
 </section>
@@ -255,6 +259,8 @@
 
 <div id="toast" class="toast hidden"></div>
 
+<script src="characters.js"></script>
+<script src="princess.js"></script>
 <script src="app.js"></script>
 </body>
 </html>
