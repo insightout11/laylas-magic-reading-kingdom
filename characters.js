@@ -106,4 +106,60 @@ function initWorld(){
   if(mini) mini.innerHTML = twinkleSVG('mini');
   const sp = document.getElementById('splash-twinkle');
   if(sp) sp.innerHTML = twinkleSVG('splash');
+  try{
+    map.querySelectorAll('.scene-mark').forEach(m=>{
+      const e = m.querySelector('.land-emoji');
+      const ic = markIcon(m.getAttribute('data-land'));
+      if(e && ic) e.innerHTML = ic;
+    });
+  }catch(err){}
+}
+
+/* Original mini landmark icons — no emoji carries the home identity. */
+function markIcon(land){
+  const open = '<svg class="mark-svg" viewBox="0 0 64 64" aria-hidden="true">';
+  if(land==='rainbow') return open+'<g fill="none" stroke-width="7"><path d="M8,50 A24,24 0 0 1 56,50" stroke="#f87171"/><path d="M15,50 A17,17 0 0 1 49,50" stroke="#facc15"/><path d="M22,50 A10,10 0 0 1 42,50" stroke="#60a5fa"/></g><circle cx="10" cy="50" r="6" fill="#fff"/><circle cx="54" cy="50" r="6" fill="#fff"/></svg>';
+  if(land==='castle') return open+'<rect x="14" y="28" width="36" height="24" rx="3" fill="#fff7ec" stroke="#c084fc" stroke-width="3"/><rect x="8" y="20" width="12" height="32" fill="#fff7ec" stroke="#c084fc" stroke-width="3"/><rect x="44" y="20" width="12" height="32" fill="#fff7ec" stroke="#c084fc" stroke-width="3"/><polygon points="8,20 14,8 20,20" fill="#f472b6"/><polygon points="44,20 50,8 56,20" fill="#f472b6"/><polygon points="14,28 32,10 50,28" fill="#f9a8d4" stroke="#c084fc" stroke-width="2"/><rect x="28" y="38" width="8" height="14" rx="3" fill="#8b5cf6"/></svg>';
+  if(land==='kitten') return open+'<rect x="12" y="28" width="40" height="24" rx="4" fill="#ffe9c9" stroke="#a16207" stroke-width="3"/><polygon points="8,30 32,12 56,30" fill="#e0448f"/><circle cx="32" cy="40" r="10" fill="#fff"/><circle cx="28.5" cy="39" r="2.4" fill="#334155"/><circle cx="35.5" cy="39" r="2.4" fill="#334155"/><polygon points="24,33 23,27 28,30" fill="#fff" stroke="#94a3b8"/><polygon points="40,33 41,27 36,30" fill="#fff" stroke="#94a3b8"/></svg>';
+  if(land==='unicorn') return open+unicornHeadSVG()+ '</svg>';
+  if(land==='ballet') return open+'<rect x="10" y="44" width="44" height="8" rx="3" fill="#a16207"/><path d="M8,44 L14,16 L20,44 Z" fill="#e0448f"/><path d="M44,44 L50,16 L56,44 Z" fill="#e0448f"/><path d="M12,20 L52,20 L48,10 L16,10 Z" fill="#fbbf24"/><circle cx="32" cy="36" r="7" fill="#fbcfe8"/><path d="M32,29 L32,43 M27,34 L37,34" stroke="#8b5cf6" stroke-width="2"/></svg>';
+  if(land==='story') return open+'<rect x="14" y="14" width="36" height="40" rx="4" fill="#8b5cf6"/><rect x="14" y="14" width="8" height="40" fill="#6d28d9"/><rect x="26" y="22" width="20" height="4" rx="2" fill="#fde68a"/><rect x="26" y="30" width="20" height="4" rx="2" fill="#e9d5ff"/><rect x="26" y="38" width="14" height="4" rx="2" fill="#e9d5ff"/><polygon points="50,6 51.5,10 56,10 52.5,12.5 53.5,17 50,14.5 46.5,17 47.5,12.5 44,10 48.5,10" fill="#fbbf24"/></svg>';
+  if(land==='fairy') return open+'<circle cx="32" cy="40" r="6" fill="#fde047"/><g fill="#f9a8d4"><ellipse cx="32" cy="28" rx="6" ry="9"/><ellipse cx="32" cy="52" rx="6" ry="9"/><ellipse cx="20" cy="40" rx="9" ry="6"/><ellipse cx="44" cy="40" rx="9" ry="6"/></g><circle cx="32" cy="40" r="5" fill="#f59e0b"/><path d="M32,52 L32,60 M32,56 L26,52 M32,56 L38,52" stroke="#16a34a" stroke-width="2.5"/></svg>';
+  return null;
+}
+function unicornHeadSVG(){
+  return '<ellipse cx="30" cy="30" rx="10" ry="16" fill="#c4b5fd" transform="rotate(20 30 30)"/>'
+  + '<ellipse cx="26" cy="42" rx="13" ry="15" fill="#ffffff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<ellipse cx="40" cy="40" rx="11" ry="13" fill="#ffffff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<polygon points="20,30 14,14 26,24" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<polygon points="30,22 34,6 38,22" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>'
+  + '<circle cx="44" cy="38" r="3" fill="#40264f"/><circle cx="45" cy="37" r="1" fill="#fff"/>'
+  + '<ellipse cx="50" cy="46" rx="2.5" ry="2" fill="#f9a8d4"/>';
+}
+function unicornSVG(){
+  return '<svg class="unicorn-svg" viewBox="0 0 200 170" aria-hidden="true">'
+  + '<ellipse cx="100" cy="152" rx="70" ry="12" fill="#bbf7d0"/>'
+  + '<path class="uni-tail" d="M40,90 Q18,100 26,128 Q30,138 36,130 Q30,112 46,104 Z" fill="#c4b5fd" stroke="#8b5cf6" stroke-width="2"/>'
+  + '<rect x="66" y="108" width="11" height="40" rx="5" fill="#fff" stroke="#e9d5ff" stroke-width="2"/><rect x="86" y="108" width="11" height="40" rx="5" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<rect x="118" y="108" width="11" height="40" rx="5" fill="#f5f0ff" stroke="#e9d5ff" stroke-width="2"/><rect x="136" y="108" width="11" height="40" rx="5" fill="#f5f0ff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<ellipse cx="102" cy="92" rx="52" ry="32" fill="#ffffff" stroke="#e9d5ff" stroke-width="3"/>'
+  + '<path d="M140,80 Q160,60 158,36 Q157,28 150,32 Q146,52 134,66 Z" fill="#fff" stroke="#e9d5ff" stroke-width="3"/>'
+  + '<ellipse cx="162" cy="34" rx="15" ry="13" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<polygon points="152,26 148,12 158,20" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
+  + '<polygon points="160,20 166,2 170,20" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>'
+  + '<path d="M146,30 Q140,44 144,58 Q138,44 132,40 Q138,30 146,30" fill="#f0abfc"/>'
+  + '<path d="M156,26 Q162,38 160,52 Q156,40 150,36 Q154,30 156,26" fill="#a78bfa"/>'
+  + '<circle cx="165" cy="33" r="3" fill="#40264f"/><circle cx="166" cy="32" r="1" fill="#fff"/>'
+  + '<ellipse cx="171" cy="40" rx="2.6" ry="2" fill="#f9a8d4"/>'
+  + '<polygon points="100,46 102,52 108,52 103,56 105,62 100,58 95,62 97,56 92,52 98,52" fill="#fde047"/>'
+  + '</svg>';
+}
+function cottageDoorSVG(){
+  return '<svg class="door-svg" viewBox="0 0 120 150" aria-hidden="true">'
+  + '<rect x="20" y="10" width="80" height="130" rx="38" fill="#a16207" stroke="#fbbf24" stroke-width="5"/>'
+  + '<rect x="32" y="24" width="56" height="104" rx="28" fill="#854d0e"/>'
+  + '<circle cx="82" cy="86" r="8" fill="#fbbf24" stroke="#fff" stroke-width="3"/>'
+  + '<rect x="52" y="60" width="16" height="24" rx="8" fill="#312e81"/>'
+  + '<polygon points="60,44 61.5,48 66,48 62.5,51 63.5,55 60,52.5 56.5,55 57.5,51 54,48 58.5,48" fill="#fde047"/>'
+  + '</svg>';
 }

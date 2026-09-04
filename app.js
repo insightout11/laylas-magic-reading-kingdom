@@ -927,7 +927,8 @@ Games.crystals = function(params){
   const area=$('game-area'); area.innerHTML='';
   say('find-sound', 'Which letter makes this sound?');
   twinkleSay('The unicorn lost her sound crystal! Listen! 🦄💎', {silent:true});
-  const uni=document.createElement('div'); uni.className='center'; uni.style.fontSize='90px'; uni.textContent='🦄';
+  const uni=document.createElement('div'); uni.className='center unicorn-holder';
+  uni.innerHTML = (typeof unicornSVG==='function') ? unicornSVG() : '<div style="font-size:90px">🦄</div>';
   area.appendChild(uni);
   const hear=document.createElement('div'); hear.className='center';
   hear.innerHTML='<button class="big-magic-btn">🔊 Hear the magic sound</button>';
@@ -943,7 +944,7 @@ Games.crystals = function(params){
     b.onclick=()=>{
       if(L===focus){
         b.style.transform='translateY(-30px) scale(1.2)'; AudioSys.sfx('magic');
-        uni.textContent='🦄✨'; uni.style.transform='scale(1.15)';
+        uni.classList.add('happy');
         celebrateRight('sound:'+focus, 'Yes! '+L.toUpperCase()+' makes '+PHONEMES[focus].cue+'! The unicorn is so happy!');
         addStars(3);
         sparkles(20);
@@ -970,7 +971,7 @@ Games.firstSound = function(params){
   hear.innerHTML='<button class="magic-btn">🔊 Hear '+PHONEMES[sound].cue+'</button>';
   hear.querySelector('button').onclick=()=>AudioSys.playPhoneme(sound);
   area.appendChild(hear);
-  const row=document.createElement('div'); row.className='choices';
+  const row=document.createElement('div'); row.className='choices mirror-frame';
   shuffle(set.options).forEach(o=>{
     const b=document.createElement('button'); b.className='choice-card pic-card';
     b.innerHTML='<span class="pic-emoji">'+o.e+'</span><span class="pic-word">'+o.w+'</span>';
@@ -1050,8 +1051,9 @@ Games.rescue = function(params){
   say('sound-it-out', "Let's sound it out!");
   $('game-area').dataset.scene='cottage';
   twinkleSay('A kitten needs us! Sound it out with me! 🐱', {silent:true});
-  const wrap=document.createElement('div'); wrap.className='center';
-  wrap.innerHTML='<div style="font-size:80px">🐱</div><div style="font-size:40px">🚪🔒</div>';
+  const wrap=document.createElement('div'); wrap.className='center rescue-scene';
+  wrap.innerHTML='<div style="font-size:76px">🐱</div>'
+    + ((typeof cottageDoorSVG==='function') ? cottageDoorSVG() : '<div style="font-size:44px">🚪</div>');
   area.appendChild(wrap);
   const stage=document.createElement('div'); stage.className='blend-stage';
   w.ph.forEach(p=>{

@@ -323,6 +323,14 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 .room-svg [data-zone]{cursor:pointer;}
 .room-svg [data-zone]:hover{filter:brightness(1.08);}
 .swatch{width:52px; height:52px;}
+.mark-svg{width:56px; height:56px; filter:drop-shadow(0 4px 8px rgba(0,0,0,.25));}
+.unicorn-svg{width:min(64vw,230px); height:auto;}
+.unicorn-holder.happy .unicorn-svg{animation:uniHappy .7s ease;}
+@keyframes uniHappy{0%{transform:translateY(0);}40%{transform:translateY(-26px) rotate(-3deg);}70%{transform:translateY(0);}100%{transform:translateY(-8px);}}
+.uni-tail{transform-box:fill-box; transform-origin:top right; animation:sway 2.2s ease-in-out infinite alternate;}
+.mirror-frame{background:linear-gradient(180deg,#fde68a,#f59e0b); border-radius:130px 130px 28px 28px; padding:26px 18px 18px; border:6px solid #fff; box-shadow:var(--shadow), inset 0 0 24px #fff8;}
+.rescue-scene{display:flex; align-items:flex-end; justify-content:center; gap:18px;}
+.door-svg{width:96px; height:auto; filter:drop-shadow(0 6px 10px rgba(0,0,0,.25));}
 .closet-item svg{pointer-events:none;}
 .closet{background:linear-gradient(180deg,#a16207,#854d0e); border:4px solid #fbbf24;}
 .closet-tab{background:#fef3c7; border-color:#fbbf24; color:#7c2d12;}
