@@ -249,25 +249,11 @@ const AudioSys = {
       return pref;
     }catch(e){ return null; }
   },
-  speak(text, opts){
-    opts = opts||{};
-    try{
-      if(!('speechSynthesis' in window)) return;
-      if(!opts.force && !opts.important && S.settings.voice<=0) return;
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      const v = this.pickVoice();
-      if(v) u.voice = v;
-      u.rate = opts.rate || 0.95;
-      u.pitch = opts.pitch || 1.15;
-      u.volume = Math.max(0, Math.min(1, S.settings.voice));
-      u.lang = (v&&v.lang)||'en-US';
-      talking(true);
-      u.onend = ()=>talking(false);
-      u.onerror = ()=>talking(false);
-      speechSynthesis.speak(u);
-    }catch(e){ talking(false); }
-  },
+  /* REMOVED: a second speechSynthesis path lived here. It called
+     speechSynthesis.cancel()/speak() directly, bypassing the single-channel
+     Speech queue, which is why two voices could talk at once and why the
+     same phoneme behaved differently run to run. The only TTS entry point
+     is now Speech._ttsInto, reached via Sound.say(). */
   stopSpeak(){ Speech.cancel('stopSpeak'); },
   sfx(name, vol, delay){
     try{
@@ -900,8 +886,10 @@ function showScreen(name){
   }catch(e){}
   SceneEpoch++;
   enterLog('enter:'+name);
-  if(typeof Speech!=='undefined') Speech.cancel('navigation:'+name);
-  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
+  /* One authority for scene identity. Scene.enter cancels audio, kills every
+     tracked timer and abandons the current activity, so nothing deferred by
+     the previous screen can fire inside this one. */
+  try{ Scene.enter(name); }catch(e){ if(typeof Speech!=='undefined') Speech.cancel('nav'); }
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','enter-zoom','enter-door','enter-page'));
   const el = $('screen-'+name);
   el.classList.add('active');
@@ -1039,6 +1027,10 @@ function nextActivity(){
   renderDots();
   attemptsThisItem=0; firstTryFlag=true;
   const act=sessionQueue[sessionIdx];
+  /* The SESSION starts the activity; the game then describes what it owns.
+     That way every one of the games has exactly one authoritative activity
+     object, even the ones that never learned about the runtime. */
+  Act.start({type:'activity', targetLabel:act.title||sessionName, prompt:act.title||''});
   $('game-title-pill').textContent=act.title||sessionName;
   /* Full-bleed is opt-in per activity — reset before each one runs. */
   try{
@@ -1047,9 +1039,33 @@ function nextActivity(){
   }catch(e){}
   act.run(act.params||{});
 }
+/* Never advance while something is still talking. Automatic progression
+   waits for the channel to clear; it does not cut feedback off. */
 function activityDone(){
+  const tok = Scene.epoch;
+  /* Exactly ONE advance per activity, however many code paths ask for it.
+     Without this, a stray tap or a legacy timer could call activityDone()
+     again and again: sessionIdx ran past the end of the queue (14 of 4 in
+     testing), the session ended early, and the screen appeared to freeze.
+     This is the completion-ownership rule — the activity decides once. */
+  const a = Act.current;
+  if(a){
+    if(a.advanced){
+      Bus.emit('DUPLICATE_ADVANCE_IGNORED', {id:a.id, state:a.state});
+      return;
+    }
+    a.advanced = true;
+    if(!a.done) Act.closeCurrent('activityDone');
+  }
   sessionIdx++;
-  after(900, nextActivity);
+  Bus.emit('TRANSITION_WAIT', {nextIndex:sessionIdx});
+  Sound.idle().then(()=>{
+    if(tok !== Scene.epoch){ Bus.emit('CALLBACK_DROPPED',{label:'activityDone'}); return; }
+    /* Show any milestone earned during that activity BETWEEN activities,
+       never on top of one. */
+    if(Flow.hasMilestones()){ flushMilestone(()=>Scene.later(300, nextActivity, 'nextActivity')); return; }
+    Scene.later(420, nextActivity, 'nextActivity');
+  });
 }
 function gentleNo(cardEl, retrySpeech){
   attemptsThisItem++;
@@ -1092,8 +1108,11 @@ function celebrateRight(skillId, praise){
   }
   const unlocked = maybeUnlockNext();
   if(unlocked && PHONEMES[unlocked]){
-    setTimeout(()=>{ twinkleSay('New magic sound! '+GU(unlocked)+'! '+PHONEMES[unlocked].emoji); }, 1400);
+    Scene.later(1400, ()=>{ twinkleSay('New magic sound! '+GU(unlocked)+'! '+PHONEMES[unlocked].emoji); }, 'unlock-toast');
   }
+  /* Milestones are QUEUED, never shown here. Showing them mid-activity is
+     what made building "at" announce "You spelled your name!" — the
+     celebration took its text from global state, not from this activity. */
   checkMilestones();
 }
 /* ---------------- GAMES ---------------- */
@@ -1135,6 +1154,12 @@ Games.buildName = function(){
   AudioSys.playVoice('build-name', 'Drag the letters to spell Layla.');
   $('game-area').dataset.scene='castle';
   const target=['L','A','Y','L','A'];
+  /* This activity OWNS "Layla". Its praise is a function of this object, so
+     no other activity's word can be substituted into the feedback. */
+  const nameAct = Act.start({
+    type:'name', targetWord:'LAYLA', targetLabel:'Layla',
+    prompt:'Spell your name', masteryKey:'name:build'
+  });
   const slots=document.createElement('div'); slots.className='slot-row';
   const tiles=document.createElement('div'); tiles.className='tile-row';
   const slotEls=[];
@@ -1152,15 +1177,17 @@ Games.buildName = function(){
       const slot=slotEls[next];
       if(t.c===slot.dataset.want){
         slot.textContent=t.c; slot.classList.add('filled'); b.classList.add('used');
-        AudioSys.sfx('pop'); AudioSys.speak(t.c==='A'?'a':t.c==='Y'?'y':t.c==='L'?'l':t.c);
+        AudioSys.sfx('pop');
+        /* Name recognition is about LETTERS, so a letter name is right here.
+           This is the only place the app says one; no phoneme activity can
+           reach it. */
+        Sound.say(t.c, {rate:0.85});
         slot.classList.remove('next'); next++;
         if(slotEls[next]) slotEls[next].classList.add('next');
         if(next>=5){
-          AudioSys.sfx('fanfare'); confettiBlast();
-          AudioSys.playVoice('name-spelled', 'Layla! You spelled your name! Amazing!');
-          record('name:build', firstTryFlag&&attemptsThisItem===0);
+          confettiBlast();
           addStars(4);
-          after(2400, activityDone);
+          Act.finish(nameAct, {praise: Praise.word});
         }
       } else {
         attemptsThisItem++; gentleNo(b,'That letter goes somewhere else. Try a '+slot.dataset.want+'!');
@@ -1219,6 +1246,7 @@ Games.bubbles = function(params){
   const area=$('game-area'); area.innerHTML='';
   if(!focus) return needGrownup(area);
   const mode = params.mode || (Math.random()<0.5?'name':'sound');
+  Act.describe({type:'letter', targetLabel:GU(focus), targetPhonemes:[focus], masteryKey:'letter:'+focus});
   $('game-area').dataset.scene='rainbow';
   const distract = distractors(focus, 2);
   const letters = shuffle([focus].concat(distract));
@@ -1253,7 +1281,7 @@ Games.bubbles = function(params){
         Array.prototype.forEach.call(row.querySelectorAll('.bubble'), x=>{ x.disabled=true; });
         b.classList.add('pop'); AudioSys.sfx('pop');
         after(350, ()=>{
-          celebrateRight('letter:'+focus, mode==='sound' ? 'Yes! '+GU(focus)+' makes '+PHONEMES[focus].cue+'!' : 'Yes! That is '+GU(focus)+'!');
+          celebrateRight('letter:'+focus, 'Yes! That is '+GU(focus)+'!');
           addStars(2);
           const rb=document.createElement('div'); rb.className='rainbow-bar';
           const cols=['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
@@ -1281,6 +1309,7 @@ Games.crystals = function(params){
   const focus=usablePhonemes([params.focus||S.currentFocus])[0] || null;
   const area=$('game-area'); area.innerHTML='';
   if(!focus) return needGrownup(area);
+  Act.describe({type:'sound', targetLabel:GU(focus), targetPhonemes:[focus], masteryKey:'sound:'+focus});
   area.dataset.scene='meadow';
   area.classList.add('scene-full');
   /* Let the scene own the whole screen: no instruction bar, no card. */
@@ -1376,7 +1405,7 @@ function crystalSuccess(gem, uni, tw, focus, letter){
     tw.classList.add('tw-cheer');
   });
 
-  celebrateRight('sound:'+focus, 'Yes! '+GU(letter)+' makes '+PHONEMES[focus].cue+'! The unicorn is so happy!');
+  celebrateRight('sound:'+focus, 'Yes! '+GU(letter)+'! The unicorn is so happy!');
   addStars(3);
   after(2900, activityDone);
 }
@@ -1489,10 +1518,13 @@ Games.firstSound = function(params){
     b.onclick=()=>{
       if(o.w===set.answer){
         b.classList.add('correct'); AudioSys.sfx('fanfare');
-        AudioSys.speak(set.answer+'! '+set.answer+' starts with '+PHONEMES[sound].cue+'!');
+        /* Say the word, then PLAY the sound. The cue ('nnn','ssss') is
+           teacher shorthand for the parent panel; spoken aloud by TTS it
+           comes out as "n n n". */
+        Sound.say(set.answer+'! '+set.answer+' starts with...').then(function(){ return Sound.phoneme(sound); });
         celebrateRight('first:'+sound, null); addStars(3); sparkles(20);
         after(2300, activityDone);
-      } else gentleNo(b, 'Listen again... '+PHONEMES[sound].cue+'... Which picture starts that way?');
+      } else { gentleNo(b, 'Listen again. Which picture starts that way?'); Sound.phoneme(sound); }
     };
     row.appendChild(b);
   });
@@ -2007,7 +2039,19 @@ function openCastle(){
     }catch(e){}
     castleHighlight=null;
   }
-  AudioSys.playVoice('castle-hello', 'Welcome to your castle, Layla!');
+  /* Castle narration must finish before anything else may interrupt.
+     Flow.narrationPending blocks the session modal for its duration. */
+  Flow.narrationPending = true;
+  Flow.castleInteractionComplete = !castleHighlight;   // a new item needs trying on
+  const tok = Scene.epoch;
+  Bus.emit('NARRATION_START', {scene:'castle'});
+  Sound.clip('castle-hello', 'Welcome to your castle, Layla!').then(function(){
+    return Sound.idle();
+  }).then(function(){
+    if(tok !== Scene.epoch){ Bus.emit('CALLBACK_DROPPED',{label:'castle narration'}); return; }
+    Flow.narrationPending = false;
+    Bus.emit('NARRATION_END', {scene:'castle'});
+  });
 }
 function renderClosetTabs(){
   const t=$('closet-tabs'); t.innerHTML='';
@@ -2032,6 +2076,10 @@ function renderCloset(){
     d.onclick=()=>{
       if(!owned){ AudioSys.speak('Keep playing adventures to unlock this!'); toast('Play adventures to unlock! 🔒'); return; }
       S.equipped[closetTab]=r.id; save(); renderCloset(); renderRoom();
+      /* She has tried the new thing on — the castle visit has served its
+         purpose, so the session modal is allowed to appear after this. */
+      Flow.castleInteractionComplete = true;
+      Bus.emit('CASTLE_INTERACTION', {slot:closetTab, item:r.id});
       const pm=$('princess-mount');
       if(pm && (closetTab==='dress'||closetTab==='crown'||closetTab==='shoes'||closetTab==='wings')){
         pm.classList.remove('spinning','shimmer'); void pm.offsetWidth;
@@ -2147,7 +2195,7 @@ function refreshKingdom(speak){
   const msgs={
     'land-castle':"Layla! I found something magical in your castle! Come see! 💖",
     'land-rainbow':"The rainbow lost its colors! Can you help? 🌈",
-    'land-unicorn':"A unicorn needs a sound crystal! Can you hear "+(PHONEMES[S.currentFocus]?PHONEMES[S.currentFocus].cue:'ssss')+"? 🦄",
+    'land-unicorn':"A unicorn needs a sound crystal! Can you help? 🦄",
     'land-kitten':"A kitten is stuck! Let's sound out a word! 🐱"
   };
   const label={ 'land-castle':'castle','land-rainbow':'rainbow','land-unicorn':'unicorn','land-kitten':'kitten' }[rec];
@@ -2217,11 +2265,19 @@ function logSession(){
   if(S.sessions.length>30) S.sessions.shift();
   S.minutes+=6; save(); refreshKingdom();
 }
+/* The session-complete modal is never shown on a timer and never by
+   scattered code. It waits until Flow says every condition is clear:
+   no live activity, no narration, no reward flow, no queued milestone,
+   no speech. This is the fix for castle narration being cut off by
+   "Another adventure?". */
 function showSessionChoice(){
-  $('session-title').textContent='Beautiful playing! 🌈';
-  $('session-text').textContent='You helped the kingdom AND learned reading magic!';
-  $('session-modal').classList.remove('hidden');
-  AudioSys.playVoice('another-adventure', 'You helped the rainbow AND learned a new sound! Want another adventure?');
+  Flow.whenQuiet(function(){
+    Bus.emit('SESSION_MODAL_SHOW', null);
+    $('session-title').textContent='Beautiful playing! 🌈';
+    $('session-text').textContent='You helped the kingdom AND learned reading magic!';
+    $('session-modal').classList.remove('hidden');
+    Sound.clip('another-adventure', 'Want another adventure?');
+  }, 'sessionChoice');
 }
 $('btn-again').onclick=()=>{ $('session-modal').classList.add('hidden'); adventure(); };
 $('btn-to-castle').onclick=()=>{ $('session-modal').classList.add('hidden'); openCastle(); };
@@ -2930,6 +2986,20 @@ function renderParent(){
   try{ renderAudioQA(); }catch(e){}
   try{ renderParentInsights(); }catch(e){}
   try{ renderParentPractice(); }catch(e){}
+  try{ startActivityDebug(); renderActivityDebug(); }catch(e){}
+  try{
+    const tb=$('btn-run-tests');
+    if(tb && !tb._wired){
+      tb._wired=true;
+      tb.onclick=function(){
+        tb.disabled=true; tb.textContent='running…';
+        Tests.runAll().then(function(res){
+          renderTestResults(res);
+          tb.disabled=false; tb.textContent='▶ Run the suite';
+        });
+      };
+    }
+  }catch(e){}
 }
 document.addEventListener('input',e=>{
   if(e.target.id==='set-voice'){S.settings.voice=e.target.value/100; save();}

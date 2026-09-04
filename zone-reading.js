@@ -63,6 +63,8 @@ Games.rescue = function(params){
   const area=$('game-area'); area.innerHTML='';
   const w = pickBlendWord(params);
   if(!w) return needGrownup(area);
+  Act.describe({type:'blend', targetWord:w.t, targetLabel:w.t,
+                targetPhonemes:w.ph, masteryKey:'blend:'+w.t});
   area.dataset.scene='cottage';
   say('sound-it-out', "Let's sound it out!");
   twinkleSay('A kitten is stuck! Sound out the word to open the door. 🐱', {silent:true});
@@ -143,6 +145,10 @@ Games.buildWord = function(params){
   const area=$('game-area'); area.innerHTML='';
   const w = pickBlendWord(params);
   if(!w) return needGrownup(area);
+  const act = Act.describe({
+    type:'word', targetWord:w.t, targetLabel:w.t,
+    targetPhonemes:w.ph, prompt:'Build the word', masteryKey:'spell:'+w.t
+  });
   area.dataset.scene='cottage';
   setInstruction('Build the word.', 'Build the word!');
   twinkleSay('Put the sounds in order! 🧱', {silent:true});
@@ -184,13 +190,11 @@ Games.buildWord = function(params){
         if(next>=slotEls.length){
           finished=true;
           Array.prototype.forEach.call(tiles.querySelectorAll('.tile'), x=>x.disabled=true);
-          record('spell:'+w.t, firstTryFlag && attemptsThisItem===0);
           noteWordRead(w.t);
-          addStars(4); save(); sparkles(20);
-          after(700, ()=>AudioSys.playWordSlow(w, { onDone:()=>{
-            AudioSys.speak('You built '+w.t+'!');
-            after(2000, activityDone);
-          }}));
+          addStars(4); save();
+          /* Blend what she built, THEN praise it by name. Praise reads from
+             `act`, so it can only ever say this word. */
+          Act.finish(act, { animation: ()=>Sound.blend(w, {}), praise: Praise.word });
         }
       } else {
         attemptsThisItem++;
@@ -219,6 +223,8 @@ Games.whichWord = function(params){
                         return shared(b)-shared(a);
                       });
   const others = (similar.length>=2 ? similar : pool.filter(x=>x.t!==target.t)).slice(0,2);
+  Act.describe({type:'read', targetWord:target.t, targetLabel:target.t,
+                targetPhonemes:target.ph, masteryKey:'read:'+target.t});
   area.dataset.scene='cottage';
   setInstruction('Which word says it?', 'Listen, then find the word.');
   twinkleSay('Listen carefully, then find the word! 🐱', {silent:true});
@@ -261,6 +267,8 @@ Games.matchPicture = function(params){
   if(pool.length < 3) return needGrownup(area);
   const target = pickBlendWord(params) || pool[0];
   const others = shuffle(pool.filter(x=>x.t!==target.t)).slice(0,2);
+  Act.describe({type:'read', targetWord:target.t, targetLabel:target.t,
+                targetPhonemes:target.ph, masteryKey:'read:'+target.t});
   area.dataset.scene='cottage';
   setInstruction('Read it, then find the picture.', 'Read the word, then find its picture.');
   twinkleSay('Read it first — no peeking at the pictures! 😺', {silent:true});
@@ -599,12 +607,15 @@ function refreshCastleUnlocks(){
   });
 }
 
-/* Replaces the older ad-hoc milestone checks. Fires each celebration once. */
+/* Milestones are DETECTED here and QUEUED — never shown here.
+   Showing one inline is what made building "at" announce "You spelled your
+   name!": the celebration ran inside a different activity and took its text
+   from global state. Now the text is captured at detection time and the
+   modal is only shown between activities, by flushMilestone(). */
 function checkMilestones(){
   if(!S.milestones) S.milestones=[];
   refreshCastleUnlocks();
 
-  /* progression flags the rest of the app reads */
   const dec = decodableWords();
   if(!S.blendingUnlocked && strongSounds().length>=3 && dec.length>=2){ S.blendingUnlocked=true; save(); }
   if(!S.sentenceUnlocked && Reading.readableSentences().length>=1){
@@ -621,17 +632,37 @@ function checkMilestones(){
     S.milestones.push(m.id);
     S.lastMilestone={id:m.id, title:m.title, at:Date.now()};
     save();
-    /* The two headline moments announce themselves from their own flow;
-       this avoids showing the same celebration twice. */
+    /* The two headline moments announce themselves from the storybook flow. */
     if(m.id==='sentence1' || m.id==='story1') return;
-    const word = (typeof m.word==='function') ? m.word() : m.word;
-    after(1200, ()=>{
-      showMilestone(m.title, word, m.text, m.clip?{clip:m.clip}:{});
-      grantMilestoneReward(m.reward, m.id);
-    });
-    return;   // one celebration at a time
+    /* Freeze the text NOW, while the context that earned it is still true. */
+    let word;
+    try{ word = (typeof m.word==='function') ? m.word() : m.word; }catch(e){ word=''; }
+    Flow.queueMilestone({id:m.id, title:m.title, word:word, text:m.text, clip:m.clip, reward:m.reward});
+    return;   // one at a time
   }
 }
+
+/* Show one queued milestone, then continue. Called between activities only. */
+function flushMilestone(next){
+  const m = Flow.nextMilestone();
+  if(!m){ if(next) next(); return; }
+  Bus.emit('MILESTONE_SHOW', {id:m.id, title:m.title, word:m.word});
+  Flow.rewardPending = true;
+  showMilestone(m.title, m.word, m.text, m.clip?{clip:m.clip}:{});
+  const done = ()=>{
+    Flow.rewardPending = false;
+    if(m.reward) grantMilestoneReward(m.reward, m.id);
+    if(next) Scene.later(200, next, 'afterMilestone');
+  };
+  /* Advance when SHE dismisses it, or after a generous fallback. */
+  const btn=$('btn-milestone-ok');
+  if(btn){
+    const prev=btn.onclick;
+    btn.onclick=()=>{ btn.onclick=prev; if(prev) try{ prev(); }catch(e){} done(); };
+  }
+  Scene.later(12000, ()=>{ if(Flow.rewardPending) done(); }, 'milestoneFallback');
+}
+
 /* Word-level celebration is handled by the milestone table now. */
 function maybeWordMilestone(word){ checkMilestones(); }
 

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="styles.css?v=20260905004200">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
 </head>
 <body>
@@ -227,6 +227,11 @@
     <div class="parent-card">
       <h3>🧪 Test Mode</h3>
       <div class="practice-grid" id="test-grid"></div>
+      <h3 style="margin-top:14px">🧬 Activity Debug</h3>
+      <div id="activity-debug" class="audio-debug">Open an activity to see live state.</div>
+      <h3 style="margin-top:14px">🧪 Regression Tests</h3>
+      <button class="magic-btn" id="btn-run-tests">▶ Run the suite</button>
+      <div id="test-results"></div>
       <h3 style="margin-top:14px">🔍 Audio Debug</h3>
       <div id="audio-debug" class="audio-debug">Open the parent panel to see live audio state.</div>
       <h3 style="margin-top:14px">🎨 Art Status (vertical slice)</h3>
@@ -273,17 +278,19 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="phonics.js"></script>
-<script src="content.js"></script>
-<script src="feltkit.js"></script>
-<script src="characters.js"></script>
-<script src="princess.js"></script>
+<script src="phonics.js?v=20260905004200"></script>
+<script src="content.js?v=20260905004200"></script>
+<script src="feltkit.js?v=20260905004200"></script>
+<script src="characters.js?v=20260905004200"></script>
+<script src="princess.js?v=20260905004200"></script>
 <!-- felt-* load last: their declarations replace the older drawings -->
-<script src="felt-characters.js"></script>
-<script src="felt-princess.js"></script>
-<script src="app.js"></script>
-<script src="zone-reading.js"></script>
-<script src="zone-play.js"></script>
-<script src="progress.js"></script>
+<script src="felt-characters.js?v=20260905004200"></script>
+<script src="felt-princess.js?v=20260905004200"></script>
+<script src="app.js?v=20260905004200"></script>
+<script src="runtime.js?v=20260905004200"></script>
+<script src="zone-reading.js?v=20260905004200"></script>
+<script src="zone-play.js?v=20260905004200"></script>
+<script src="progress.js?v=20260905004200"></script>
+<script src="devtools.js?v=20260905004200"></script>
 </body>
 </html>

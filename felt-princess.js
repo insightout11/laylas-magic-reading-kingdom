@@ -314,17 +314,42 @@ function feltRoomSVG(){
     + feltStar(140,132,13, FELT.butter)
     + feltStitch('M70 200 q30 14 56 0','rgba(255,255,255,.7)',2.4)
   + '</g>'
-  /* bed */
+  /* bed — a four-poster canopy bed, built the same way as everything else:
+     stacked felt pieces, die-cut borders, visible stitching. The canopy is
+     centred on the bed (the previous one sat 30px to the left of it) and the
+     bedding is layered mattress / duvet / turned-back sheet / two pillows so
+     it reads as soft rather than as a white rectangle. */
   + '<g class="room-bed">'
-    + '<rect class="pc" x="628" y="300" width="238" height="112" rx="18" fill="'+FELT.tanD+'"/>'
-    + '<rect class="pc" x="628" y="284" width="238" height="52" rx="18" fill="'+FELT.pink+'"/>'
-    + '<rect class="pc" x="838" y="220" width="34" height="180" rx="14" fill="'+FELT.tanD+'"/>'
-    + '<rect class="pc" x="616" y="200" width="34" height="200" rx="14" fill="'+FELT.tanD+'"/>'
-    + '<rect class="pc" x="648" y="256" width="86" height="52" rx="18" fill="'+FELT.white+'"/>'
-    + feltStitch('M660 340 q100 24 196 0','rgba(255,255,255,.8)',3)
-    + '<path class="pc" d="M596 168 q76 -52 152 0 q-8 26 -76 26 q-68 0 -76 -26 z" fill="'+FELT.pinkD+'"/>'
-    + '<path class="pc" d="M600 176 q-14 84 4 130 l-26 0 q-12 -80 0 -130 z" fill="'+FELT.pinkL+'" opacity=".9"/>'
-    + '<path class="pc" d="M744 176 q14 84 -4 130 l26 0 q12 -80 0 -130 z" fill="'+FELT.pinkL+'" opacity=".9"/>'
+    + '<ellipse cx="744" cy="418" rx="140" ry="16" fill="'+FELT.shadow+'"/>'
+    /* back posts */
+    + '<rect class="pc" x="632" y="214" width="24" height="194" rx="12" fill="'+FELT.tanD+'"/>'
+    + '<rect class="pc" x="840" y="214" width="24" height="194" rx="12" fill="'+FELT.tanD+'"/>'
+    /* canopy valance + crown, centred at 744 */
+    + '<path class="pc" d="M620 236 q124 -44 256 0 q-9 18 -128 18 q-119 0 -128 -18 z" fill="'+FELT.pinkD+'"/>'
+    + '<path d="M632 244 q116 24 232 0" fill="none" stroke="'+FELT.butter+'" stroke-width="5" stroke-linecap="round"/>'
+    + feltStar(748,206,14, FELT.butter)
+    /* drapes falling from the canopy, tied back at the posts */
+    + '<path class="pc" d="M636 248 q-13 62 2 104 l26 0 q-12 -58 -3 -104 z" fill="'+FELT.pinkL+'"/>'
+    + '<path class="pc" d="M860 248 q13 62 -2 104 l-26 0 q12 -58 3 -104 z" fill="'+FELT.pinkL+'"/>'
+    + '<ellipse class="pc" cx="648" cy="316" rx="13" ry="9" fill="'+FELT.butter+'"/>'
+    + '<ellipse class="pc" cx="848" cy="316" rx="13" ry="9" fill="'+FELT.butter+'"/>'
+    /* headboard: arched, with a heart cut-out */
+    + '<path class="pc" d="M644 322 v-46 q0 -38 48 -38 q48 0 48 38 v46 z" fill="'+FELT.tan+'"/>'
+    + '<path d="M692 268 q-10 -12 -19 -4 q-8 8 3 17 l16 15 l16 -15 q11 -9 3 -17 q-9 -8 -19 4 z" fill="'+FELT.pinkD+'"/>'
+    /* bed base + mattress */
+    + '<rect class="pc" x="636" y="352" width="220" height="52" rx="16" fill="'+FELT.tanD+'"/>'
+    + '<rect class="pc" x="644" y="322" width="206" height="44" rx="16" fill="'+FELT.white+'"/>'
+    /* duvet, plump and stitched */
+    + '<path class="pc" d="M690 316 q84 -16 162 2 q10 34 -2 56 q-80 16 -160 0 q-10 -30 0 -58 z" fill="'+FELT.pink+'"/>'
+    + feltStitch('M700 350 q76 16 148 2','rgba(255,255,255,.85)',3)
+    /* turned-back top sheet */
+    + '<path class="pc" d="M686 318 q40 -12 76 -4 q4 16 -2 26 q-38 8 -76 -2 q-4 -12 2 -20 z" fill="'+FELT.white+'"/>'
+    /* two pillows with depth */
+    + '<ellipse class="pc" cx="700" cy="304" rx="46" ry="26" fill="'+FELT.white+'"/>'
+    + '<ellipse class="pc" cx="716" cy="296" rx="42" ry="24" fill="'+FELT.lilacL+'"/>'
+    + feltStitch('M686 296 q30 10 60 -2','rgba(150,112,217,.45)',2.2)
+    /* little felt heart resting on the bed */
+    + '<path class="pc" d="M792 300 q-9 -12 -18 -3 q-8 8 3 17 l15 14 l15 -14 q11 -9 3 -17 q-9 -9 -18 3 z" fill="'+FELT.rose+'"/>'
   + '</g>'
   /* vanity + mirror */
   + '<g data-zone="crown" class="room-hot">'

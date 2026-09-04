@@ -64,6 +64,7 @@ Games.soundSteps = function(params){
   const area=$('game-area'); area.innerHTML='';
   const pool = usablePhonemes(S.unlocked);
   if(pool.length < 2) return needGrownup(area);
+  Act.describe({type:'sound-steps', targetLabel:'sound steps'});
   area.dataset.scene='stage';
   const TOTAL = Math.min(4, pool.length);
   let got=0, target=null;
@@ -142,6 +143,7 @@ Games.rhymeDance = function(){
   const area=$('game-area'); area.innerHTML='';
   const r = Reading.rhymeRound();
   if(!r) return needGrownup(area);
+  Act.describe({type:'rhyme', targetWord:r.target.t, targetLabel:r.target.t, masteryKey:'rhyme'});
   area.dataset.scene='stage';
   setInstruction('Which one rhymes with '+r.target.t+'?', 'Which word rhymes with '+r.target.t+'?');
   twinkleSay('Rhyming words dance together! 🩰', {silent:true});
@@ -188,6 +190,7 @@ Games.syllableClaps = function(){
   const area=$('game-area'); area.innerHTML='';
   area.dataset.scene='stage';
   const w = SYLLABLE_WORDS[Math.floor(Math.random()*SYLLABLE_WORDS.length)];
+  Act.describe({type:'syllables', targetWord:w.t, targetLabel:w.t, masteryKey:'syllables'});
   setInstruction('How many claps?', 'How many claps?');
   twinkleSay('Clap the beats with me! 👏', {silent:true});
 
@@ -268,6 +271,7 @@ Games.startsWith = function(){
   const others = shuffle(words.filter(w=>w.ph[0]!==sound)).slice(0,2);
   if(others.length<2) return needGrownup(area);
 
+  Act.describe({type:'sound', targetLabel:GU(sound), targetPhonemes:[sound], masteryKey:'sound:'+sound});
   area.dataset.scene='garden';
   setInstruction('Which one starts with this sound?', 'Which picture starts with this sound?');
   twinkleSay('Listen! Which one starts that way? 🌸', {silent:true});
@@ -294,7 +298,7 @@ Games.startsWith = function(){
       done=true;
       Array.prototype.forEach.call(row.querySelectorAll('button'), x=>x.disabled=true);
       growFlower(garden);
-      celebrateRight('sound:'+sound, target.t+' starts with '+PHONEMES[sound].cue+'!');
+      celebrateRight('sound:'+sound, target.t+' starts with that sound!');
       addStars(2); save();
       after(2400, activityDone);
     };
@@ -308,6 +312,7 @@ Games.oddOneOut = function(){
   const area=$('game-area'); area.innerHTML='';
   const r = Reading.rhymeRound();
   if(!r) return needGrownup(area);
+  Act.describe({type:'rhyme', targetWord:r.odd.t, targetLabel:r.odd.t, masteryKey:'rhyme'});
   area.dataset.scene='garden';
   setInstruction('Which one sounds different?', 'Which word sounds different?');
   twinkleSay('Two of these rhyme. One does not! 🌼', {silent:true});
