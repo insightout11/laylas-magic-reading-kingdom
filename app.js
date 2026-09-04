@@ -150,8 +150,8 @@ function record(skill, firstTry){
   save();
 }
 function weakestPhoneme(){
-  const pool = S.unlocked.filter(id=>PHONEMES[id] && PHONEMES[id].kind==='decode');
-  if(!pool.length) return 's';
+  const pool = usablePhonemes(S.unlocked.filter(id=>PHONEMES[id] && PHONEMES[id].kind==='decode'));
+  if(!pool.length) return usablePhonemes()[0]||'s';
   let worst = pool[0], worstScore = 99;
   pool.forEach(id=>{
     const sc = (S.mastery['sound:'+id]||{score:0.5}).score;
@@ -160,16 +160,18 @@ function weakestPhoneme(){
   return worst;
 }
 function maybeUnlockNext(){
-  // unlock next phoneme when current focus is strong
+  // unlock next phoneme when current focus is strong (skip unusable ones)
   const idx = PHONEME_ORDER.indexOf(S.currentFocus);
   const m = S.mastery['sound:'+S.currentFocus];
-  if(m && m.score > 0.75 && idx >= 0 && idx+1 < PHONEME_ORDER.length){
-    const next = PHONEME_ORDER[idx+1];
-    if(!S.unlocked.includes(next)){
-      S.unlocked.push(next);
-      S.currentFocus = next;
-      save();
-      return next;
+  if(m && m.score > 0.75 && idx >= 0){
+    for(let j=idx+1;j<PHONEME_ORDER.length;j++){
+      const next = PHONEME_ORDER[j];
+      if(!S.unlocked.includes(next) && isPhonemeUsable(next)){
+        S.unlocked.push(next);
+        S.currentFocus = next;
+        save();
+        return next;
+      }
     }
   }
   // rotate focus to weakest if current mastered
@@ -181,7 +183,7 @@ function maybeUnlockNext(){
 }
 function decodableWords(){
   const set = new Set(S.unlocked);
-  return WORDS.filter(w => w.ph.every(p=>set.has(p)));
+  return WORDS.filter(w => w.ph.every(p=>set.has(p)&&isPhonemeUsable(p)));
 }
 
 /* ---------------- AUDIO ---------------- */
@@ -381,6 +383,26 @@ const AudioSys = {
 const VOICE_DIR = 'audio/voice/';
 const WORD_DIR = 'audio/words/';
 const PH_DIR = 'audio/phonemes/';
+/* Phoneme asset manifest (built from validated human recordings).
+   valid=false (or MISSING) phonemes are NEVER modeled in child mode. */
+let PHONEME_MANIFEST = null;
+function isPhonemeUsable(id){
+  if(PHONEME_MANIFEST && PHONEME_MANIFEST[id]) return !!PHONEME_MANIFEST[id].valid;
+  return true; // manifest unreachable (local file mode): probe decides
+}
+function usablePhonemes(list){
+  return (list||PHONEME_ORDER).filter(isPhonemeUsable);
+}
+function loadPhonemeManifest(){
+  try{
+    fetch(PH_DIR+'manifest.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(m=>{ PHONEME_MANIFEST=m; try{
+      const bad=Object.keys(m).filter(k=>!m[k].valid);
+      if(bad.length){ const miss=S.audioMissing||(S.audioMissing=[]); bad.forEach(b=>{ if(!miss.includes(b)) miss.push(b); }); save(); }
+      if(!isPhonemeUsable(S.currentFocus)){ const u=usablePhonemes(); if(u.length) S.currentFocus=u[0]; }
+    }catch(e){} }).catch(()=>{});
+  }catch(e){}
+}
 const PHONEME_WORD = {s:'sun',a:'apple',t:'tap',p:'pan',i:'igloo',n:'net',m:'moon',d:'dog',g:'gap',o:'otter',c:'cat',k:'kite',l:'lion'};
 const AudioStat = { phoneme:{}, voice:{}, word:{} }; // 'ok' | 'missing'
 AudioSys._lastSpeak = { text:'', t:0 };
@@ -454,9 +476,16 @@ AudioSys.playVoice = function(key, fallbackText, opts){
     });
   });
 };
-/* Phoneme playback: real asset ONLY (exact .mp3 filename). No synth, no letter names. */
+/* Phoneme playback: real human asset ONLY (exact .mp3 filename).
+   Invalid/missing assets are NEVER modeled: soft cue + parent flag. */
 AudioSys.playPhoneme = function(id){
   showMouthCue(id);
+  if(!isPhonemeUsable(id)){
+    AudioSys.sfx('boop', 0.35);
+    const miss=S.audioMissing||(S.audioMissing=[]);
+    if(!miss.includes(id)){ miss.push(id); save(); }
+    return;
+  }
   Speech.request(1, 'phoneme:'+id, 'phoneme', (cancelled, done, track)=>{
     AudioSys.duck(true); AudioSys._ducked=true;
     Speech.playFile(PH_DIR+id+'.mp3', null, track).then((ok)=>{
@@ -520,6 +549,13 @@ AudioSys.playWord = function(word, slow){
 /* Specific phonics praise in ONE channel hold: character voice names the
    letter, then the clean isolated phoneme plays — never overlapping. */
 AudioSys.praiseSound = function(id){
+  if(!isPhonemeUsable(id)){
+    // Never model an invalid phoneme: generic celebration only.
+    Speech.request(4, 'praise:'+id, 'clip', (cancelled, done, trackEl)=>{
+      Speech.playFile(VOICE_DIR+'you-did-it.mp3', null, trackEl).then(()=>{ if(!cancelled()) done('done'); else done('cancelled'); });
+    });
+    return;
+  }
   Speech.request(4, 'praise:'+id, 'clip', (cancelled, done, trackEl)=>{
     Speech.playFile(VOICE_DIR+'yes-'+id+'.mp3', null, trackEl).then((ok)=>{
       AudioStat.voice['yes-'+id] = ok?'ok':'missing';
@@ -635,6 +671,7 @@ const Speech = {
       else if(c.el){ try{ c.el.onended=null; c.el.onerror=null; c.el.pause(); }catch(e){} }
     }catch(e){}
     talking(false);
+    this._lastStopAt = Date.now();
     this.log('stop', (c.tag||c.kind)+' ← '+reason);
   },
   cancel(reason){ this.token++; this.queued=null; this._stopCur(reason||'cancel'); this.log('cancel', reason||''); },
@@ -652,7 +689,14 @@ const Speech = {
   _run(job){
     const my=++this.token;
     job.seq=(this._seq=(this._seq||0)+1);
-    this.cur={prio:job.prio, tag:job.tag, kind:job.kind, el:null, seq:job.seq};
+    // Isolation gap: phonemes/words never start on the tail of a stopped
+    // sound (covers async pause() + speechSynthesis.cancel() races).
+    const gap = (job.kind==='phoneme'||job.kind==='word') ? 160 : 0;
+    const sinceStop = Date.now()-(this._lastStopAt||0);
+    const wait = Math.max(0, gap-sinceStop);
+    const begin=()=>{
+      if(this.token!==my) return;
+      this.cur={prio:job.prio, tag:job.tag, kind:job.kind, el:null, seq:job.seq};
     talking(true);
     this.log('start', job.tag+' ['+job.kind+' p'+job.prio+']');
     let finished=false;
@@ -665,8 +709,10 @@ const Speech = {
       const q=this.queued; this.queued=null;
       if(q && this.token===my) this._run(q);
     };
-    try{ job.starter(()=>this.token!==my, finish, (el)=>{ if(this.cur&&this.cur.tag===job.tag) this.cur.el=el; }); }
+    try{ job.starter(()=>this.token!==my, finish, (el)=>{ if(this.cur&&this.cur.seq===job.seq) this.cur.el=el; }); }
     catch(e){ finish('error'); }
+    };
+    if(wait>0) setTimeout(begin, wait); else begin();
   },
   playFile(src, volume, track){
     // Resolves true when the file finished audibly, false if missing/blocked.
@@ -685,21 +731,31 @@ const Speech = {
     });
   },
   _ttsInto(text, opts, trackEl, cancelled, done){
+    // Chrome/Android race: cancel() then speak() instantly can double-talk.
+    // Always cancel first, then wait a beat before speaking.
     try{ speechSynthesis.cancel(); }catch(e){}
-    try{
-      const u=new SpeechSynthesisUtterance(text);
+    setTimeout(()=>{
+      if(cancelled()){ done('cancelled'); return; }
+      try{
+        const u=new SpeechSynthesisUtterance(text);
       const v=AudioSys.pickVoice(); if(v) u.voice=v;
       u.rate=opts.rate||0.92; u.pitch=opts.pitch||1.05;
       u.volume=Math.max(0,Math.min(1,S.settings.voice));
       u.lang=(v&&v.lang)||'en-US';
       u.onend=()=>done('done'); u.onerror=()=>done('error');
       speechSynthesis.speak(u);
-    }catch(e){ done('error'); }
+      }catch(e){ done('error'); }
+    }, 120);
   }
 };
+let twinkleMood=null;
 function talking(on){
   const a=document.getElementById('twinkle-avatar');
   if(a) a.classList.toggle('talking', !!on);
+  try{
+    if(on){ if(!twinkleMood) twinklePose('talking'); }
+    else { twinkleMood=null; twinklePose(null); }
+  }catch(e){}
 }
 /* Mouth-shape cue: shows Layla HOW the sound is made (teeth/lips/open).
    Purely visual support for the phoneme audio — not a replacement for it. */
@@ -784,19 +840,37 @@ function twinkleSay(text, opts){
   else currentInstruction=text;
 }
 function twinklePose(p){
+  twinkleMood=p||null;
   try{
     const m=$('twinkle-mini-cat');
     if(m && typeof twinkleSVG==='function') m.innerHTML=twinkleSVG('mini', p||'idle');
   }catch(e){}
 }
-/* Major-figure art: illustrated SVG where it exists, emoji only for tiny objects. */
+/* Major-figure art: one coherent SVG icon set; unknown words get a uniform badge. */
+function iconByName(name){
+  try{
+    if(name==='sun' && typeof sunSVG==='function') return sunSVG();
+    if(name==='moon' && typeof moonSVG==='function') return moonSVG();
+    if(name==='cat' && typeof kittenSVG==='function') return kittenSVG();
+    if(name==='lion' && typeof lionSVG==='function') return lionSVG();
+    if(name==='tap' && typeof tapSVG==='function') return tapSVG();
+    if(name==='pan' && typeof panSVG==='function') return panSVG();
+    if(name==='apple' && typeof appleSVG==='function') return appleSVG();
+    if(name==='tin' && typeof tinSVG==='function') return tinSVG();
+    if(name==='net' && typeof netSVG==='function') return netSVG();
+    if(name==='hat' && typeof hatSVG==='function') return hatSVG();
+    if(name==='frog' && typeof frogSVG==='function') return frogSVG();
+    if(name==='dog' && typeof dogSVG==='function') return dogSVG();
+  }catch(e){}
+  return null;
+}
 function picFor(word, emoji){
   try{
     if(word==='cat'||emoji==='🐱') return kittenSVG();
-    if((word==='sun'||emoji==='☀️') && typeof sunSVG==='function') return sunSVG();
-    if((word==='moon'||emoji==='🌙') && typeof moonSVG==='function') return moonSVG();
+    const g = iconByName(word);
+    if(g) return g;
   }catch(e){}
-  return emoji;
+  return '<span class="word-badge">'+emoji+'</span>';
 }
 function wordArt(w){ return picFor(w.t, w.emoji); }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t;} return a; }
@@ -1003,7 +1077,7 @@ Games.missingLetter = function(){
 /* 4. Magic letter bubbles */
 Games.bubbles = function(params){
   params=params||{};
-  const focus = params.focus || S.currentFocus;
+  const focus = usablePhonemes([params.focus||S.currentFocus])[0] || usablePhonemes()[0] || 's';
   const area=$('game-area'); area.innerHTML='';
   const mode = params.mode || (Math.random()<0.5?'name':'sound');
   $('game-area').dataset.scene='rainbow';
@@ -1053,7 +1127,7 @@ Games.bubbles = function(params){
 /* 5. Unicorn sound crystals */
 Games.crystals = function(params){
   params=params||{};
-  const focus=params.focus||S.currentFocus;
+  const focus=usablePhonemes([params.focus||S.currentFocus])[0] || usablePhonemes()[0] || 's';
   const area=$('game-area'); area.innerHTML='';
   say('find-sound', 'Which letter makes this sound?');
   twinkleSay('The unicorn lost her sound crystal! Listen! 🦄💎', {silent:true});
@@ -1073,12 +1147,29 @@ Games.crystals = function(params){
     if(L===focus) b.dataset.correct='1';
     b.onclick=()=>{
       if(L===focus){
-        b.style.transform='translateY(-30px) scale(1.2)'; AudioSys.sfx('magic');
-        uni.classList.add('happy');
+        AudioSys.sfx('magic');
+        // the crystal zips across the meadow into the unicorn's horn
+        try{
+          const r1=b.getBoundingClientRect(), u1=uni.getBoundingClientRect();
+          const fly=document.createElement('div');
+          fly.className='crystal-fly'; fly.textContent=L.toUpperCase();
+          fly.style.background=b.style.background||'#a78bfa';
+          fly.style.left=(r1.left+r1.width/2-34)+'px'; fly.style.top=(r1.top)+'px';
+          document.body.appendChild(fly);
+          requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+            fly.style.left=(u1.left+u1.width/2-34)+'px'; fly.style.top=(u1.top+10)+'px';
+            fly.style.transform='scale(.55) rotate(20deg)'; fly.style.opacity='.9';
+          }); });
+          setTimeout(()=>{ fly.remove(); }, 850);
+        }catch(e){}
+        setTimeout(()=>{
+          try{ if(typeof unicornSVG==='function') uni.innerHTML=unicornSVG('happy'); }catch(e){}
+          uni.classList.add('happy');
+          AudioSys.sfx('sparkle'); sparkles(22);
+        }, 620);
         celebrateRight('sound:'+focus, 'Yes! '+L.toUpperCase()+' makes '+PHONEMES[focus].cue+'! The unicorn is so happy!');
         addStars(3);
-        sparkles(20);
-        setTimeout(activityDone, 2400);
+        setTimeout(activityDone, 2800);
       } else gentleNo(b);
     };
     row.appendChild(b);
@@ -1090,7 +1181,7 @@ Games.crystals = function(params){
 Games.firstSound = function(params){
   params=params||{};
   const area=$('game-area'); area.innerHTML='';
-  const pool = FIRST_SOUND_SETS.filter(s=>s.familiar || S.unlocked.includes(s.sound));
+  const pool = FIRST_SOUND_SETS.filter(s=>s.familiar || (S.unlocked.includes(s.sound)&&isPhonemeUsable(s.sound)));
   const set = pool.length? pool[Math.floor(Math.random()*pool.length)] : FIRST_SOUND_SETS[0];
   const sound=set.sound;
   say('first-sound', 'Which picture starts with this sound?');
@@ -1332,8 +1423,8 @@ Games.dressup = function(){
 /* 11. Ballet sound steps */
 Games.ballet = function(){
   const area=$('game-area'); area.innerHTML='';
-  const steps = shuffle(S.unlocked.filter(x=>PHONEMES[x]).slice(0,3));
-  while(steps.length<3) steps.push(PHONEME_ORDER[steps.length%PHONEME_ORDER.length]);
+  const steps = usablePhonemes(S.unlocked.filter(x=>PHONEMES[x]));
+  while(steps.length<3) steps.push(usablePhonemes()[steps.length%Math.max(1,usablePhonemes().length)]||'s');
   setInstruction('Tap the sound you hear!', 'Tap the stage tile that makes the sound you hear!');
   twinkleSay('The ballerina needs your ears! 🩰', {silent:true});
   $('game-area').dataset.scene='stage';
@@ -1385,7 +1476,7 @@ Games.rhyme = function(){
   const row=document.createElement('div'); row.className='choices';
   shuffle(set.rhymes.concat(set.others)).forEach(w=>{
     const b=document.createElement('button'); b.className='choice-card pic-card';
-    b.innerHTML='<span class="pic-emoji">'+(set.be[w]||'⭐')+'</span><span class="pic-word">'+w+'</span>';
+    b.innerHTML='<span class="pic-emoji">'+picFor(w, (set.be[w]||'⭐'))+'</span><span class="pic-word">'+w+'</span>';
     if(set.rhymes.includes(w)) b.dataset.correct='1';
     b.onclick=()=>{
       AudioSys.playWord(w);
@@ -1488,7 +1579,7 @@ function openStorybook(){
   let page=0;
   // Only show pages whose sounds Layla has unlocked (plus the first page always).
   const set = new Set(S.unlocked);
-  let pages = STORY_PAGES.filter((p,i)=> i===0 || (p.needs||[]).every(n=>set.has(n)));
+  let pages = STORY_PAGES.filter((p,i)=> i===0 || (p.needs||[]).every(n=>set.has(n)&&isPhonemeUsable(n)));
   if(!pages.length) pages = STORY_PAGES.slice(0,1);
   function render(){
     const P=pages[page%pages.length];
@@ -1545,31 +1636,57 @@ function grantRandomReward(context){
   awardSticker('star-'+r.id, true);
   showReward(r);
 }
+/* Reward state machine: closed → opening → revealed.
+   The item is NEVER shown before the chest opens. */
+let rewardState='idle', rewardCurrent=null, castleHighlight=null, rewardAfterCastle=null;
+function tabForCat(cat){
+  try{ if(CLOSET_TABS.some(t=>t[0]===cat)) return cat; }catch(e){}
+  return 'dress';
+}
+function goCastleWithReward(r){
+  $('reward-modal').classList.add('hidden');
+  castleHighlight=r.id;
+  openCastle();
+  setClosetTab(tabForCat(r.cat));
+}
 function showReward(r){
-  $('reward-item').textContent=r.emoji;
-  $('reward-name').textContent=r.name;
-  $('reward-chest').innerHTML=(typeof chestSVG==='function')?chestSVG(false):'🎁';
-  $('reward-chest').classList.remove('open');
+  rewardState='closed'; rewardCurrent=r;
+  const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
+  ri.textContent=r.emoji; rn.textContent=r.name;
+  ri.classList.remove('revealed'); rn.classList.remove('revealed');
+  ch.innerHTML=(typeof chestSVG==='function')?chestSVG(false):'🎁';
+  ch.classList.remove('open','shaking');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
   $('reward-modal').classList.remove('hidden');
-  AudioSys.sfx('chest');
-  twinkleSay('You earned something! Open it! 🎁', {silent:true});
-  AudioSys.playVoice('look-unlocked', 'Look what you unlocked!');
+  twinkleSay('Something magical is waiting! Tap the chest! 🎁', {silent:true});
   twinklePose('happy');
   $('btn-reward-open').onclick=()=>{
-    if(typeof chestSVG==='function'){ $('reward-chest').innerHTML=chestSVG(true); }
-    else $('reward-chest').textContent='✨';
-    $('reward-chest').classList.add('open');
-    AudioSys.sfx('fanfare'); confettiBlast(); sparkles(24);
-    AudioSys.speak('You earned '+r.name+'! Beautiful!');
-    // auto-equip wearable
-    const slot = r.cat==='dress'?'dress':r.cat==='crown'?'crown':r.cat==='shoes'?'shoes':r.cat==='pet'?'pet':r.cat==='wallpaper'?'wallpaper':r.cat==='furniture'?'furniture':r.cat==='window'?'window':r.cat==='decor'?'decor':r.cat;
-    if(slot && S.equipped.hasOwnProperty(slot)){ S.equipped[slot]=r.id; save(); }
-    $('btn-reward-open').classList.add('hidden');
-    const b=$('btn-reward-castle'); b.classList.remove('hidden');
-    AudioSys.playVoice('try-it-on', "Let's try it on!");
-    b.onclick=()=>{ $('reward-modal').classList.add('hidden'); openCastle(); };
+    if(rewardState!=='closed') return;
+    rewardState='opening';
+    ch.classList.add('shaking');
+    AudioSys.sfx('chest');
+    setTimeout(()=>{
+      if(rewardState!=='opening') return;
+      if(typeof chestSVG==='function'){ ch.innerHTML=chestSVG(true); }
+      ch.classList.remove('shaking'); ch.classList.add('open');
+      ri.classList.add('revealed'); rn.classList.add('revealed');
+      rewardState='revealed';
+      AudioSys.sfx('fanfare'); confettiBlast(); sparkles(24);
+      AudioSys.playVoice('look-unlocked', 'Look what you unlocked! '+r.name+'!');
+      // auto-equip wearable so it is immediately usable
+      const slot = r.cat;
+      if(slot && S.equipped.hasOwnProperty(slot)){ S.equipped[slot]=r.id; save(); }
+      $('btn-reward-open').classList.add('hidden');
+      const b=$('btn-reward-castle'); b.classList.remove('hidden');
+      AudioSys.playVoice('try-it-on', "Let's try it on!");
+      b.onclick=()=>{
+        const r2=rewardCurrent||r, after=rewardAfterCastle;
+        rewardAfterCastle=null;
+        goCastleWithReward(r2);
+        if(after) setTimeout(after, 1400);
+      };
+    }, 750);
   };
 }
 function awardSticker(id, silent){
@@ -1586,7 +1703,8 @@ function showMilestone(title, word, text, opts){
   twinklePose('happy');
   confettiBlast(); sparkles(30,true); AudioSys.sfx('fanfare');
   if(opts.clip){
-    AudioSys.playVoice(opts.clip, title).then(()=>setTimeout(()=>AudioSys.playWord(word), 1200));
+    AudioSys.playVoice(opts.clip, title);
+    setTimeout(()=>AudioSys.playWord(word), 2600);
   } else {
     AudioSys.speak(title+' '+word+'! '+text);
   }
@@ -1603,6 +1721,13 @@ function openCastle(){
   AudioSys.sfx('door');
   if(typeof mountCastleRoom==='function') mountCastleRoom();
   renderClosetTabs(); renderCloset(); renderRoom();
+  if(castleHighlight){
+    try{
+      const tiles=$('closet-grid').querySelectorAll('.closet-item');
+      tiles.forEach(t=>{ if(t.classList.contains('equipped')){ t.classList.add('new-glow'); setTimeout(()=>t.classList.remove('new-glow'), 6000); } });
+    }catch(e){}
+    castleHighlight=null;
+  }
   AudioSys.playVoice('castle-hello', 'Welcome to your castle, Layla!');
 }
 function renderClosetTabs(){
@@ -1634,8 +1759,9 @@ function renderCloset(){
       S.equipped[closetTab]=r.id; save(); renderCloset(); renderRoom();
       const pm=$('princess-mount');
       if(pm && (closetTab==='dress'||closetTab==='crown'||closetTab==='shoes'||closetTab==='wings')){
-        pm.classList.remove('spinning'); void pm.offsetWidth; pm.classList.add('spinning');
-        setTimeout(()=>pm.classList.remove('spinning'), 900);
+        pm.classList.remove('spinning','shimmer'); void pm.offsetWidth;
+        pm.classList.add('spinning','shimmer');
+        setTimeout(()=>pm.classList.remove('spinning','shimmer'), 900);
       }
       AudioSys.sfx('sparkle'); sparkles(10);
       if(closetTab==='dress') AudioSys.sfx('spin', 0.7, 0.2);
@@ -1768,9 +1894,8 @@ function namePlaqueIntro(){
   wrap.innerHTML='<div class="name-plaque" style="position:static;transform:none;font-size:54px;letter-spacing:8px;">LAYLA 👑</div><div style="font-size:90px">🐱👑</div><p style="font-weight:800;font-size:20px;">Twinkle found your name on the castle door!<br>You are <b>already</b> a reader! 💖</p><button class="big-magic-btn">Yay! 💖</button>';
   area.appendChild(wrap);
   twinkleSay("Hi Layla! I found something magical! That's YOUR name!", {silent:true});
-  AudioSys.playVoice('hi-layla', 'Hi Layla!').then(()=>{
-    setTimeout(()=>AudioSys.speak("I found something magical! That's YOUR name! Layla!"), 700);
-  });
+  AudioSys.playVoice('hi-layla', 'Hi Layla!');
+  setTimeout(()=>AudioSys.speak("I found something magical! That's YOUR name! Layla!"), 2600);
   wrap.querySelector('button').onclick=()=>{ AudioSys.sfx('fanfare'); sparkles(20); activityDone(); };
 }
 function endSession(){
@@ -1780,11 +1905,7 @@ function endSession(){
     S.rewards.push(rew.id); save();
     if(!S.firstSessionDone){ S.firstSessionDone=true; save(); }
     showReward(rew);
-    const b=$('btn-reward-castle');
-    const old=b.onclick;
-    b.onclick=()=>{ $('reward-modal').classList.add('hidden'); openCastle(); setTimeout(showSessionChoice, 1200); };
-    // also auto show choice after closing via X? keep simple
-    setTimeout(()=>{ if($('reward-modal').classList.contains('hidden')) showSessionChoice(); }, 8000);
+    rewardAfterCastle=showSessionChoice;
     sessionReward=null;
     logSession();
     return;
@@ -1794,8 +1915,7 @@ function endSession(){
     const locked = REWARDS.filter(r=>!S.rewards.includes(r.id));
     if(locked.length){
       grantRandomReward();
-      const b=$('btn-reward-castle');
-      b.onclick=()=>{ $('reward-modal').classList.add('hidden'); openCastle(); setTimeout(showSessionChoice, 1500); };
+      rewardAfterCastle=showSessionChoice;
       logSession();
       return;
     }
@@ -1959,14 +2079,17 @@ function renderAudioQA(){
     box.appendChild(row);
     AudioSys.probe([PH_DIR+id+'.mp3']).then((ok)=>{
       AudioStat.phoneme[id]=ok?'ok':'missing';
+      const man=(typeof PHONEME_MANIFEST!=='undefined'&&PHONEME_MANIFEST&&PHONEME_MANIFEST[id])||null;
+      if(man) lab.title=id.toUpperCase()+' /'+man.ipa+'/ · '+man.sourceAuthor+' · '+man.license;
       if(!ok){ st.textContent='MISSING ✗'; st.style.color='#dc2626'; }
+      else if(man && !man.valid){ st.textContent='INVALID — DO NOT USE ✗'; st.style.color='#dc2626'; }
       else{
         st.textContent='found…'; st.style.color='#92400e';
         AudioSys.inspect(PH_DIR+id+'.mp3').then((info)=>{
           if(!info.ok){ st.textContent='unverified'; st.style.color='#92400e'; }
           else{
-            const ready = info.dur>0.05 && info.dur<3.0 && info.peak>0.05;
-            st.textContent=(ready?'READY ✓ ':'DO NOT USE ✗ ')+info.dur.toFixed(2)+'s · '+Math.round(info.peak*100)+'%';
+            const ready = info.dur>0.05 && info.dur<3.0 && info.peak>0.05 && (!man || man.valid);
+            st.textContent=(ready?(man?'REAL AUDIO READY ✓ ':'READY ✓ '):'INVALID — DO NOT USE ✗ ')+info.dur.toFixed(2)+'s · '+Math.round(info.peak*100)+'%';
             st.style.color= ready?'#16a34a':'#dc2626';
             if(!ready){ const miss=S.audioMissing||(S.audioMissing=[]); if(!miss.includes(id)){miss.push(id); save();} }
           }
@@ -1976,8 +2099,9 @@ function renderAudioQA(){
       if(done>=ids.length){
         const miss = ids.filter(x=>AudioStat.phoneme[x]==='missing');
         S.audioMissing = miss; save();
-        sum.innerHTML = 'Phonemes: <b>'+(ids.length-miss.length)+'/'+ids.length+' real audio '+(miss.length?'':'✓')+'</b>'
+        sum.innerHTML = 'Phonemes: <b>'+(ids.length-miss.length)+'/'+ids.length+' files found '+(miss.length?'':'✓')+'</b>'
           + (miss.length? ' — missing: <b style="color:#dc2626">'+miss.join(', ').toUpperCase()+'</b>':'')
+          + '<br><span style="font-size:12px">Human recordings: Wikimedia Commons contributors, CC BY-SA 3.0 (see each row for author).</span>'
           + '<br><span id="qa-vw">Checking voice & words…</span>';
         const vps = VOICE_KEYS.map(k=>AudioSys.probe(VOICE_DIR+k+'.mp3').then(ok=>{AudioStat.voice[k]=ok?'ok':'missing'; return ok; }));
         const wps = WORD_KEYS.map(k=>AudioSys.probe(WORD_DIR+k+'.mp3').then(ok=>{AudioStat.word[k]=ok?'ok':'missing'; return ok; }));
@@ -2080,6 +2204,7 @@ function init(){
   try{ if('speechSynthesis' in window) speechSynthesis.getVoices(); }catch(e){}
   try{ if('speechSynthesis' in window) speechSynthesis.onvoiceschanged=()=>{}; }catch(e){}
   try{ if(typeof initWorld==='function') initWorld(); }catch(e){}
+  try{ if(typeof loadPhonemeManifest==='function') loadPhonemeManifest(); }catch(e){}
   AudioSys.applyVolumes();
   refreshAll();
   if(S.stars>0 || S.firstSessionDone){

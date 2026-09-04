@@ -27,7 +27,7 @@ function twinkleSVG(cls, pose){
   + '<ellipse cx="80" cy="82" rx="5" ry="3.6" fill="#f9a8d4" opacity=".85"/>'
   + '<polygon points="57,80 63,80 60,83.5" fill="#f472b6"/>'
   + (pose==='happy'
-    ? '<ellipse cx="60" cy="88" rx="5" ry="4" fill="#9a3412"/>'
+    ? (pose==='talking' ? '<ellipse cx="60" cy="89" rx="3.6" ry="5.2" fill="#9a3412"/>' : '<ellipse cx="60" cy="88" rx="5" ry="4" fill="#9a3412"/>')
     : '<path d="M60,83.5 Q60,87 56,87 M60,83.5 Q60,87 64,87" fill="none" stroke="#a16207" stroke-width="1.6" stroke-linecap="round"/>')
   + (pose==='point' ? '<ellipse cx="96" cy="92" rx="8" ry="6" fill="#fffaf3" stroke="#f0d9c8" stroke-width="2"/>' : '')
   + (pose==='fly' ? '<path d="M14,84 L2,80 M16,96 L4,96" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>' : '')
@@ -57,6 +57,7 @@ const WORLD_SCENE = ''
 + '<g fill="#ffffff" opacity=".92"><ellipse class="cloud c1" cx="420" cy="110" rx="70" ry="26"/><ellipse class="cloud c1" cx="470" cy="100" rx="50" ry="22"/>'
 + '<ellipse class="cloud c2" cx="830" cy="80" rx="80" ry="28"/><ellipse class="cloud c2" cx="890" cy="70" rx="52" ry="22"/>'
 + '<ellipse class="cloud c3" cx="1060" cy="170" rx="60" ry="22"/></g>'
++ '<g class="bird" stroke="#7c6aa8" stroke-width="3" fill="none" stroke-linecap="round"><path d="M700,150 Q708,142 716,150 Q724,142 732,150"/><path d="M760,120 Q766,114 772,120 Q778,114 784,120"/></g>'
 + '<g opacity=".75"><polygon points="560,330 660,180 760,330" fill="#b9a5f5"/><polygon points="660,180 690,230 630,230" fill="#fff" opacity=".8"/>'
 + '<polygon points="880,330 960,210 1040,330" fill="#c4b0f2"/><polygon points="960,210 984,252 936,252" fill="#fff" opacity=".8"/>'
 + '<g opacity=".65"><rect x="368" y="300" width="26" height="60" fill="#e8dcc8"/><polygon points="364,300 381,272 398,300" fill="#f9a8d4"/>'
@@ -72,6 +73,7 @@ const WORLD_SCENE = ''
 + '<path class="path-glow" d="M210,640 C300,600 340,560 420,540 C520,515 560,470 600,430"/>'
 + '<path class="path-glow" d="M600,430 C660,470 720,500 800,520 C880,542 920,580 950,630"/>'
 + '<path class="path-glow" d="M420,540 C380,580 340,610 330,660"/></g>'
++ '<g fill="#e7dcc8" stroke="#fff" stroke-width="3"><ellipse cx="560" cy="560" rx="22" ry="12"/><ellipse cx="585" cy="500" rx="20" ry="11"/><ellipse cx="570" cy="440" rx="22" ry="12"/><ellipse cx="600" cy="380" rx="20" ry="11"/></g>'
 + '<g fill="#fff" opacity=".9"><g transform="translate(392 588)"><ellipse cx="0" cy="3" rx="7" ry="5.5"/><circle cx="-8" cy="-5" r="3"/><circle cx="0" cy="-7" r="3"/><circle cx="8" cy="-5" r="3"/></g>'
 + '<g transform="translate(368 614) rotate(-12)"><ellipse cx="0" cy="3" rx="7" ry="5.5"/><circle cx="-8" cy="-5" r="3"/><circle cx="0" cy="-7" r="3"/><circle cx="8" cy="-5" r="3"/></g>'
 + '<g transform="translate(348 640) rotate(-8)"><ellipse cx="0" cy="3" rx="7" ry="5.5"/><circle cx="-8" cy="-5" r="3"/><circle cx="0" cy="-7" r="3"/><circle cx="8" cy="-5" r="3"/></g></g>'
@@ -112,9 +114,12 @@ const WORLD_SCENE = ''
 + '<ellipse class="mist" cx="1030" cy="400" rx="120" ry="70" fill="url(#mist)"/>'
 + '<ellipse class="mist m2" cx="845" cy="330" rx="95" ry="85" fill="url(#mist)"/>'
 + '<ellipse class="mist m3" cx="480" cy="650" rx="130" ry="50" fill="url(#mist)"/>'
++ '<g class="balloon"><ellipse cx="1080" cy="120" rx="30" ry="36" fill="#f9a8d4" stroke="#fff" stroke-width="4"/><path d="M1052,108 Q1066,120 1062,140 M1108,108 Q1094,120 1098,140" stroke="#f472b6" stroke-width="3" fill="none"/><rect x="1072" y="152" width="16" height="12" rx="3" fill="#a16207"/><path d="M1074,152 L1080,138 M1086,152 L1080,138" stroke="#a16207" stroke-width="2"/></g>'
 + '<g fill="#3d9e63"><path d="M0,700 Q25,630 50,700 Z"/><path d="M90,700 Q115,640 140,700 Z"/><path d="M1060,700 Q1085,640 1110,700 Z"/><path d="M1150,700 Q1175,645 1200,700 Z"/></g>'
 + '<g><rect x="58" y="636" width="7" height="40" fill="#16a34a"/><g fill="#f472b6"><ellipse cx="61" cy="618" rx="9" ry="14"/><ellipse cx="61" cy="648" rx="9" ry="14"/><ellipse cx="46" cy="633" rx="14" ry="9"/><ellipse cx="76" cy="633" rx="14" ry="9"/></g><circle cx="61" cy="633" r="8" fill="#fde047"/></g>'
 + '<g><rect x="1130" y="640" width="7" height="40" fill="#16a34a"/><g fill="#c4b5fd"><ellipse cx="1133" cy="622" rx="9" ry="14"/><ellipse cx="1133" cy="652" rx="9" ry="14"/><ellipse cx="1118" cy="637" rx="14" ry="9"/><ellipse cx="1148" cy="637" rx="14" ry="9"/></g><circle cx="1133" cy="637" r="8" fill="#fff"/></g>'
++ '<g stroke="#16a34a" stroke-width="4" stroke-linecap="round"><line x1="860" y1="655" x2="856" y2="628"/><line x1="950" y1="655" x2="954" y2="626"/><line x1="930" y1="658" x2="928" y2="636"/></g>'
++ '<g fill="#4ade80" stroke="#16a34a" stroke-width="3"><ellipse cx="640" cy="648" rx="34" ry="20"/><ellipse cx="1010" cy="620" rx="30" ry="18"/><ellipse cx="180" cy="648" rx="30" ry="18"/><circle cx="640" cy="636" r="5" fill="#f9a8d4"/><circle cx="1010" cy="610" r="5" fill="#fff"/><circle cx="180" cy="638" r="5" fill="#fde047"/></g>'
 + '<g fill="#fef9c7"><circle class="firefly" cx="300" cy="560" r="5"/><circle class="firefly" cx="520" cy="600" r="4" style="animation-delay:1s"/><circle class="firefly" cx="700" cy="540" r="5" style="animation-delay:2s"/><circle class="firefly" cx="940" cy="560" r="4" style="animation-delay:.5s"/><circle class="firefly" cx="220" cy="640" r="4" style="animation-delay:1.6s"/><circle class="firefly" cx="1080" cy="600" r="5" style="animation-delay:2.4s"/></g>'
 + '</svg>'
 + '<div class="twinkle-fly" id="twinkle-fly" aria-hidden="true"></div>'
@@ -133,6 +138,77 @@ function sunSVG(){
   + '<path d="M32,47 Q40,53 48,47" stroke="#92400e" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
   + '<ellipse cx="28" cy="44" rx="4" ry="2.6" fill="#fda4af"/><ellipse cx="52" cy="44" rx="4" ry="2.6" fill="#fda4af"/>'
   + '</svg>';
+}
+function lionSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<circle cx="40" cy="42" r="24" fill="#f59e0b"/><circle cx="40" cy="42" r="16" fill="#fde68a"/>'
+  + '<circle cx="34" cy="40" r="2.6" fill="#40264f"/><circle cx="46" cy="40" r="2.6" fill="#40264f"/>'
+  + '<ellipse cx="40" cy="48" rx="4" ry="3" fill="#fff"/><path d="M36,52 Q40,55 44,52" stroke="#92400e" stroke-width="2" fill="none"/>'
+  + '<circle cx="28" cy="30" r="5" fill="#f59e0b"/><circle cx="52" cy="30" r="5" fill="#f59e0b"/></svg>';
+}
+function tapSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<rect x="30" y="14" width="20" height="18" rx="4" fill="#94a3b8"/>'
+  + '<rect x="22" y="30" width="36" height="12" rx="6" fill="#cbd5e1"/>'
+  + '<rect x="24" y="40" width="10" height="18" rx="4" fill="#94a3b8"/>'
+  + '<path d="M29,62 q-4,7 0,12 q4,-5 0,-12" fill="#7dd3fc"/>'
+  + '<circle cx="58" cy="24" r="5" fill="#f87171"/></svg>';
+}
+function panSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<rect x="52" y="36" width="22" height="8" rx="4" fill="#7c2d12"/>'
+  + '<ellipse cx="32" cy="40" rx="24" ry="16" fill="#334155"/>'
+  + '<ellipse cx="32" cy="38" rx="18" ry="11" fill="#94a3b8"/>'
+  + '<path d="M24,30 q3,-8 8,-10 M36,28 q4,-6 9,-7" stroke="#cbd5e1" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+}
+function appleSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<circle cx="40" cy="46" r="22" fill="#ef4444"/>'
+  + '<path d="M40,24 Q40,16 46,12" stroke="#7c2d12" stroke-width="4" fill="none"/>'
+  + '<path d="M46,16 Q58,12 60,22 Q50,26 46,16" fill="#4ade80"/>'
+  + '<ellipse cx="32" cy="40" rx="5" ry="8" fill="#fca5a5" opacity=".8"/>'
+  + '<circle cx="34" cy="46" r="2.4" fill="#7f1d1d"/><circle cx="46" cy="46" r="2.4" fill="#7f1d1d"/></svg>';
+}
+function tinSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<rect x="24" y="24" width="32" height="36" rx="5" fill="#cbd5e1" stroke="#94a3b8" stroke-width="3"/>'
+  + '<ellipse cx="40" cy="24" rx="16" ry="6" fill="#e2e8f0" stroke="#94a3b8" stroke-width="3"/>'
+  + '<rect x="30" y="36" width="20" height="12" rx="3" fill="#f472b6"/>'
+  + '<circle cx="40" cy="42" r="3" fill="#fff"/></svg>';
+}
+function netSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<rect x="36" y="52" width="8" height="20" rx="4" fill="#a16207" transform="rotate(12 40 60)"/>'
+  + '<ellipse cx="40" cy="32" rx="24" ry="20" fill="#bae6fd" stroke="#0284c7" stroke-width="3"/>'
+  + '<path d="M20,24 L60,40 M20,40 L60,24 M28,16 L52,48 M52,16 L28,48 M40,12 L40,52" stroke="#0284c7" stroke-width="1.6"/>'
+  + '<circle cx="58" cy="52" r="5" fill="#fb923c"/></svg>';
+}
+function hatSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<ellipse cx="40" cy="58" rx="28" ry="8" fill="#7c3aed"/>'
+  + '<path d="M24,58 Q24,26 40,26 Q56,26 56,58 Z" fill="#8b5cf6"/>'
+  + '<rect x="24" y="48" width="32" height="8" fill="#fbbf24"/>'
+  + '<circle cx="40" cy="44" r="4" fill="#fde047"/></svg>';
+}
+function frogSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<circle cx="26" cy="28" r="10" fill="#4ade80"/><circle cx="54" cy="28" r="10" fill="#4ade80"/>'
+  + '<circle cx="26" cy="28" r="4" fill="#fff"/><circle cx="54" cy="28" r="4" fill="#fff"/>'
+  + '<circle cx="26" cy="28" r="2" fill="#1f2937"/><circle cx="54" cy="28" r="2" fill="#1f2937"/>'
+  + '<ellipse cx="40" cy="52" rx="24" ry="18" fill="#4ade80"/>'
+  + '<ellipse cx="40" cy="56" rx="14" ry="9" fill="#bbf7d0"/>'
+  + '<path d="M30,52 Q40,58 50,52" stroke="#166534" stroke-width="2.5" fill="none"/>'
+  + '<circle cx="24" cy="50" r="3.5" fill="#f9a8d4"/><circle cx="56" cy="50" r="3.5" fill="#f9a8d4"/></svg>';
+}
+function dogSVG(){
+  return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
+  + '<ellipse cx="22" cy="36" rx="8" ry="14" fill="#b45309"/><ellipse cx="58" cy="36" rx="8" ry="14" fill="#b45309"/>'
+  + '<circle cx="40" cy="44" r="20" fill="#d97706"/>'
+  + '<ellipse cx="40" cy="52" rx="10" ry="8" fill="#fde68a"/>'
+  + '<circle cx="33" cy="40" r="3" fill="#1f2937"/><circle cx="47" cy="40" r="3" fill="#1f2937"/>'
+  + '<circle cx="40" cy="50" r="3.4" fill="#1f2937"/>'
+  + '<path d="M40,53 Q40,56 37,56 M40,53 Q40,56 43,56" stroke="#1f2937" stroke-width="1.6" fill="none"/>'
+  + '<ellipse cx="40" cy="26" rx="6" ry="4" fill="#b45309"/></svg>';
 }
 function moonSVG(){
   return '<svg class="obj-svg" viewBox="0 0 80 80" aria-hidden="true">'
@@ -184,23 +260,58 @@ function unicornHeadSVG(){
   + '<circle cx="44" cy="38" r="3" fill="#40264f"/><circle cx="45" cy="37" r="1" fill="#fff"/>'
   + '<ellipse cx="50" cy="46" rx="2.5" ry="2" fill="#f9a8d4"/>';
 }
-function unicornSVG(){
-  return '<svg class="unicorn-svg" viewBox="0 0 200 170" aria-hidden="true">'
-  + '<ellipse cx="100" cy="152" rx="70" ry="12" fill="#bbf7d0"/>'
-  + '<path class="uni-tail" d="M40,90 Q18,100 26,128 Q30,138 36,130 Q30,112 46,104 Z" fill="#c4b5fd" stroke="#8b5cf6" stroke-width="2"/>'
-  + '<rect x="66" y="108" width="11" height="40" rx="5" fill="#fff" stroke="#e9d5ff" stroke-width="2"/><rect x="86" y="108" width="11" height="40" rx="5" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
-  + '<rect x="118" y="108" width="11" height="40" rx="5" fill="#f5f0ff" stroke="#e9d5ff" stroke-width="2"/><rect x="136" y="108" width="11" height="40" rx="5" fill="#f5f0ff" stroke="#e9d5ff" stroke-width="2"/>'
-  + '<ellipse cx="102" cy="92" rx="52" ry="32" fill="#ffffff" stroke="#e9d5ff" stroke-width="3"/>'
-  + '<path d="M140,80 Q160,60 158,36 Q157,28 150,32 Q146,52 134,66 Z" fill="#fff" stroke="#e9d5ff" stroke-width="3"/>'
-  + '<ellipse cx="162" cy="34" rx="15" ry="13" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
-  + '<polygon points="152,26 148,12 158,20" fill="#fff" stroke="#e9d5ff" stroke-width="2"/>'
-  + '<polygon points="160,20 166,2 170,20" fill="#fbbf24" stroke="#d97706" stroke-width="1.5"/>'
-  + '<path d="M146,30 Q140,44 144,58 Q138,44 132,40 Q138,30 146,30" fill="#f0abfc"/>'
-  + '<path d="M156,26 Q162,38 160,52 Q156,40 150,36 Q154,30 156,26" fill="#a78bfa"/>'
-  + '<circle cx="165" cy="33" r="3" fill="#40264f"/><circle cx="166" cy="32" r="1" fill="#fff"/>'
-  + '<ellipse cx="171" cy="40" rx="2.6" ry="2" fill="#f9a8d4"/>'
-  + '<polygon points="100,46 102,52 108,52 103,56 105,62 100,58 95,62 97,56 92,52 98,52" fill="#fde047"/>'
-  + '</svg>';
+function unicornSVG(mood){
+  mood = mood||'idle';
+  const happy = mood==='happy';
+  let s = '<svg class="unicorn-svg" viewBox="0 0 220 190" aria-hidden="true">';
+  s += '<ellipse cx="110" cy="172" rx="78" ry="12" fill="#9fd8b4"/>';
+  // flowing pastel tail
+  s += '<path class="uni-tail" d="M46,104 Q20,112 26,142 Q29,154 37,146 Q30,124 52,116 Z" fill="#c4b5fd" stroke="#8b5cf6" stroke-width="2.5"/>';
+  s += '<path class="uni-tail t2" d="M52,110 Q34,122 40,144" fill="none" stroke="#f0abfc" stroke-width="5" stroke-linecap="round"/>';
+  // legs with rounded hooves
+  s += '<rect x="72" y="122" width="13" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="94" y="122" width="13" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="128" y="122" width="13" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="148" y="122" width="13" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<ellipse cx="78" cy="166" rx="9" ry="6" fill="#c4b5fd"/><ellipse cx="100" cy="166" rx="9" ry="6" fill="#c4b5fd"/>';
+  s += '<ellipse cx="134" cy="166" rx="9" ry="6" fill="#d8b4fe"/><ellipse cx="154" cy="166" rx="9" ry="6" fill="#d8b4fe"/>';
+  // body with soft belly shade
+  s += '<ellipse cx="112" cy="104" rx="58" ry="36" fill="#ffffff" stroke="#e3d3f5" stroke-width="3"/>';
+  s += '<ellipse cx="112" cy="118" rx="44" ry="20" fill="#f3e8ff" opacity=".8"/>';
+  // star flank mark
+  s += '<polygon points="96,92 98,97 103,97 99,100 100,105 96,102 92,105 93,100 89,97 94,97" fill="#f9a8d4"/>';
+  // elegant arched neck + head
+  s += '<path d="M152,92 Q172,70 170,44 Q169,34 161,38 Q156,60 144,78 Z" fill="#ffffff" stroke="#e3d3f5" stroke-width="3"/>';
+  s += '<ellipse cx="176" cy="42" rx="17" ry="15" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<ellipse cx="188" cy="48" rx="9" ry="7" fill="#fdf4ff"/>';
+  s += '<circle cx="191" cy="47" r="1.6" fill="#c4b5fd"/>';
+  // muzzle smile
+  s += happy
+    ? '<path d="M182,54 Q188,58 194,52" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"/>'
+    : '<path d="M184,54 Q189,56 193,53" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/>';
+  s += '<ellipse cx="196" cy="50" rx="3" ry="2.2" fill="#f9a8d4"/>';
+  // ear + golden spiral horn
+  s += '<polygon points="164,32 160,16 172,26" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<polygon points="172,28 178,6 184,28" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>';
+  s += '<path d="M175,22 L181,22 M174,16 L182,17" stroke="#d97706" stroke-width="1.5"/>';
+  s += '<circle cx="178" cy="6" r="3" fill="#fef9c3" opacity=".9"/>';
+  // flowing rainbow mane locks
+  s += '<path d="M158,34 Q148,48 152,66 Q144,52 136,50 Q144,40 158,34" fill="#f0abfc"/>';
+  s += '<path d="M166,30 Q162,46 168,62 Q160,48 152,46 Q158,36 166,30" fill="#a78bfa"/>';
+  s += '<path d="M174,30 Q174,44 178,56 Q172,46 166,44 Q170,36 174,30" fill="#99e6c8"/>';
+  s += '<circle cx="160" cy="24" r="7" fill="#f9a8d4"/><circle cx="160" cy="24" r="3" fill="#fde047"/>';
+  // big expressive eye (or happy closed arc)
+  s += happy
+    ? '<path d="M170,40 Q176,35 182,40" fill="none" stroke="#40264f" stroke-width="3" stroke-linecap="round"/>'
+    : '<ellipse cx="176" cy="41" rx="6.5" ry="8" fill="#fff"/>'
+      + '<circle cx="177" cy="43" r="4" fill="#40264f"/><circle cx="178.5" cy="41" r="1.4" fill="#fff"/>'
+      + '<path d="M169,34 Q176,31 183,34" fill="none" stroke="#40264f" stroke-width="2" stroke-linecap="round"/>';
+  s += '<ellipse cx="168" cy="50" rx="3.4" ry="2.4" fill="#f9a8d4"/>';
+  // sparkles
+  s += '<polygon points="60,60 61.5,64 66,64 62.5,66.5 63.5,71 60,68.5 56.5,71 57.5,66.5 54,64 58.5,64" fill="#fde047"/>';
+  s += '<circle cx="204" cy="70" r="2.5" fill="#fff"/><circle cx="46" cy="70" r="2" fill="#fff"/>';
+  s += '</svg>';
+  return s;
 }
 function cottageDoorSVG(){
   return '<svg class="door-svg" viewBox="0 0 120 150" aria-hidden="true">'
