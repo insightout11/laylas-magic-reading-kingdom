@@ -1275,13 +1275,20 @@ Games.bubbles = function(params){
     AudioSys.speak('Find '+GU(focus)+'!');
   }
   const row=document.createElement('div'); row.className='choices';
+  /* One correct answer ends the round. Without this latch the popped
+     bubble stays in the DOM at opacity 0 -- invisible but still tappable --
+     so every further tap re-ran the reward and stacked another rainbow bar. */
+  let answered=false;
   letters.forEach(L=>{
     const b=document.createElement('button'); b.className='bubble'; b.textContent=GU(L);
     if(L===focus) b.dataset.correct='1';
     b.style.animationDelay=(Math.random()*1.5)+'s';
     b.onclick=()=>{
+      if(answered) return;
       AudioSys.ensure();
       if(L===focus){
+        answered=true;
+        Array.prototype.forEach.call(row.querySelectorAll('.bubble'), x=>{ x.disabled=true; });
         b.classList.add('pop'); AudioSys.sfx('pop');
         after(350, ()=>{
           celebrateRight('letter:'+focus, mode==='sound' ? 'Yes! '+GU(focus)+' makes '+PHONEMES[focus].cue+'!' : 'Yes! That is '+GU(focus)+'!');
@@ -1292,6 +1299,9 @@ Games.bubbles = function(params){
           area.appendChild(rb);
           if(S.rainbowColors<6){ S.rainbowColors++; save(); }
           sparkles(18);
+          /* Every other activity ends by advancing the session; this one
+             never did, so the round could not be completed. */
+          after(2200, activityDone);
         });
       } else gentleNo(b);
     };

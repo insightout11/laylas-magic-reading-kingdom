@@ -920,3 +920,8 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 .castle-room{ flex:1; min-height:0; }
 .closet{ flex:0 0 auto; max-height:40vh; overflow-y:auto; }
 #princess-mount{ width:min(26vw,215px); bottom:5%; left:47%; }
+/* A popped bubble animates to opacity 0 and STAYS there (animation-fill:
+   forwards). Invisible is not the same as gone: without this it still
+   receives taps. Belt-and-braces alongside the `answered` latch in JS. */
+.bubble.pop{ pointer-events:none; }
+.bubble:disabled{ cursor:default; }
