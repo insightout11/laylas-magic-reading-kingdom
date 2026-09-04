@@ -925,3 +925,177 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
    receives taps. Belt-and-braces alongside the `answered` latch in JS. */
 .bubble.pop{ pointer-events:none; }
 .bubble:disabled{ cursor:default; }
+
+/* ====================================================================
+   READING ZONES — Kitten Cottage, word tiles, Storybook Tower
+   ==================================================================== */
+
+/* --- word tiles: the sound/spelling unit Layla actually reads --- */
+.wt-row{ display:inline-flex; gap:6px; align-items:center; justify-content:center; flex-wrap:wrap; }
+.wt{
+  font-family:'Andika','Segoe UI',system-ui,sans-serif; font-weight:700;
+  font-size:clamp(30px,5.5vw,46px); color:#4E3859;
+  background:#FFF3DF; border:3px dashed rgba(150,112,217,.55); border-radius:16px;
+  min-width:1.1em; padding:2px 12px; line-height:1.25;
+  box-shadow:0 3px 0 rgba(112,74,132,.18);
+  transition:transform .22s cubic-bezier(.34,1.56,.64,1), background .22s, border-color .22s;
+}
+.wt.lit{ background:#FBD881; border-color:#FFFDF8; border-style:solid; transform:translateY(-8px) scale(1.12); }
+.wt-row.big .wt{ font-size:clamp(40px,8vw,64px); padding:4px 16px; }
+/* after blending, the sounds close up into one word */
+.blend-stage.together .wt-row{ gap:0; }
+.blend-stage.together .wt{ border-style:solid; border-color:#F7A6C4; background:#FFFDF8; }
+
+.big-word-card{ margin:10px auto 4px; }
+.word-card{
+  background:#FFFDF8; border:3px solid #DED0FA; border-radius:20px;
+  padding:10px 14px; cursor:pointer; box-shadow:0 4px 0 rgba(112,74,132,.2);
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.word-card:active{ transform:scale(.95); }
+.word-card.correct{ border-color:#86efac; box-shadow:0 0 0 4px #bbf7d0; }
+.word-card:disabled{ opacity:.5; }
+
+/* --- cottage scene: kitten behind the door --- */
+.cottage-scene{ position:relative; width:min(62vw,260px); margin:4px auto 0; }
+.door-felt{ width:100%; height:auto; display:block; }
+.door-felt .door-leaf{ transform-origin:74px 185px; transition:transform .7s cubic-bezier(.34,1.4,.64,1); }
+.cottage-scene.door-open .door-leaf{ transform:rotateY(-78deg) translateX(-10px); }
+.cottage-kitten{
+  position:absolute; left:50%; bottom:6%; width:44%;
+  transform:translate(-50%,10px) scale(.7); opacity:0;
+  transition:transform .7s cubic-bezier(.34,1.56,.64,1) .25s, opacity .4s .25s;
+  pointer-events:none;
+}
+.cottage-scene.door-open .cottage-kitten{ transform:translate(-50%,0) scale(1); opacity:1; }
+.cottage-kitten svg{ width:100%; height:auto; }
+
+/* --- heart word introduction --- */
+.heart-word-intro{ padding:10px; }
+.hw-heart{ font-size:56px; animation:bob 1.4s ease-in-out infinite; }
+.hw-word{
+  font-family:'Andika',system-ui,sans-serif; font-weight:700;
+  font-size:clamp(48px,10vw,80px); color:#DE749C;
+  background:#FFFDF8; border:4px solid #F7A6C4; border-radius:22px;
+  padding:2px 34px; margin:8px 0; display:inline-block;
+}
+.hw-note{ font-weight:700; color:#4E3859; font-size:16px; line-height:1.6; max-width:420px; }
+
+/* --- storybook tower --- */
+.story-shelf{ display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+.story-card{
+  background:#FFF3DF; border:3px dashed rgba(150,112,217,.5); border-radius:20px;
+  padding:14px 10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px;
+  box-shadow:0 4px 0 rgba(112,74,132,.2); font-family:inherit;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.story-card:active{ transform:scale(.95); }
+.story-card.read{ background:#f0fdf4; border-color:#86efac; border-style:solid; }
+.story-card.practice{ background:#DED0FA; }
+.sc-art{ font-size:44px; }
+.sc-title{ font-family:'Baloo 2',cursive; font-size:17px; color:#4E3859; font-weight:800; line-height:1.2; }
+.sc-pages{ font-size:12px; font-weight:700; color:#6E4E7C; opacity:.75; }
+.sc-done{ font-size:12px; font-weight:800; color:#16a34a; }
+.story-locked{ font-weight:700; color:#6E4E7C; font-size:18px; padding:20px; line-height:1.6; }
+
+/* Tappable words. Heart words are marked so she learns they are different. */
+.story-sentence .w{
+  cursor:pointer; border-radius:12px; padding:2px 10px; display:inline-block; margin:3px 1px;
+  transition:background .2s, transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+.story-sentence .w:active{ transform:scale(.94); }
+.story-sentence .w.lit{ background:#FBD881; transform:translateY(-4px) scale(1.06); }
+.story-sentence .w.heart{ color:#DE749C; }
+.story-sentence .w.heart::after{ content:'💗'; font-size:.5em; vertical-align:super; margin-left:2px; }
+
+/* ====================================================================
+   PLAY ZONES — Ballet Stage + Fairy Garden
+   ==================================================================== */
+.ballet-stage-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+.ballerina-holder{ width:clamp(120px,22vw,190px); }
+.ballerina-felt{ width:100%; height:auto; display:block; }
+.ballerina-holder.move{ animation:pirouette .6s cubic-bezier(.34,1.56,.64,1); }
+@keyframes pirouette{
+  0%{ transform:translateY(0) scale(1); }
+  35%{ transform:translateY(-18px) scale(1.05,.95) rotate(-6deg); }
+  70%{ transform:translateY(0) scale(.97,1.04) rotate(5deg); }
+  100%{ transform:translateY(0) scale(1) rotate(0); }
+}
+.ballerina-holder.finale{ filter:drop-shadow(0 0 20px rgba(251,216,129,.9)); }
+.dance-track{ display:flex; gap:8px; justify-content:center; }
+.dance-step{
+  font-size:26px; width:40px; height:40px; border-radius:50%;
+  display:grid; place-items:center; background:rgba(255,253,248,.65);
+  border:2px dashed rgba(150,112,217,.45); color:rgba(110,78,124,.4);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1), background .3s;
+}
+.dance-step.on{ background:#FBD881; border-style:solid; border-color:#FFFDF8; transform:scale(1.12); }
+.ballet-tile{
+  width:clamp(76px,15vw,104px); height:clamp(76px,15vw,104px); border-radius:24px;
+  background:#FFF3DF; border:4px solid #FFFDF8; box-shadow:0 5px 0 rgba(112,74,132,.24);
+  font-size:clamp(34px,7vw,50px); color:#4E3859; cursor:pointer;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.ballet-tile:active{ transform:scale(.93); }
+.ballet-tile.stepped{ background:#FBD881; animation:pirouette .5s; }
+
+.rhyme-target{ margin:4px auto 2px; }
+.rt-label{ display:block; font-weight:800; color:#6E4E7C; font-size:14px; margin-bottom:2px; }
+.rt-pic{ font-size:42px; }
+.wc-pic{ font-size:34px; margin-top:2px; }
+.wc-pic svg,.rt-pic svg{ width:44px; height:auto; }
+
+.clap-scene{ gap:8px; }
+.clap-pic{ font-size:clamp(64px,14vw,104px); }
+.clap-dots{ display:flex; gap:10px; justify-content:center; height:22px; }
+.clap-dot{
+  width:18px; height:18px; border-radius:50%; background:#F7A6C4;
+  animation:clapPulse .4s ease-out both;
+}
+@keyframes clapPulse{ from{ transform:scale(0); opacity:0; } to{ transform:scale(1); opacity:1; } }
+.clap-btn{
+  background:#FFFDF8; border:4px solid #DED0FA; border-radius:22px;
+  padding:12px 20px; cursor:pointer; box-shadow:0 5px 0 rgba(112,74,132,.22);
+  display:flex; flex-direction:column; align-items:center; gap:2px; font-family:inherit;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.clap-btn:active{ transform:scale(.93); }
+.clap-btn.correct{ border-color:#86efac; background:#f0fdf4; }
+.cb-n{ font-family:'Andika',system-ui,sans-serif; font-size:38px; font-weight:700; color:#4E3859; }
+.cb-h{ font-size:16px; }
+
+.garden-holder{ margin:2px auto 6px; }
+.garden-row{ display:flex; gap:4px; justify-content:center; flex-wrap:wrap; min-height:42px; align-items:flex-end; }
+.gf{ width:34px; height:34px; display:grid; place-items:center; }
+.gf.seed{ color:rgba(110,78,124,.28); font-size:22px; }
+.gf-svg{ width:100%; height:auto; }
+.gf.pop-in{ animation:growUp .55s cubic-bezier(.34,1.56,.64,1); }
+@keyframes growUp{ from{ transform:scale(0) translateY(10px); } to{ transform:scale(1) translateY(0); } }
+
+@media (prefers-reduced-motion:reduce){
+  .ballerina-holder.move,.ballet-tile.stepped,.gf.pop-in,.clap-dot{ animation:none !important; }
+}
+
+/* ---- parent insight panel: plain language, no jargon ---------------- */
+.pi-stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px; margin-bottom:12px; }
+.pi-stat{
+  background:#faf5ff; border-radius:14px; padding:9px 10px; text-align:center;
+  border:2px solid #f3e8ff;
+}
+.pi-stat b{ display:block; font-family:'Baloo 2',cursive; font-size:24px; color:var(--lilac-deep); line-height:1.1; }
+.pi-stat span{ font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+.pi-say, .pi-hard, .pi-miles, .pi-sessions{ margin-top:12px; }
+.pi-say h4, .pi-hard h4, .pi-miles h4, .pi-sessions h4{
+  margin:0 0 5px; font-family:'Baloo 2',cursive; font-size:15px; color:var(--lilac-deep);
+}
+.pi-say p{ margin:4px 0; font-weight:600; line-height:1.55; font-size:14.5px; color:var(--ink); }
+.pi-chips{ display:flex; gap:8px; flex-wrap:wrap; }
+.pi-chip{
+  background:#fff7ed; border:2px solid #fed7aa; border-radius:12px; padding:5px 11px;
+  font-family:'Andika',system-ui,sans-serif; font-weight:700; font-size:19px; color:#9a3412;
+  display:flex; flex-direction:column; align-items:flex-start; line-height:1.2;
+}
+.pi-chip i{ font-style:normal; font-size:10.5px; font-weight:600; color:#c2410c; font-family:inherit; }
+.pi-miles ul, .pi-sessions ul{ margin:0; padding-left:2px; list-style:none; }
+.pi-miles li, .pi-sessions li{ font-size:13px; font-weight:600; color:var(--ink); padding:2px 0; }
+#parent-practice .practice-grid button:disabled{ opacity:.42; cursor:not-allowed; }

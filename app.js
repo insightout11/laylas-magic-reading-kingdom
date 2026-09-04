@@ -37,41 +37,8 @@ const PHONEMES = Phonics.catalog.reduce(function(m,p){
   return m;
 }, {});
 
-/* Words carry BOTH layers. ph[] is the sequence of SOUNDS to play; gr[] is
-   the sequence of LETTERS Layla sees. They are parallel arrays, so 'cat' is
-   three sounds (k, a_short, t) spelled c-a-t, and 'moon' is m-oo-n. This is
-   what lets one sound have several spellings without the games misrepresenting
-   either layer. Every word here has a recorded whole-word file in audio/words/. */
-const WORDS = [
-  {t:'sat',  ph:['s','a_short','t'], gr:['s','a','t'],  emoji:'🪑', art:'sat'},
-  {t:'mat',  ph:['m','a_short','t'], gr:['m','a','t'],  emoji:'🧶', art:'mat'},
-  {t:'cat',  ph:['k','a_short','t'], gr:['c','a','t'],  emoji:'🐱', art:'cat'},
-  {t:'pat',  ph:['p','a_short','t'], gr:['p','a','t'],  emoji:'👋', art:'pat'},
-  {t:'tap',  ph:['t','a_short','p'], gr:['t','a','p'],  emoji:'🚰', art:'tap'},
-  {t:'map',  ph:['m','a_short','p'], gr:['m','a','p'],  emoji:'🗺️', art:'map'},
-  {t:'man',  ph:['m','a_short','n'], gr:['m','a','n'],  emoji:'🤴', art:'man'},
-  {t:'pan',  ph:['p','a_short','n'], gr:['p','a','n'],  emoji:'🍳', art:'pan'},
-  {t:'gap',  ph:['g','a_short','p'], gr:['g','a','p'],  emoji:'🕳️', art:'gap'},
-  {t:'sit',  ph:['s','i_short','t'], gr:['s','i','t'],  emoji:'🪑', art:'sit'},
-  {t:'sip',  ph:['s','i_short','p'], gr:['s','i','p'],  emoji:'🥤', art:'sip'},
-  {t:'tip',  ph:['t','i_short','p'], gr:['t','i','p'],  emoji:'👆', art:'tip'},
-  {t:'tin',  ph:['t','i_short','n'], gr:['t','i','n'],  emoji:'🥫', art:'tin'},
-  {t:'pin',  ph:['p','i_short','n'], gr:['p','i','n'],  emoji:'📌', art:'pin'},
-  {t:'Sam',  ph:['s','a_short','m'], gr:['S','a','m'],  emoji:'👦', art:'sam', proper:true},
-  {t:'cap',  ph:['k','a_short','p'], gr:['c','a','p'],  emoji:'🧢', art:'cap'},
-  {t:'can',  ph:['k','a_short','n'], gr:['c','a','n'],  emoji:'🥫', art:'can'},
-  {t:'dog',  ph:['d','o_short','g'], gr:['d','o','g'],  emoji:'🐶', art:'dog'},
-  {t:'mop',  ph:['m','o_short','p'], gr:['m','o','p'],  emoji:'🧹', art:'mop'},
-  {t:'pot',  ph:['p','o_short','t'], gr:['p','o','t'],  emoji:'🍲', art:'pot'},
-  {t:'sun',  ph:['s','u_short','n'], gr:['s','u','n'],  emoji:'☀️', art:'sun'},
-  {t:'net',  ph:['n','e_short','t'], gr:['n','e','t'],  emoji:'🥅', art:'net'},
-  {t:'moon', ph:['m','oo_long','n'], gr:['m','oo','n'], emoji:'🌙', art:'moon'},
-  {t:'am',   ph:['a_short','m'],     gr:['a','m'],      emoji:'💖', art:'am'},
-  {t:'at',   ph:['a_short','t'],     gr:['a','t'],      emoji:'📍', art:'at'},
-  {t:'it',   ph:['i_short','t'],     gr:['i','t'],      emoji:'✨', art:'it'},
-  {t:'in',   ph:['i_short','n'],     gr:['i','n'],      emoji:'📥', art:'in'},
-  {t:'on',   ph:['o_short','n'],     gr:['o','n'],      emoji:'🔛', art:'on'}
-];
+/* WORDS, HEART_WORDS, SENTENCES and STORIES now live in content.js,
+   together with the Reading engine that decides what is readable. */
 
 const FIRST_SOUND_SETS = [
   {sound:'s', options:[{w:'sun',e:'☀️'},{w:'cat',e:'🐱'},{w:'moon',e:'🌙'}], answer:'sun'},
@@ -113,15 +80,6 @@ const PRINCESS_LOOK = {
   'dress-blue':'👱‍♀️', 'dress-lilac':'👩‍🦰'
 };
 
-/* needs[] lists phonemeIds. A page is only offered when every sound in it is
-   human-approved, so a story never asks Layla to decode an unapproved sound. */
-const STORY_PAGES = [
-  {s:['Sam','sat.'], art:'👦', needs:['s','a_short','m','t']},
-  {s:['Sam','sat','on','a','mat.'], art:'🧶', needs:['s','a_short','m','t','o_short','n']},
-  {s:['A','cat','sat.'], art:'🐱', needs:['s','a_short','m','t','o_short','n','k']},
-  {s:['A','cat','sat','on','a','mat.'], art:'🧶', needs:['s','a_short','m','t','o_short','n','k']}
-];
-
 /* ---------------- STATE ---------------- */
 const SAVE_KEY = 'layla-kingdom-v1';
 function defaultState(){
@@ -135,6 +93,11 @@ function defaultState(){
        reconcileApprovals(). There is no global "wipe everything" reset. */
     phonemeApproval:{},
     mastery:{}, wordsRead:[], wordsCelebrated:[],
+    /* Heart words Layla has actually been introduced to. A heart word is
+       gated on this, not on its phonemes -- that is what makes it a heart
+       word. Nothing shows one before it has been taught. */
+    heartWords:[], gardenFlowers:0,
+    sentencesRead:[], storiesRead:[], milestones:[], castleUnlocks:[],
     rewards:['dress-pink'], stickers:['layla-name'],
     equipped:{dress:'dress-pink', crown:'crown-flower', shoes:'shoes-ballet', pet:'pet-white', wallpaper:'wall-pink', furniture:'bed-royal', window:'window-rainbow', decor:'decor-flowers', wings:null, necklace:null},
     sessions:[], minutes:0, lastPlayDate:null, streak:0,
@@ -203,14 +166,23 @@ function masteryOf(skill){
   if(!S.mastery[skill]) S.mastery[skill] = {p:0, ok:0, att:0, recent:[], score:0, last:0};
   return S.mastery[skill];
 }
+/* Mastery. Accuracy alone is not knowledge: one lucky tap out of three
+   choices used to score a perfect 1.0, which told the parent she "knows"
+   a sound she had met once, and unlocked the next sound immediately.
+   Score is now accuracy DAMPED BY REPETITION — it takes about five goes
+   before a sound can count as known, however well she does. */
+const MASTERY_REPS = 5;   // goes needed before a score can reach its ceiling
 function record(skill, firstTry){
   const m = masteryOf(skill);
   m.p++; m.att++;
   if(firstTry) m.ok++;
   m.recent.push(firstTry?1:0);
   if(m.recent.length>6) m.recent.shift();
-  const acc = m.recent.reduce((a,b)=>a+b,0)/m.recent.length;
-  m.score = Math.min(1, (m.ok/Math.max(1,m.att))*0.5 + acc*0.5 + Math.min(0.2, m.p*0.02));
+  const recentAcc = m.recent.reduce((a,b)=>a+b,0)/m.recent.length;
+  const lifetimeAcc = m.ok/Math.max(1,m.att);
+  const accuracy = lifetimeAcc*0.4 + recentAcc*0.6;      // recent form matters more
+  const confidence = Math.min(1, m.p/MASTERY_REPS);      // repetition earns trust
+  m.score = Math.min(1, accuracy * confidence);
   m.last = Date.now();
   save();
 }
@@ -246,10 +218,11 @@ function maybeUnlockNext(){
   }
   return null;
 }
-function decodableWords(){
-  const set = new Set(S.unlocked);
-  return WORDS.filter(w => w.ph.every(p=>set.has(p)&&isPhonemeUsable(p)));
-}
+/* Single question the whole app asks: what can Layla actually read?
+   Delegates to the Reading engine in content.js so there is one answer. */
+function decodableWords(opts){ return Reading.readableWords(opts); }
+function readableSentences(){ return Reading.readableSentences(); }
+function readableStories(){ return Reading.readableStories(); }
 
 /* ---------------- AUDIO ---------------- */
 const AudioSys = {
@@ -1123,17 +1096,6 @@ function celebrateRight(skillId, praise){
   }
   checkMilestones();
 }
-function checkMilestones(){
-  const dec = decodableWords();
-  if(!S.blendingUnlocked && S.unlocked.length>=3 && dec.length>=2){
-    S.blendingUnlocked=true; save();
-  }
-  if(dec.length>=3 && S.wordsRead.length>=3 && !S.sentenceUnlocked){
-    S.sentenceUnlocked=true; save();
-    const n=$('story-lock-note'); if(n) n.textContent='Open! 🎉';
-  }
-}
-
 /* ---------------- GAMES ---------------- */
 const Games = {};
 
@@ -1666,14 +1628,6 @@ Games.rescue = function(params){
   // auto-play once for 4yo
   after(1200, ()=>{ if(document.body.contains(btnRow)) btnRow.querySelector('button').click(); });
 };
-function maybeWordMilestone(word){
-  if(S.wordsCelebrated.includes(word)) return;
-  S.wordsCelebrated.push(word); save();
-  const dec=decodableWords();
-  if(S.wordsRead.length===1 || word==='sat' || word==='cat'){
-    after(2600, ()=> showMilestone('You read a word!', word, 'You sounded it out all by yourself! I am SO proud!', {clip:'you-read-a-word'}));
-  }
-}
 
 /* 9. Word building */
 Games.buildWord = function(params){
@@ -1917,51 +1871,6 @@ Games.painter = function(){
   note.innerHTML='<i>Can you find the things beginning with /c/? (crown, cat...) — just for fun! 💜</i>';
   area.appendChild(note);
 };
-
-/* 15. Storybook reading (also a screen) */
-function openStorybook(){
-  showScreen('story');
-  let page=0;
-  // Only show pages whose sounds Layla has unlocked (plus the first page always).
-  const set = new Set(S.unlocked);
-  let pages = STORY_PAGES.filter((p,i)=> i===0 || (p.needs||[]).every(n=>set.has(n)&&isPhonemeUsable(n)));
-  if(!pages.length) pages = STORY_PAGES.slice(0,1);
-  function render(){
-    const P=pages[page%pages.length];
-    $('story-page-title').textContent='Read it yourself — page '+(page%pages.length+1);
-    const sent=$('story-sentence'); sent.innerHTML='';
-    P.s.forEach(word=>{
-      const clean=word.replace('.','');
-      const s=document.createElement('span'); s.className='w'; s.textContent=word;
-      s.onclick=(e)=>{ e.stopPropagation(); AudioSys.speak(clean,{rate:0.8}); };
-      sent.appendChild(s); sent.appendChild(document.createTextNode(' '));
-    });
-    $('story-art').textContent = P.art || '🐱';
-    currentInstruction='Read it yourself. Tap a word if you need help.';
-  }
-  $('story-prev').onclick=()=>{page=(page+pages.length-1)%pages.length; render(); AudioSys.sfx('page');};
-  $('story-next').onclick=()=>{page=(page+1)%pages.length; render(); AudioSys.sfx('page');};
-  $('btn-story-hear').onclick=()=>{
-    const P=pages[page%pages.length];
-    AudioSys.speak(P.s.join(' '),{rate:0.8});
-  };
-  $('btn-story-read').onclick=()=>{
-    const P=pages[page%pages.length];
-    confettiBlast(); AudioSys.sfx('fanfare');
-    S.wordsRead.push('sentence:'+(page%pages.length));
-    addStars(5); save();
-    if(!S.sentenceCelebrated){
-      S.sentenceCelebrated=true; save();
-      showMilestone('LAYLA READ A SENTENCE!', P.s.join(' '), 'You read a whole sentence! This is REAL reading! 🌟', {clip:'sentence-win'});
-      grantReward('crown-gold');
-    } else {
-      AudioSys.speak('You read it! Amazing reading!');
-      toast('Amazing reading! 🌟');
-    }
-  };
-  render();
-  AudioSys.playVoice('story-help', 'Read it yourself! Tap a word if you need help.');
-}
 
 /* ---------------- REWARDS / CASTLE / STICKERS ---------------- */
 function grantReward(id){
@@ -2317,24 +2226,7 @@ function showSessionChoice(){
 $('btn-again').onclick=()=>{ $('session-modal').classList.add('hidden'); adventure(); };
 $('btn-to-castle').onclick=()=>{ $('session-modal').classList.add('hidden'); openCastle(); };
 
-function adventure(){
-  // 5-min loop: warm-up + current sound + review + blending + reward
-  const focus=S.currentFocus;
-  const review=weakestPhoneme();
-  const dec=decodableWords();
-  const acts=[];
-  acts.push({title:'Warm-up Bubbles', run:()=>Games.bubbles({focus:review, mode:'name'})});
-  acts.push({title:'Unicorn Sound Crystals', run:()=>Games.crystals({focus})});
-  acts.push({title:'Magic Mirror', run:()=>Games.firstSound()});
-  if(dec.length>=2 && (S.blendingUnlocked||S.unlocked.length>=3)){
-    acts.push({title:'Help the Kitten', run:()=>Games.rescue()});
-  } else {
-    acts.push({title:'Rainbow Match', run:()=>Games.matchCase()});
-  }
-  runSession('Magical Adventure', acts, null);
-  // sessionReward: surprise
-  sessionReward = Math.random()<0.6 ? REWARDS.filter(r=>!S.rewards.includes(r.id))[0]||null : null;
-}
+/* adventure() now lives in progress.js — it is adaptive. */
 
 /* ---------------- LAND ROUTING ---------------- */
 document.querySelectorAll('.landmark').forEach(l=>{
@@ -2355,16 +2247,11 @@ document.querySelectorAll('.landmark').forEach(l=>{
       else runSession('Rainbow Road',[{title:'Build Your Name',run:()=>Games.buildName()},{title:'Missing Letter',run:()=>Games.missingLetter()}], null);
     }
     else if(land==='unicorn') runSession('Unicorn Meadow',[{title:'Unicorn Sound Crystals',run:()=>Games.crystals({focus:S.currentFocus})},{title:'First Sound Mirror',run:()=>Games.firstSound()},{title:'Ballet Sound Steps',run:()=>Games.ballet()}], null);
-    else if(land==='kitten'){
-      if(!S.blendingUnlocked && S.unlocked.length<3){
-        // gentle on-ramp
-        runSession('Kitten Cottage',[{title:'Unicorn Sound Crystals',run:()=>Games.crystals({focus:'s'})},{title:'Help the Kitten',run:()=>Games.rescue({word:'sat'})}], null);
-      } else runSession('Kitten Cottage',[{title:'Help the Kitten',run:()=>Games.rescue()},{title:'Word Building',run:()=>Games.buildWord()}], null);
-    }
+    else if(land==='kitten') cottageSession();
     else if(land==='castle') openCastle();
-    else if(land==='ballet') runSession('Ballet Stage',[{title:'Ballet Sound Steps',run:()=>Games.ballet()},{title:'Rhyme Garden',run:()=>Games.rhyme()}], null);
+    else if(land==='ballet') balletSession();
     else if(land==='story') openStorybook();
-    else if(land==='fairy') runSession('Fairy Garden',[{title:'Rhyme Garden',run:()=>Games.rhyme()},{title:'Rainbow Painter',run:()=>Games.painter()}], null);
+    else if(land==='fairy') fairySession();
   });
 });
 
@@ -3041,6 +2928,8 @@ function renderParent(){
   ].forEach(([label,fn])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=fn; tg.appendChild(b);});
   /* The sound library is the point of this screen, so build it every time. */
   try{ renderAudioQA(); }catch(e){}
+  try{ renderParentInsights(); }catch(e){}
+  try{ renderParentPractice(); }catch(e){}
 }
 document.addEventListener('input',e=>{
   if(e.target.id==='set-voice'){S.settings.voice=e.target.value/100; save();}
