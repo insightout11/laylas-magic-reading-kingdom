@@ -1,0 +1,11 @@
+{
+  "name": "laylas-magic-reading-kingdom",
+  "version": "2.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Static tablet-first phonics game. No build step: index.html loads the scripts directly. This package.json exists only to isolate the project from the parent directory's ESM setting and to document the build-time tooling in tools/.",
+  "scripts": {
+    "import-phonics": "node tools/import-phonics.cjs",
+    "verify-phonics": "node tools/import-phonics.cjs --verify"
+  }
+}

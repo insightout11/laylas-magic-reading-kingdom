@@ -247,6 +247,62 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 .qa-src{font-size:12px; color:var(--ink-soft); font-weight:600;}
 .qa-prev img{width:52px; height:52px; object-fit:contain; background:#fff; border-radius:10px; border:2px solid #e9d5ff;}
 .qa-st{margin-left:auto; font-size:14px; font-weight:800;}
+
+/* ---- Sound Library: compact bulk-review list (parent only) ----
+   Dense on purpose. The parent has ~43 recordings to listen to, so a row
+   is one line and the whole list is scannable without scrolling per item. */
+.parent-card.wide{grid-column:1 / -1;}
+.qa-tally{font-size:17px; font-weight:800; color:var(--lilac-deep); margin-bottom:4px;}
+.qa-note{font-size:12.5px; color:var(--ink-soft); font-weight:600; line-height:1.5; margin-top:3px;}
+.qa-note b{color:var(--ink);}
+.qa-keys{background:#faf5ff; border-radius:8px; padding:4px 8px; display:inline-block;}
+.qa-licence{border-left:3px solid #e9d5ff; padding-left:8px;}
+.qa-filters{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 8px;}
+.qa-filter{background:#fff; border:2px solid #e9d5ff; border-radius:999px; padding:7px 13px;
+  font-weight:800; font-size:13px; cursor:pointer; min-height:40px; color:var(--ink-soft);}
+.qa-filter.on{background:var(--lilac-deep); border-color:var(--lilac-deep); color:#fff;}
+.qa-list{max-height:60vh; overflow:auto; border:2px solid #f3e8ff; border-radius:14px; padding:4px;}
+.qa-phase{font-size:12px; font-weight:800; color:var(--lilac-deep); text-transform:uppercase;
+  letter-spacing:.04em; padding:10px 8px 4px; position:sticky; top:0; background:#fff; z-index:1;}
+.qa-phase span{font-weight:600; text-transform:none; letter-spacing:0; color:var(--ink-soft); font-size:11.5px;}
+.qa-line{display:grid; grid-template-columns:auto 1fr auto auto; align-items:center; gap:10px;
+  padding:6px 8px; border-radius:10px; border:2px solid transparent; cursor:pointer;}
+.qa-line:nth-child(odd){background:#fcfaff;}
+.qa-line.cursor{border-color:var(--lilac-deep); background:#f5f0ff;}
+.qa-line.is-approved{background:#f0fdf4;}
+.qa-line.is-rejected{background:#fef2f2; opacity:.75;}
+.qa-line.is-missing{background:#fff7ed;}
+.qa-gr{font-family:'Andika',system-ui,sans-serif; font-size:19px; font-weight:700;
+  min-width:74px; display:flex; align-items:baseline; gap:1px;}
+.qa-gr b{color:var(--ink-soft); font-weight:700;}
+.qa-gr b.pri{color:var(--ink); font-size:23px;}
+.qa-gr i{color:#d8b4fe; font-style:normal; font-size:13px;}
+.qa-lab{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; min-width:0;}
+.qa-ipa{font-family:ui-monospace,monospace; font-size:13px; color:var(--lilac-deep); font-weight:700;}
+.qa-pid{font-size:11px; color:#a78bfa; font-weight:700; font-family:ui-monospace,monospace;}
+.qa-tgt{font-size:12.5px; color:var(--ink-soft); font-weight:600;}
+.qa-line .qa-ctl{display:flex; gap:4px;}
+.qa-line .qa-ctl button{min-height:38px; min-width:40px; padding:4px 10px; font-size:15px;
+  border-radius:10px; border:2px solid #e9d5ff; background:#fff; font-weight:800; cursor:pointer;}
+.qa-line .qa-play{color:var(--lilac-deep);}
+.qa-line .qa-ok{color:#16a34a;}
+.qa-line .qa-no{color:#dc2626;}
+.qa-line .qa-ctl button:disabled{opacity:.35; cursor:not-allowed;}
+.qa-status{font-size:11.5px; font-weight:800; min-width:132px; text-align:right;}
+.qa-status.s-ok{color:#16a34a;}
+.qa-status.s-no{color:#dc2626;}
+.qa-status.s-un{color:#92400e;}
+.qa-status.s-miss{color:#dc2626;}
+.qa-status.s-dev{color:#c2410c;}
+.qa-more{grid-column:1 / -1; display:none; align-items:center; gap:6px; padding:4px 0 2px;}
+.qa-line.cursor .qa-more{display:flex;}
+.qa-mini{background:#fff; border:2px solid #e9d5ff; border-radius:999px; padding:5px 11px;
+  font-weight:700; font-size:12px; cursor:pointer; min-height:34px; display:inline-flex; align-items:center;}
+.qa-toolbar{display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;}
+.qa-tool{background:#fff; border:2px solid var(--lilac); border-radius:999px; padding:10px 16px;
+  font-weight:800; font-size:14px; cursor:pointer; min-height:46px;}
+.qa-tool.ok{border-color:#86efac; color:#16a34a;}
+.qa-tool.no{border-color:#fecaca; color:#dc2626;}
 .audio-debug{background:#1e1b4b; color:#c4b5fd; border-radius:14px; padding:10px 14px; font-family:ui-monospace,monospace; font-size:12px; line-height:1.6; white-space:pre-wrap; max-height:220px; overflow:auto;}
 /* ---- full-viewport kingdom: the child is IN the world, not looking at a board ---- */
 #screen-kingdom{min-height:100dvh; padding-bottom:0;}
@@ -434,3 +490,433 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
   .scene-mark .land-label{font-size:13px;}
   #princess-mount{width:min(46%,170px);}
 }
+
+/* ====================================================================
+   FELT / STICKER / PAPER-DOLL ART DIRECTION
+   Appended last so it wins over the earlier card-and-panel styling.
+   Child mode should read as a playset, not as software.
+   ==================================================================== */
+
+/* ---- 1. felt primitives ------------------------------------------- */
+/* paint-order draws each shape's stroke UNDER its fill, so one element
+   gets a die-cut sticker border with no duplicated geometry. */
+.felt .pc{
+  paint-order:stroke fill markers;
+  stroke:#FFFDF8; stroke-width:6;
+  stroke-linejoin:round; stroke-linecap:round;
+}
+.felt .st{ vector-effect:non-scaling-stroke; }
+.felt{ overflow:visible; }
+/* Roughened outlines read as cut felt. Characters only — never a
+   full-screen layer, because displacement maps are the expensive thing. */
+/* Contrast: a cream character with a white die-cut border vanishes against
+   a pale sky. A tight dark drop-shadow traces the whole silhouette — the
+   contour a real sticker casts — and a soft one lifts it off the scene.
+   CSS drop-shadow is used rather than a second SVG filter pass: it is
+   GPU-composited, which matters on a tablet. */
+.unicorn-felt, .twinkle-felt, .princess-felt, .chest-felt{
+  filter:
+    drop-shadow(0 0 2.5px rgba(96,64,110,.72))
+    drop-shadow(0 8px 10px rgba(112,74,132,.34));
+}
+/* Felt fuzz on the edges, characters only — never a full-screen layer. */
+.unicorn-felt .uni-head, .twinkle-felt .tw-head, .princess-felt .doll-head{
+  filter:url(#felt-edge);
+}
+/* A touch of body shading so the plush reads as three-dimensional. */
+.unicorn-felt .uni-body, .twinkle-felt, .princess-felt .doll-base{ isolation:isolate; }
+
+/* ---- 2. kingdom: one full-bleed playset ---------------------------- */
+#screen-kingdom{ background:#CFEAFB; }
+.world{ position:relative; width:100%; flex:1; min-height:0; overflow:hidden; background:none; }
+.world-svg{ position:absolute; inset:0; width:100%; height:100%; }
+.w-bg{ will-change:transform; }
+
+/* Landmarks are OBJECTS in the world. No card, no border, no panel. */
+.landmark{
+  position:absolute; transform:translate(-50%,-50%);
+  background:none; border:none; box-shadow:none; padding:0; overflow:visible;
+  min-height:0; display:flex; flex-direction:column; align-items:center; gap:2px;
+  cursor:pointer; font-family:inherit; z-index:4;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .18s cubic-bezier(.34,1.56,.64,1);
+}
+.landmark:active{ transform:translate(-50%,-50%) scale(.93); }
+.landmark.castle-land{ background:none; border:none; z-index:5; }
+.land-emoji{ font-size:0; line-height:0; display:block; }
+.mark-svg{
+  width:clamp(76px, 13vw, 132px); height:auto; display:block;
+  filter:drop-shadow(0 6px 10px rgba(120,86,140,.28));
+}
+.castle-land .mark-svg{ width:clamp(104px, 18vw, 186px); }
+/* Label is a stitched sticker banner sitting on the object, not a caption. */
+.land-label{
+  font-family:'Baloo 2',cursive; font-size:clamp(11px,1.55vw,15px); font-weight:800;
+  color:#5B4368; background:#FFFDF8; border-radius:999px;
+  padding:2px 12px; margin-top:-6px; white-space:nowrap;
+  box-shadow:0 3px 7px rgba(120,86,140,.26);
+  border:2px dashed rgba(169,140,224,.55);
+}
+.land-progress{ font-size:11px; font-weight:800; color:#fff; background:rgba(122,92,134,.72);
+  border-radius:999px; padding:1px 9px; }
+.lock-note{ font-size:11px; font-weight:800; color:#fff; background:rgba(122,92,134,.6);
+  border-radius:999px; padding:1px 9px; }
+.landmark.locked{ opacity:1; filter:saturate(.45) brightness(1.06); cursor:default; }
+.landmark.locked .mark-svg{ filter:drop-shadow(0 4px 7px rgba(120,86,140,.2)); }
+/* Recommended destination gets a soft sticker halo, not an inset ring. */
+.land-glow{ position:absolute; left:50%; top:44%; width:132%; aspect-ratio:1; border-radius:50%;
+  transform:translate(-50%,-50%); background:radial-gradient(circle,rgba(251,226,160,.85) 0%,rgba(251,226,160,0) 68%);
+  opacity:0; z-index:-1; animation:feltHalo 1.9s ease-in-out infinite; }
+.landmark.recommended .land-glow{ opacity:1; }
+@keyframes feltHalo{ 0%,100%{transform:translate(-50%,-50%) scale(.9);} 50%{transform:translate(-50%,-50%) scale(1.12);} }
+
+/* scenery motion */
+.cloud{ animation:drift var(--d,8s) ease-in-out infinite alternate; }
+@keyframes drift{ from{transform:translateX(0);} to{transform:translateX(26px);} }
+.butterfly{ animation:flutter 5s ease-in-out infinite; transform-origin:center; }
+.bf-b{ animation-duration:6.4s; animation-delay:-1.6s; }
+.bf-c{ animation-duration:7.2s; animation-delay:-3.1s; }
+@keyframes flutter{
+  0%,100%{ transform:translate(0,0) rotate(-4deg); }
+  25%{ transform:translate(16px,-14px) rotate(5deg); }
+  60%{ transform:translate(-12px,-22px) rotate(-6deg); }
+}
+.wsparkle{ animation:twinkleFade 3.4s ease-in-out infinite; transform-origin:center;
+  animation-delay:calc(var(--i,0) * .27s); }
+@keyframes twinkleFade{ 0%,100%{opacity:.15; } 50%{opacity:.85;} }
+
+/* Twinkle's speech becomes a sticker bubble pinned to the world. */
+.twinkle-guide{
+  position:absolute; left:8px; right:8px; bottom:74px; top:auto; z-index:12;
+  display:flex; align-items:flex-end; gap:8px; margin:0; padding:0;
+  background:none; border:none; box-shadow:none; max-width:none;
+}
+.twinkle-avatar{ width:clamp(62px,10vw,92px); flex:0 0 auto; filter:drop-shadow(0 5px 9px rgba(120,86,140,.3)); }
+.speech-bubble{
+  background:#FFFDF8; border-radius:22px; padding:9px 15px; font-weight:700;
+  color:#5B4368; box-shadow:0 5px 14px rgba(120,86,140,.25);
+  border:2px dashed rgba(169,140,224,.5); position:relative; flex:1; min-width:0;
+  font-size:clamp(13px,1.9vw,17px);
+}
+
+/* ---- 3. characters -------------------------------------------------- */
+.unicorn-felt, .twinkle-felt, .princess-felt{ width:100%; height:auto; display:block; }
+.twinkle-felt[data-fly="1"] .tw-wings,
+.twinkle-felt[data-pose="happy"] .tw-wings{ animation:wingFlap .34s ease-in-out infinite alternate; transform-origin:100px 110px; }
+.twinkle-felt .tw-wings{ animation:wingFlap 1.5s ease-in-out infinite alternate; transform-origin:100px 110px; }
+@keyframes wingFlap{ from{ transform:scaleX(1) scaleY(1); } to{ transform:scaleX(.84) scaleY(1.06); } }
+.twinkle-felt .tw-tail{ animation:tailSway 2.6s ease-in-out infinite alternate; transform-origin:144px 190px; }
+@keyframes tailSway{ from{transform:rotate(-5deg);} to{transform:rotate(7deg);} }
+.twinkle-felt[data-pose="talking"] .tw-head{ animation:talkNod .42s ease-in-out infinite alternate; transform-origin:100px 140px; }
+@keyframes talkNod{ from{transform:translateY(0) rotate(-1deg);} to{transform:translateY(-3px) rotate(1.5deg);} }
+.twinkle-felt[data-pose="pointing"] .tw-point{ animation:pointNudge .9s ease-in-out infinite alternate; transform-origin:140px 176px; }
+@keyframes pointNudge{ from{transform:translate(0,0);} to{transform:translate(7px,-5px);} }
+.tw-cheer{ animation:cheerHop .55s cubic-bezier(.34,1.56,.64,1) 2; }
+@keyframes cheerHop{ 0%,100%{transform:translateY(0) scale(1);} 40%{transform:translateY(-16px) scale(1.06,.95);} }
+
+.unicorn-felt .uni-tail{ animation:tailSway 3s ease-in-out infinite alternate; transform-origin:250px 200px; }
+.unicorn-felt .uni-head{ animation:uniBreathe 3.4s ease-in-out infinite alternate; transform-origin:160px 190px; }
+@keyframes uniBreathe{ from{transform:translateY(0) rotate(0deg);} to{transform:translateY(-4px) rotate(1.2deg);} }
+.unicorn-felt[data-pose="listening"] .uni-head{ transform:rotate(-7deg); }
+.horn-lit .uni-horn .horn-spark{ animation:hornFlare .9s ease-out forwards; }
+@keyframes hornFlare{ 0%{opacity:0; r:7;} 35%{opacity:1;} 100%{opacity:0; r:34;} }
+.horn-lit .uni-horn{ filter:url(#felt-glow); }
+.uni-bounce{ animation:uniBounce .72s cubic-bezier(.34,1.56,.64,1); }
+@keyframes uniBounce{
+  0%{transform:translateY(0) scale(1,1);}
+  22%{transform:translateY(4px) scale(1.09,.9);}
+  55%{transform:translateY(-26px) scale(.94,1.09);}
+  78%{transform:translateY(2px) scale(1.05,.95);}
+  100%{transform:translateY(0) scale(1,1);}
+}
+.mane-wobble .uni-mane{ animation:maneWobble .8s ease-out; transform-origin:160px 120px; }
+.mane-wobble .uni-tail{ animation:maneWobble .8s ease-out .06s; }
+@keyframes maneWobble{ 0%,100%{transform:rotate(0);} 25%{transform:rotate(-7deg);} 60%{transform:rotate(5deg);} }
+
+/* ---- 4. the meadow: crystals activity ------------------------------- */
+.game-area.scene-full{
+  max-width:none; margin:0; padding:0; border:none; border-radius:0;
+  background:none; box-shadow:none; min-height:62vh; flex:1;
+}
+.meadow{ position:relative; width:100%; height:100%; min-height:62vh; overflow:hidden; }
+.meadow-bg{ position:absolute; inset:0; width:100%; height:100%; }
+/* Bottom-anchored so the cast STANDS ON the grass. A cream felt character
+   against the pale sky disappears; against the green hill it pops. */
+.meadow-unicorn{
+  position:absolute; left:50%; bottom:36%; transform:translateX(-50%);
+  width:clamp(160px, 29vw, 270px); z-index:3;
+}
+.meadow-twinkle{
+  position:absolute; right:5%; bottom:38%; width:clamp(78px, 13vw, 126px); z-index:4;
+  animation:hover 3s ease-in-out infinite alternate;
+}
+@keyframes hover{ from{transform:translateY(0);} to{transform:translateY(-11px);} }
+.hear-orb{
+  position:absolute; left:50%; bottom:24.5%;
+  transform:translateX(-50%);
+  width:clamp(62px,10vw,84px); height:clamp(62px,10vw,84px); border-radius:50%;
+  background:#FFFDF8; border:4px solid #FBE2A0; cursor:pointer; z-index:6;
+  display:grid; place-items:center; font-size:clamp(26px,4vw,34px);
+  box-shadow:0 6px 16px rgba(120,86,140,.3);
+}
+.hear-orb:active{ transform:translateX(-50%) scale(.92); }
+.orb-ring{ position:absolute; inset:-8px; border-radius:50%; border:4px solid #FBE2A0; opacity:0; }
+.hear-orb.ping .orb-ring{ animation:orbPing 1.1s ease-out 2; }
+@keyframes orbPing{ 0%{opacity:.9; transform:scale(1);} 100%{opacity:0; transform:scale(1.65);} }
+.crystal-row{
+  position:absolute; left:0; right:0; bottom:3%; z-index:6;
+  display:flex; justify-content:center; align-items:flex-end; gap:clamp(10px,3vw,34px);
+}
+.gem{
+  position:relative; background:none; border:none; padding:0; cursor:pointer;
+  width:clamp(88px,15vw,132px); display:block;
+  filter:drop-shadow(0 8px 14px rgba(120,86,140,.34));
+  animation:gemFloat 2.8s ease-in-out infinite alternate;
+  animation-delay:var(--gd,0s);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1), opacity .3s;
+}
+@keyframes gemFloat{ from{transform:translateY(0) rotate(-1.5deg);} to{transform:translateY(-9px) rotate(1.5deg);} }
+.gem-svg{ width:100%; height:auto; display:block; }
+.gem-letter{
+  position:absolute; left:50%; top:56%; transform:translate(-50%,-50%);
+  font-family:'Andika',system-ui,sans-serif; font-weight:700;
+  font-size:clamp(34px,6vw,52px); color:#4E3859;
+  text-shadow:0 2px 0 rgba(255,255,255,.9), 0 -1px 0 rgba(255,255,255,.7),
+              2px 0 0 rgba(255,255,255,.7), -2px 0 0 rgba(255,255,255,.7);
+  pointer-events:none; letter-spacing:-.01em;
+}
+.gem:active{ transform:scale(.94); }
+.gem-dim{ opacity:.32; animation:none; }
+.gem-squash{ animation:none !important; transform:scale(1.14,.84) !important; transition:transform .14s ease-out; }
+.gem-pop{ animation:none !important; transform:translateY(-46px) scale(1.16) !important; transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+.gem-gone{ opacity:0; transition:opacity .12s; }
+.gem-fly{
+  position:fixed; width:clamp(88px,15vw,132px); z-index:9990; pointer-events:none;
+  transform:translate(-50%,-50%) scale(1);
+  transition:left .62s cubic-bezier(.32,.66,.3,1), top .62s cubic-bezier(.32,.66,.3,1),
+             transform .62s cubic-bezier(.32,.66,.3,1), opacity .62s ease-in .2s;
+}
+.gem-fly .gem-svg{ width:100%; height:auto; }
+.gem-fly .gem-letter{ position:absolute; left:50%; top:56%; }
+
+/* sticker star burst */
+.burst-star{
+  position:fixed; width:34px; height:34px; margin:-17px 0 0 -17px; pointer-events:none; z-index:9995;
+  animation:burstOut .95s cubic-bezier(.22,.9,.3,1) forwards; animation-delay:var(--dly,0s);
+}
+.burst-star svg{ width:100%; height:100%; }
+@keyframes burstOut{
+  0%{ transform:translate(0,0) scale(.2) rotate(0); opacity:0; }
+  22%{ transform:translate(calc(var(--dx)*.4),calc(var(--dy)*.4)) scale(1.15) rotate(calc(var(--rot)*.4)); opacity:1; }
+  100%{ transform:translate(var(--dx),calc(var(--dy) + 34px)) scale(.5) rotate(var(--rot)); opacity:0; }
+}
+
+/* ---- 5. reward chest ------------------------------------------------ */
+.reward-card{ border-color:#FBE2A0; background:linear-gradient(180deg,#FFFDF8,#FDF2F8); }
+.reward-chest{ font-size:0; width:min(58vw,240px); margin:0 auto; }
+.chest-felt{ width:100%; height:auto; display:block; }
+.chest-felt .chest-lid{ transform-origin:52px 114px; transition:transform .42s cubic-bezier(.34,1.56,.64,1); }
+.reward-chest.shaking{ animation:chestShake .68s ease; }
+@keyframes chestShake{
+  0%,100%{transform:translateX(0) rotate(0);}
+  15%{transform:translateX(-7px) rotate(-3deg);} 30%{transform:translateX(7px) rotate(3deg);}
+  45%{transform:translateX(-6px) rotate(-2.5deg);} 60%{transform:translateX(6px) rotate(2.5deg);}
+  80%{transform:translateX(-3px) rotate(-1deg);}
+}
+.reward-chest.open{ animation:chestPop .45s cubic-bezier(.34,1.56,.64,1); }
+@keyframes chestPop{ 0%{transform:scale(1);} 40%{transform:scale(1.12,.9);} 100%{transform:scale(1);} }
+.reward-chest.glowing{ filter:drop-shadow(0 0 26px rgba(251,226,160,.95)); }
+.reward-item{
+  font-size:0; width:min(46vw,190px); margin:6px auto 0; min-height:1px;
+  opacity:0; transform:translateY(46px) scale(.5);
+  transition:opacity .5s ease, transform .58s cubic-bezier(.34,1.56,.64,1);
+}
+.reward-item.revealed{ opacity:1; transform:translateY(0) scale(1); }
+.reward-item svg{ width:100%; height:auto; display:block; }
+.reward-name{
+  font-family:'Baloo 2',cursive; font-size:clamp(20px,4.4vw,28px); color:#E58BAE;
+  margin:8px 0; opacity:0; transform:scale(.6);
+  transition:opacity .35s ease, transform .4s cubic-bezier(.34,1.56,.64,1);
+}
+.reward-name.revealed{ opacity:1; transform:scale(1); }
+
+/* ---- 6. dollhouse + toy trays --------------------------------------- */
+.castle-layout{ display:grid; grid-template-columns:1fr; gap:0; padding:0; max-width:none; }
+.castle-room{
+  background:#F9BCD2; border:none; border-radius:0; min-height:52vh;
+  box-shadow:none; position:relative; overflow:hidden;
+}
+.room-svg{ position:absolute; inset:0; width:100%; height:100%; }
+.room-hot{ cursor:pointer; transition:transform .18s cubic-bezier(.34,1.56,.64,1); transform-origin:center; }
+.room-hot:active{ transform:scale(.96); }
+#princess-mount{
+  position:absolute; left:50%; bottom:4%; transform:translateX(-50%);
+  width:min(30vw,190px); z-index:6; filter:drop-shadow(0 12px 16px rgba(91,42,110,.32));
+}
+#princess-mount.spinning{ animation:dollTwirl .95s cubic-bezier(.4,0,.3,1); }
+@keyframes dollTwirl{
+  0%{ transform:translateX(-50%) rotateY(0) scale(1); }
+  20%{ transform:translateX(-50%) rotateY(0) scale(1.05,.94); }
+  55%{ transform:translateX(-50%) rotateY(360deg) scale(.96,1.06); }
+  100%{ transform:translateX(-50%) rotateY(720deg) scale(1); }
+}
+.princess-felt .doll-wings{ animation:wingFlap 1.7s ease-in-out infinite alternate; transform-origin:150px 196px; }
+.princess-felt .doll-crown{ animation:crownBob 2.8s ease-in-out infinite alternate; transform-origin:150px 52px; }
+@keyframes crownBob{ from{transform:translateY(0) rotate(-1.5deg);} to{transform:translateY(-3px) rotate(1.5deg);} }
+
+/* Inventory reads as toy drawers / sticker trays, not web UI. */
+.closet{
+  background:linear-gradient(180deg,#DCA97F,#B9835B); border:none; border-radius:0;
+  box-shadow:0 -10px 24px rgba(120,86,140,.25); padding:10px 10px 14px;
+}
+.closet-tabs{ display:flex; gap:7px; flex-wrap:nowrap; overflow-x:auto; margin-bottom:9px;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.closet-tabs::-webkit-scrollbar{ display:none; }
+.closet-tab{
+  background:#FFF7EC; border:3px solid #FBE2A0; border-radius:14px 14px 4px 4px;
+  padding:8px 15px; font-weight:800; font-size:14px; color:#7A5C86; min-height:44px;
+  white-space:nowrap; cursor:pointer; box-shadow:0 3px 0 rgba(120,86,140,.22);
+  transition:transform .14s cubic-bezier(.34,1.56,.64,1);
+}
+.closet-tab.active{ background:#FBE2A0; border-color:#FFFDF8; color:#5B4368; transform:translateY(-3px); }
+.closet-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(94px,1fr)); gap:9px; }
+.closet-item{
+  background:#FFF7EC; border:3px dashed rgba(169,140,224,.55); border-radius:16px;
+  padding:7px 5px 5px; cursor:pointer; text-align:center; position:relative;
+  min-height:112px; display:flex; flex-direction:column; align-items:center; justify-content:space-between;
+  box-shadow:0 3px 0 rgba(120,86,140,.2);
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.closet-item:active{ transform:scale(.94); }
+.closet-item > span:first-child{ flex:1; display:grid; place-items:center; width:100%; min-height:0; }
+.closet-item svg{ width:100%; max-height:74px; height:auto; }
+.closet-item .cname{ font-size:10.5px; font-weight:800; color:#5B4368; line-height:1.2; }
+.closet-item.locked{ filter:none; opacity:1; background:#EFE3D4; border-style:dotted; }
+.closet-item.locked .cname{ color:rgba(91,67,104,.5); }
+.tray-locked{ font-size:34px; font-weight:800; color:rgba(122,92,134,.32); font-family:'Baloo 2',cursive; }
+.closet-item.equipped{ border:3px solid #F1C65A; box-shadow:0 0 0 3px #FBE2A0, 0 3px 0 rgba(120,86,140,.2); }
+.closet-item.new-glow{
+  border:3px solid #F1C65A; box-shadow:0 0 0 4px #FBE2A0, 0 0 24px #FBE2A0;
+  animation:trayNudge 1.1s cubic-bezier(.34,1.56,.64,1) infinite;
+}
+@keyframes trayNudge{ 0%,100%{transform:translateY(0) rotate(0);} 45%{transform:translateY(-7px) rotate(-2deg);} }
+.equip-badge{ position:absolute; top:-7px; right:-5px; font-size:17px; }
+
+/* ---- 7. shared motion language -------------------------------------- */
+/* One vocabulary: sticker pop, bounce, squash/stretch, overshoot, snap. */
+.big-magic-btn, .magic-btn, .nav-pill, .choice-card, .bubble, .tile, .closet-tab{
+  transition:transform .16s cubic-bezier(.34,1.56,.64,1);
+}
+.big-magic-btn:active, .magic-btn:active, .nav-pill:active{ transform:scale(.94); }
+@media (prefers-reduced-motion:reduce){
+  .cloud,.butterfly,.wsparkle,.gem,.meadow-twinkle,.twinkle-felt .tw-wings,
+  .twinkle-felt .tw-tail,.unicorn-felt .uni-head,.unicorn-felt .uni-tail,
+  .princess-felt .doll-wings,.princess-felt .doll-crown,.closet-item.new-glow{
+    animation:none !important;
+  }
+}
+
+/* ---- 8. less chrome in child mode ----------------------------------- */
+.kingdom-header{ padding:6px 8px 0; }
+.kingdom-header .banner-ribbon{ display:none; }
+.header-row{ gap:6px; }
+.icon-nav-btn{ background:rgba(255,253,248,.9); border:2px solid rgba(255,255,255,.9);
+  box-shadow:0 3px 8px rgba(120,86,140,.22); }
+.stars-pill{ background:rgba(255,253,248,.92); border:2px solid #FBE2A0;
+  box-shadow:0 3px 8px rgba(120,86,140,.22); font-weight:800; }
+/* The bottom nav duplicated the header icons; the header keeps them. */
+.kingdom-nav{ display:none; }
+.game-area.scene-full ~ .twinkle-mini, .scene-full .instruction-bar{ display:none; }
+#screen-game:has(.scene-full) .instruction-bar{ display:none; }
+
+/* ---- 9. typography: decoding text stays boringly legible ------------ */
+/* Decorative faces are fine for headings. Every letter Layla has to DECODE
+   uses Andika, which keeps a/g single-storey and disambiguates I/l/1 and
+   b/d/p/q — the exact glyphs an early reader confuses. */
+.gem-letter, .blend-letter, .slot, .tile, .bubble, .big-letter,
+.story-sentence, .milestone-word, .blend-word, .qa-gr{
+  font-family:'Andika', 'Segoe UI', system-ui, sans-serif !important;
+  font-variant-ligatures:none; letter-spacing:.01em;
+}
+.blend-letter, .slot, .tile{
+  background:#FFF7EC; border:3px dashed rgba(169,140,224,.6); border-radius:18px;
+  color:#5B4368; text-shadow:none; box-shadow:0 3px 0 rgba(120,86,140,.18);
+}
+.tile{ background:#FBE2A0; border-style:solid; border-color:#FFFDF8; }
+.slot.filled{ background:#FFFDF8; border-style:solid; border-color:#F9BCD2; }
+.slot.next{ border-color:#F1C65A; box-shadow:0 0 0 4px rgba(251,226,160,.6); }
+.blend-letter.together{ background:#FBE2A0; border-style:solid; border-color:#FFFDF8; }
+.blend-word{ background:#FFFDF8; border:3px dashed rgba(169,140,224,.6); color:#E58BAE; }
+
+/* ---- 10. Twinkle's guide: a sticker balloon, not a toolbar ---------- */
+.twinkle-guide{
+  left:auto; right:10px; bottom:10px; width:min(56%,420px);
+  align-items:flex-end; gap:6px; flex-direction:row-reverse;
+}
+.twinkle-avatar{ width:clamp(72px,12vw,110px); }
+.speech-bubble{
+  border-radius:22px 22px 6px 22px; padding:10px 16px; flex:1;
+  background:#FFFDF8; border:3px dashed rgba(150,112,217,.5);
+  box-shadow:0 6px 16px rgba(112,74,132,.28);
+}
+.speech-bubble::after{
+  content:''; position:absolute; right:-9px; bottom:12px;
+  width:16px; height:16px; background:#FFFDF8;
+  border-right:3px dashed rgba(150,112,217,.5); border-bottom:3px dashed rgba(150,112,217,.5);
+  transform:rotate(-45deg); border-radius:0 0 4px 0;
+}
+.replay-btn{
+  position:absolute; left:-6px; top:-12px; width:40px; height:40px; border-radius:50%;
+  background:#FBD881; border:3px solid #FFFDF8; box-shadow:0 3px 8px rgba(112,74,132,.3);
+  font-size:18px; cursor:pointer; z-index:2;
+}
+/* Replay sits in the row, not floating over the balloon. */
+.replay-btn{
+  position:static; left:auto; top:auto; flex:0 0 auto;
+  width:44px; height:44px; align-self:flex-end; margin-bottom:2px;
+}
+/* Lock hints read as a felt tag, not an admin chip. */
+.lock-note{
+  background:#FFF3DF; color:#6E4E7C; border:2px dashed rgba(150,112,217,.5);
+  box-shadow:0 2px 5px rgba(112,74,132,.22); padding:1px 10px; font-size:10.5px;
+}
+.landmark.locked .land-label{ border-style:dotted; color:rgba(78,56,89,.7); }
+
+/* ---- 11. full-bleed activity: the scene IS the screen --------------- */
+#screen-game.screen-full.active{ display:flex; flex-direction:column; height:100dvh; padding:0; }
+#screen-game.screen-full .instruction-bar,
+#screen-game.screen-full .twinkle-mini{ display:none; }
+#screen-game.screen-full .game-topbar{
+  position:absolute; top:0; left:0; right:0; z-index:20;
+  background:none; box-shadow:none; border:none; padding:8px 10px; pointer-events:none;
+}
+#screen-game.screen-full .game-topbar > *{ pointer-events:auto; }
+#screen-game.screen-full .game-title-pill{ display:none; }
+#screen-game.screen-full .round-btn{
+  background:rgba(255,253,248,.92); border:2px solid #fff;
+  box-shadow:0 3px 8px rgba(112,74,132,.26);
+}
+#screen-game.screen-full .game-progress-dots{
+  background:rgba(255,253,248,.85); border-radius:999px; padding:4px 10px;
+  box-shadow:0 3px 8px rgba(112,74,132,.2);
+}
+#screen-game.screen-full .game-area.scene-full{ flex:1; min-height:0; }
+.game-area.scene-full .meadow{ height:100%; min-height:0; }
+/* Mouth-shape cue as a felt tag pinned low-left, clear of the top controls. */
+#screen-game.screen-full .mouth-cue{
+  right:auto; left:12px; top:auto; bottom:14px; z-index:12;
+  background:#FFF3DF; border:3px dashed rgba(150,112,217,.55);
+  border-radius:18px; box-shadow:0 5px 12px rgba(112,74,132,.28);
+  padding:5px 13px 5px 8px;
+}
+#screen-game.screen-full .mouth-face{ font-size:32px; }
+#screen-game.screen-full .mouth-letter{ font-size:28px; color:#6E4E7C; }
+
+/* ---- 12. castle: dollhouse fills the screen, trays sit under it ------ */
+#screen-castle.active{ display:flex; flex-direction:column; height:100dvh; padding:0; }
+#screen-castle .game-topbar{ flex:0 0 auto; }
+.castle-layout{ flex:1; min-height:0; display:flex; flex-direction:column; }
+.castle-room{ flex:1; min-height:0; }
+.closet{ flex:0 0 auto; max-height:40vh; overflow-y:auto; }
+#princess-mount{ width:min(26vw,215px); bottom:5%; left:47%; }

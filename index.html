@@ -52,34 +52,34 @@
   </header>
 
   <div class="world" id="kingdom-map">
-    <button class="landmark scene-mark" data-land="rainbow" id="land-rainbow" data-sx="300" data-sy="500">
+    <button class="landmark scene-mark" data-land="rainbow" id="land-rainbow" data-px="22" data-py="46">
       <span class="land-emoji">🌈</span><span class="land-label">Rainbow Road</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-rainbow"></span>
     </button>
-    <button class="landmark scene-mark" data-land="unicorn" id="land-unicorn" data-sx="850" data-sy="560">
+    <button class="landmark scene-mark" data-land="unicorn" id="land-unicorn" data-px="68" data-py="72">
       <span class="land-emoji">🦄</span><span class="land-label">Unicorn Meadow</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-unicorn"></span>
     </button>
-    <button class="landmark scene-mark castle-land" data-land="castle" id="land-castle" data-sx="605" data-sy="505">
+    <button class="landmark scene-mark castle-land" data-land="castle" id="land-castle" data-px="51" data-py="50">
       <span class="land-emoji">🏰</span><span class="land-label">Princess Castle</span>
       <span class="land-glow" aria-hidden="true"></span>
     </button>
-    <button class="landmark scene-mark" data-land="kitten" id="land-kitten" data-sx="410" data-sy="560">
+    <button class="landmark scene-mark" data-land="kitten" id="land-kitten" data-px="34" data-py="70">
       <span class="land-emoji">🐱</span><span class="land-label">Kitten Cottage</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-kitten"></span>
     </button>
-    <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet" data-sx="1030" data-sy="510">
+    <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet" data-px="88" data-py="70">
       <span class="land-emoji">🩰</span><span class="land-label">Ballet Stage 🔒</span>
       <span class="lock-note">💤</span>
     </div>
-    <div class="landmark scene-mark locked" data-land="story" id="land-story" data-sx="845" data-sy="480">
+    <div class="landmark scene-mark locked" data-land="story" id="land-story" data-px="82" data-py="44">
       <span class="land-emoji">📚</span><span class="land-label">Storybook Tower 🔒</span>
       <span class="lock-note" id="story-lock-note">🔒 3 words</span>
     </div>
-    <div class="landmark scene-mark locked" data-land="fairy" id="land-fairy" data-sx="480" data-sy="600">
+    <div class="landmark scene-mark locked" data-land="fairy" id="land-fairy" data-px="11" data-py="74">
       <span class="land-emoji">🧚</span><span class="land-label">Fairy Garden 🔒</span>
       <span class="lock-note">💤</span>
     </div>
@@ -190,6 +190,12 @@
     <button class="round-btn" id="btn-parent-close" aria-label="Close">✕</button>
   </header>
   <div class="parent-grid">
+    <div class="parent-card wide" id="card-sound-library">
+      <h3>🔤 Sound Library — your approval decides what Layla hears</h3>
+      <div id="audio-qa-summary" class="parent-summary">Loading the sound library…</div>
+      <div id="audio-qa"></div>
+      <button class="magic-btn" id="btn-audio-qa" style="margin-top:10px">↻ Re-check every file</button>
+    </div>
     <div class="parent-card">
       <h3>Reading Progress</h3>
       <div id="parent-progress"></div>
@@ -213,10 +219,6 @@
     <div class="parent-card">
       <h3>🧪 Test Mode</h3>
       <div class="practice-grid" id="test-grid"></div>
-      <h3 style="margin-top:14px">🔊 Audio Check</h3>
-      <div id="audio-qa-summary" class="parent-summary">Tap “Check all sounds”.</div>
-      <div id="audio-qa"></div>
-      <button class="magic-btn" id="btn-audio-qa" style="margin-top:8px">🔊 Check all sounds</button>
       <h3 style="margin-top:14px">🔍 Audio Debug</h3>
       <div id="audio-debug" class="audio-debug">Open the parent panel to see live audio state.</div>
       <h3 style="margin-top:14px">🎨 Art Status (vertical slice)</h3>
@@ -263,8 +265,13 @@
 
 <div id="toast" class="toast hidden"></div>
 
+<script src="phonics.js"></script>
+<script src="feltkit.js"></script>
 <script src="characters.js"></script>
 <script src="princess.js"></script>
+<!-- felt-* load last: their declarations replace the older drawings -->
+<script src="felt-characters.js"></script>
+<script src="felt-princess.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

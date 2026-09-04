@@ -9,57 +9,74 @@
 'use strict';
 
 /* ---------------- DATA ---------------- */
-const PHONEME_ORDER = ['s','a','t','p','i','n','m','d','g','o','c','k'];
-const FAMILIAR_LETTERS = ['l','a','y']; // Layla's name, recognition only
+/* The phoneme/grapheme model lives in phonics.js (loaded before this file)
+   so the app and the build-time importer share ONE definition.
+   PHONEME_ORDER holds phonemeIds, not letters: 'k' is one sound spelled
+   c / k / ck, and 'th_unvoiced' and 'th_voiced' are two sounds both
+   spelled th. Never assume one letter == one sound anywhere below. */
+const PHONEME_ORDER = Phonics.ordered().map(function(p){ return p.id; });
 
-const PHONEMES = {
-  s:{g:'s', cue:'ssss', stretch:'ssssss', word:'sun', emoji:'☀️', kind:'decode'},
-  a:{g:'a', cue:'a as in apple', stretch:'aaa', word:'apple', emoji:'🍎', kind:'decode'},
-  t:{g:'t', cue:'t', stretch:'t', word:'tap', emoji:'👆', kind:'decode'},
-  p:{g:'p', cue:'p', stretch:'p', word:'pan', emoji:'🍳', kind:'decode'},
-  i:{g:'i', cue:'i as in igloo', stretch:'iii', word:'igloo', emoji:'🧊', kind:'decode'},
-  n:{g:'n', cue:'nnn', stretch:'nnnn', word:'net', emoji:'🥅', kind:'decode'},
-  m:{g:'m', cue:'mmmm', stretch:'mmmm', word:'moon', emoji:'🌙', kind:'decode'},
-  d:{g:'d', cue:'d', stretch:'d', word:'dog', emoji:'🐶', kind:'decode'},
-  g:{g:'g', cue:'g', stretch:'g', word:'gap', emoji:'🕳️', kind:'decode'},
-  o:{g:'o', cue:'o as in otter', stretch:'ooo', word:'otter', emoji:'🦦', kind:'decode'},
-  c:{g:'c', cue:'k', stretch:'k', word:'cat', emoji:'🐱', kind:'decode'},
-  k:{g:'k', cue:'k', stretch:'k', word:'kite', emoji:'🪁', kind:'decode'},
-  l:{g:'l', cue:'lll', stretch:'llll', word:'lion', emoji:'🦁', kind:'familiar'},
-  y:{g:'y', cue:'y', stretch:'yyy', word:'yo-yo', emoji:'🪀', kind:'familiar'}
-};
+/* Letters in Layla's name. RECOGNITION ONLY: the name games never mark a
+   phoneme as known and never unlock decoding. Name familiarity and phoneme
+   mastery are deliberately separate concepts. */
+const FAMILIAR_LETTERS = NAME_LETTERS;
 
+/* Display helpers: the letter(s) Layla actually sees for a sound. Use these
+   instead of id.toUpperCase() — a phonemeId like 'a_short' is internal. */
+function G(id){ return Phonics.primaryGrapheme(id); }
+function GU(id){ return String(G(id)).toUpperCase(); }
+
+/* Runtime view of the catalog, keyed by phonemeId. */
+const PHONEMES = Phonics.catalog.reduce(function(m,p){
+  m[p.id] = {
+    id:p.id, g:p.graphemes[0], graphemes:p.graphemes, ipa:p.ipa,
+    cue:p.cue, stretch:p.cue, word:p.word, emoji:p.emoji,
+    target:p.target, type:p.type, phase:p.phase, order:p.order,
+    kind:'decode'
+  };
+  return m;
+}, {});
+
+/* Words carry BOTH layers. ph[] is the sequence of SOUNDS to play; gr[] is
+   the sequence of LETTERS Layla sees. They are parallel arrays, so 'cat' is
+   three sounds (k, a_short, t) spelled c-a-t, and 'moon' is m-oo-n. This is
+   what lets one sound have several spellings without the games misrepresenting
+   either layer. Every word here has a recorded whole-word file in audio/words/. */
 const WORDS = [
-  {t:'sat', ph:['s','a','t'], emoji:'🪑', art:'sat'},
-  {t:'mat', ph:['m','a','t'], emoji:'🧶', art:'mat'},
-  {t:'cat', ph:['c','a','t'], emoji:'🐱', art:'cat'},
-  {t:'pat', ph:['p','a','t'], emoji:'👋', art:'pat'},
-  {t:'tap', ph:['t','a','p'], emoji:'🚰', art:'tap'},
-  {t:'map', ph:['m','a','p'], emoji:'🗺️', art:'map'},
-  {t:'man', ph:['m','a','n'], emoji:'🤴', art:'man'},
-  {t:'pan', ph:['p','a','n'], emoji:'🍳', art:'pan'},
-  {t:'sit', ph:['s','i','t'], emoji:'🪑', art:'sit'},
-  {t:'sip', ph:['s','i','p'], emoji:'🥤', art:'sip'},
-  {t:'tip', ph:['t','i','p'], emoji:'👆', art:'tip'},
-  {t:'tin', ph:['t','i','n'], emoji:'🥫', art:'tin'},
-  {t:'pin', ph:['p','i','n'], emoji:'📌', art:'pin'},
-  {t:'Sam', ph:['s','a','m'], emoji:'👦', art:'sam', proper:true},
-  {t:'cap', ph:['c','a','p'], emoji:'🧢', art:'cap'},
-  {t:'can', ph:['c','a','n'], emoji:'🥫', art:'can'},
-  {t:'dog', ph:['d','o','g'], emoji:'🐶', art:'dog'},
-  {t:'mop', ph:['m','o','p'], emoji:'🧹', art:'mop'},
-  {t:'pot', ph:['p','o','t'], emoji:'🍲', art:'pot'},
-  {t:'am', ph:['a','m'], emoji:'💖', art:'am'},
-  {t:'at', ph:['a','t'], emoji:'📍', art:'at'},
-  {t:'it', ph:['i','t'], emoji:'✨', art:'it'},
-  {t:'in', ph:['i','n'], emoji:'📥', art:'in'},
-  {t:'on', ph:['o','n'], emoji:'🔛', art:'on'}
+  {t:'sat',  ph:['s','a_short','t'], gr:['s','a','t'],  emoji:'🪑', art:'sat'},
+  {t:'mat',  ph:['m','a_short','t'], gr:['m','a','t'],  emoji:'🧶', art:'mat'},
+  {t:'cat',  ph:['k','a_short','t'], gr:['c','a','t'],  emoji:'🐱', art:'cat'},
+  {t:'pat',  ph:['p','a_short','t'], gr:['p','a','t'],  emoji:'👋', art:'pat'},
+  {t:'tap',  ph:['t','a_short','p'], gr:['t','a','p'],  emoji:'🚰', art:'tap'},
+  {t:'map',  ph:['m','a_short','p'], gr:['m','a','p'],  emoji:'🗺️', art:'map'},
+  {t:'man',  ph:['m','a_short','n'], gr:['m','a','n'],  emoji:'🤴', art:'man'},
+  {t:'pan',  ph:['p','a_short','n'], gr:['p','a','n'],  emoji:'🍳', art:'pan'},
+  {t:'gap',  ph:['g','a_short','p'], gr:['g','a','p'],  emoji:'🕳️', art:'gap'},
+  {t:'sit',  ph:['s','i_short','t'], gr:['s','i','t'],  emoji:'🪑', art:'sit'},
+  {t:'sip',  ph:['s','i_short','p'], gr:['s','i','p'],  emoji:'🥤', art:'sip'},
+  {t:'tip',  ph:['t','i_short','p'], gr:['t','i','p'],  emoji:'👆', art:'tip'},
+  {t:'tin',  ph:['t','i_short','n'], gr:['t','i','n'],  emoji:'🥫', art:'tin'},
+  {t:'pin',  ph:['p','i_short','n'], gr:['p','i','n'],  emoji:'📌', art:'pin'},
+  {t:'Sam',  ph:['s','a_short','m'], gr:['S','a','m'],  emoji:'👦', art:'sam', proper:true},
+  {t:'cap',  ph:['k','a_short','p'], gr:['c','a','p'],  emoji:'🧢', art:'cap'},
+  {t:'can',  ph:['k','a_short','n'], gr:['c','a','n'],  emoji:'🥫', art:'can'},
+  {t:'dog',  ph:['d','o_short','g'], gr:['d','o','g'],  emoji:'🐶', art:'dog'},
+  {t:'mop',  ph:['m','o_short','p'], gr:['m','o','p'],  emoji:'🧹', art:'mop'},
+  {t:'pot',  ph:['p','o_short','t'], gr:['p','o','t'],  emoji:'🍲', art:'pot'},
+  {t:'sun',  ph:['s','u_short','n'], gr:['s','u','n'],  emoji:'☀️', art:'sun'},
+  {t:'net',  ph:['n','e_short','t'], gr:['n','e','t'],  emoji:'🥅', art:'net'},
+  {t:'moon', ph:['m','oo_long','n'], gr:['m','oo','n'], emoji:'🌙', art:'moon'},
+  {t:'am',   ph:['a_short','m'],     gr:['a','m'],      emoji:'💖', art:'am'},
+  {t:'at',   ph:['a_short','t'],     gr:['a','t'],      emoji:'📍', art:'at'},
+  {t:'it',   ph:['i_short','t'],     gr:['i','t'],      emoji:'✨', art:'it'},
+  {t:'in',   ph:['i_short','n'],     gr:['i','n'],      emoji:'📥', art:'in'},
+  {t:'on',   ph:['o_short','n'],     gr:['o','n'],      emoji:'🔛', art:'on'}
 ];
 
 const FIRST_SOUND_SETS = [
   {sound:'s', options:[{w:'sun',e:'☀️'},{w:'cat',e:'🐱'},{w:'moon',e:'🌙'}], answer:'sun'},
   {sound:'m', options:[{w:'moon',e:'🌙'},{w:'sun',e:'☀️'},{w:'tap',e:'🚰'}], answer:'moon'},
-  {sound:'c', options:[{w:'cat',e:'🐱'},{w:'sun',e:'☀️'},{w:'pin',e:'📌'}], answer:'cat'},
+  {sound:'k', options:[{w:'cat',e:'🐱'},{w:'sun',e:'☀️'},{w:'pin',e:'📌'}], answer:'cat'},
   {sound:'p', options:[{w:'pan',e:'🍳'},{w:'moon',e:'🌙'},{w:'sun',e:'☀️'}], answer:'pan'},
   {sound:'a', options:[{w:'apple',e:'🍎'},{w:'moon',e:'🌙'},{w:'tin',e:'🥫'}], answer:'apple'},
   {sound:'t', options:[{w:'tap',e:'🚰'},{w:'moon',e:'🌙'},{w:'sun',e:'☀️'}], answer:'tap'}
@@ -96,21 +113,27 @@ const PRINCESS_LOOK = {
   'dress-blue':'👱‍♀️', 'dress-lilac':'👩‍🦰'
 };
 
+/* needs[] lists phonemeIds. A page is only offered when every sound in it is
+   human-approved, so a story never asks Layla to decode an unapproved sound. */
 const STORY_PAGES = [
-  {s:['Sam','sat.'], art:'👦', needs:['s','a','m','t']},
-  {s:['Sam','sat','on','a','mat.'], art:'🧶', needs:['s','a','m','t','o','n']},
-  {s:['A','cat','sat.'], art:'🐱', needs:['s','a','m','t','o','n','c']},
-  {s:['A','cat','sat','on','a','mat.'], art:'🧶', needs:['s','a','m','t','o','n','c']}
+  {s:['Sam','sat.'], art:'👦', needs:['s','a_short','m','t']},
+  {s:['Sam','sat','on','a','mat.'], art:'🧶', needs:['s','a_short','m','t','o_short','n']},
+  {s:['A','cat','sat.'], art:'🐱', needs:['s','a_short','m','t','o_short','n','k']},
+  {s:['A','cat','sat','on','a','mat.'], art:'🧶', needs:['s','a_short','m','t','o_short','n','k']}
 ];
 
 /* ---------------- STATE ---------------- */
 const SAVE_KEY = 'layla-kingdom-v1';
 function defaultState(){
   return {
-    v:1, stars:0, rainbowColors:0,
+    v:2, stars:0, rainbowColors:0,
     firstSessionDone:false, firstSessionStep:0,
-    unlocked:['s','a','t'],
-    phonemeApproval:{}, approvalBatch:null,
+    unlocked:['s','a_short','t'],
+    /* phonemeApproval[phonemeId] = {st, custom, played, hash}
+       hash is the sha256 of the audio file the human actually listened to.
+       If the file's bytes change, that one approval lapses — see
+       reconcileApprovals(). There is no global "wipe everything" reset. */
+    phonemeApproval:{},
     mastery:{}, wordsRead:[], wordsCelebrated:[],
     rewards:['dress-pink'], stickers:['layla-name'],
     equipped:{dress:'dress-pink', crown:'crown-flower', shoes:'shoes-ballet', pet:'pet-white', wallpaper:'wall-pink', furniture:'bed-royal', window:'window-rainbow', decor:'decor-flowers', wings:null, necklace:null},
@@ -127,8 +150,50 @@ function load(){
     if(!raw) return defaultState();
     const d = JSON.parse(raw);
     const base = defaultState();
-    return Object.assign(base, d, {settings:Object.assign(base.settings, d.settings||{}), equipped:Object.assign(base.equipped, d.equipped||{})});
+    const st = Object.assign(base, d, {settings:Object.assign(base.settings, d.settings||{}), equipped:Object.assign(base.equipped, d.equipped||{})});
+    return migrateState(st);
   }catch(e){ return defaultState(); }
+}
+/* v1 saves keyed phonemes by bare letter ('a','i','o','c'). v2 keys them by
+   phonemeId ('a_short','i_short','o_short','k'). Remap everything that stored
+   a phoneme id; drop anything that no longer resolves. Approvals are remapped
+   too, but reconcileApprovals() then re-checks each one against the audio
+   file's hash, so a remapped approval only survives if the bytes match. */
+function migrateState(st){
+  if(st.v >= 2 && !st.approvalBatch) return st;
+  const mapId = function(id){ return Phonics.resolve(id); };
+  const mapList = function(list){
+    const out=[];
+    (list||[]).forEach(function(id){ const r=mapId(id); if(r && out.indexOf(r)<0) out.push(r); });
+    return out;
+  };
+  st.unlocked = mapList(st.unlocked);
+  if(!st.unlocked.length) st.unlocked = ['s','a_short','t'];
+  st.currentFocus = mapId(st.currentFocus) || st.unlocked[0];
+
+  const ap = {};
+  Object.keys(st.phonemeApproval||{}).forEach(function(k){
+    const r = mapId(k);
+    if(r && !ap[r]) ap[r] = st.phonemeApproval[k];
+  });
+  st.phonemeApproval = ap;
+
+  /* mastery keys look like 'sound:a' / 'letter:c' — remap the id half. */
+  const mast = {};
+  Object.keys(st.mastery||{}).forEach(function(k){
+    const bits = k.split(':');
+    if(bits.length===2 && (bits[0]==='sound' || bits[0]==='letter')){
+      const r = mapId(bits[1]);
+      if(!r) return;
+      mast[bits[0]+':'+r] = st.mastery[k];
+    } else mast[k] = st.mastery[k];
+  });
+  st.mastery = mast;
+
+  delete st.approvalBatch;
+  st.audioMissing = [];
+  st.v = 2;
+  return st;
 }
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(S)); }catch(e){} }
 function resetAll(){ S = defaultState(); save(); refreshAll(); toast('A brand-new kingdom! 🌈'); }
@@ -309,42 +374,113 @@ const PH_DIR = 'audio/phonemes/';
 /* Phoneme asset manifest (built from validated human recordings).
    valid=false (or MISSING) phonemes are NEVER modeled in child mode. */
 let PHONEME_MANIFEST = null;
-/* Human approval gate: UNREVIEWED | APPROVED | REJECTED (persisted).
-   NOTHING enters child phonics without a parent listening + approving.
-   Focus set first: s,a,t,p,i,n. Others unlock only after all six approved. */
-const FOCUS_PHONEMES = ['s','a','t','p','i','n'];
+/* ---- HUMAN APPROVAL GATE ----------------------------------------------
+   UNREVIEWED | APPROVED | REJECTED | MISSING (persisted per phonemeId).
+   NOTHING enters child phonics without a parent listening and approving.
+   No code path anywhere marks a sound APPROVED on its own — not the
+   importer, not signal analysis, not a "looks fine" heuristic.
+
+   Approval is bound to the audio file's sha256. Re-importing a sound
+   changes its bytes, which lapses that one approval back to UNREVIEWED.
+   Files whose bytes are unchanged — notably the six approved starter
+   recordings — keep their approval across imports. */
+const STARTER_PHONEMES = Phonics.inPhase('starter').map(function(p){ return p.id; });
 function approvalOf(id){
+  id = Phonics.resolve(id) || id;
   if(!S.phonemeApproval) S.phonemeApproval={};
-  if(!S.phonemeApproval[id]) S.phonemeApproval[id]={st:'UNREVIEWED', custom:false, played:false};
+  if(!S.phonemeApproval[id]) S.phonemeApproval[id]={st:'UNREVIEWED', custom:false, played:false, hash:null};
   return S.phonemeApproval[id];
 }
-function focusComplete(){
-  return FOCUS_PHONEMES.every(id=>approvalOf(id).st==='APPROVED');
+function manifestOf(id){
+  id = Phonics.resolve(id);
+  if(!id || !PHONEME_MANIFEST || !PHONEME_MANIFEST.sounds) return null;
+  return PHONEME_MANIFEST.sounds[id] || null;
 }
+/* The single gate every game must respect. */
 function isPhonemeUsable(id){
-  if(PHONEME_MANIFEST && PHONEME_MANIFEST[id] && !PHONEME_MANIFEST[id].valid) return false;
-  const ap = approvalOf(id).st;
-  if(ap!=='APPROVED') return false;
-  if(FOCUS_PHONEMES.includes(id)) return true;
-  return focusComplete();
+  id = Phonics.resolve(id);
+  if(!id) return false;
+  const man = manifestOf(id);
+  if(man && man.approvalStatus === 'MISSING') return false;   // no file on disk
+  return approvalOf(id).st === 'APPROVED';
 }
 function usablePhonemes(list){
-  return (list||PHONEME_ORDER).filter(isPhonemeUsable);
+  return (list||PHONEME_ORDER).map(function(id){ return Phonics.resolve(id); })
+    .filter(function(id, i, arr){ return id && arr.indexOf(id)===i && isPhonemeUsable(id); });
+}
+/* Wrong-answer choices. Spec: gameplay uses ONLY approved sounds, so a
+   distractor is drawn from the approved pool too — never from an
+   unreviewed one. If there are not enough approved sounds yet, the round
+   simply offers fewer choices rather than smuggling one in. */
+function distractors(focus, n){
+  const pool = shuffle(usablePhonemes(PHONEME_ORDER).filter(function(p){ return p!==focus; }));
+  return pool.slice(0, Math.max(0, n||2));
+}
+function approvalCounts(){
+  const c = {APPROVED:0, UNREVIEWED:0, REJECTED:0, MISSING:0};
+  PHONEME_ORDER.forEach(function(id){
+    const man = manifestOf(id);
+    if(man && man.approvalStatus==='MISSING'){ c.MISSING++; return; }
+    const st = approvalOf(id).st;
+    c[st] = (c[st]||0) + 1;
+  });
+  return c;
+}
+/* Re-check every stored approval against the manifest's file hashes.
+   - hash matches            -> approval stands
+   - hash differs            -> lapses to UNREVIEWED (the bytes changed)
+   - approval predates hashes -> adopted ONLY for the locked starter six,
+     which the importer provably never rewrites. Everything else from the
+     old scheme must be listened to again, because those files used to come
+     from a different (rejected) source. */
+function reconcileApprovals(){
+  if(!PHONEME_MANIFEST || !PHONEME_MANIFEST.sounds) return;
+  let lapsed = [], dirty = false;
+  Object.keys(S.phonemeApproval||{}).forEach(function(id){
+    const a = S.phonemeApproval[id];
+    if(!a || a.st!=='APPROVED') return;
+    if(a.custom) return;                       // parent's own recording
+    const man = PHONEME_MANIFEST.sounds[id];
+    if(!man || !man.sha256){ return; }
+    if(!a.hash){
+      if(man.locked){ a.hash = man.sha256; dirty = true; }   // grandfathered
+      else { a.st='UNREVIEWED'; a.played=false; lapsed.push(id); dirty = true; }
+      return;
+    }
+    if(a.hash !== man.sha256){
+      a.st='UNREVIEWED'; a.played=false; a.hash=null; lapsed.push(id); dirty = true;
+    }
+  });
+  if(dirty) save();
+  if(lapsed.length) try{ Speech.log('audio', 'approval lapsed: '+lapsed.join(',')); }catch(e){}
+  return lapsed;
 }
 function loadPhonemeManifest(){
   try{
-    fetch(PH_DIR+'manifest.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
-    .then(m=>{ PHONEME_MANIFEST=m; try{
-      // New audio source batch => prior human approvals no longer apply.
-      const batch = (m._batch&&m._batch.id)||null;
-      if(batch && S.approvalBatch!==batch){
-        S.phonemeApproval={}; S.approvalBatch=batch; save();
-      }
-      const bad=Object.keys(m).filter(k=>!m[k].valid);
-      if(bad.length){ const miss=S.audioMissing||(S.audioMissing=[]); bad.forEach(b=>{ if(!miss.includes(b)) miss.push(b); }); save(); }
-      if(!isPhonemeUsable(S.currentFocus)){ const u=usablePhonemes(S.unlocked.filter(id=>PHONEMES[id])); if(u.length) S.currentFocus=u[0]; }
-    }catch(e){} }).catch(()=>{});
-  }catch(e){}
+    return fetch(PH_DIR+'manifest.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
+    .then(m=>{
+      PHONEME_MANIFEST = m;
+      try{
+        reconcileApprovals();
+        const missing = Object.keys(m.sounds||{}).filter(k=>m.sounds[k].approvalStatus==='MISSING');
+        if(missing.length){
+          const miss=S.audioMissing||(S.audioMissing=[]);
+          missing.forEach(b=>{ if(!miss.includes(b)) miss.push(b); });
+          save();
+        }
+        /* Keep the focus on something Layla is actually allowed to hear. */
+        if(!isPhonemeUsable(S.currentFocus)){
+          const u=usablePhonemes(S.unlocked);
+          if(u.length) { S.currentFocus=u[0]; save(); }
+        }
+        /* The manifest arrives after the first paint; refresh the review
+           screen so provenance and hashes are shown rather than "no entry". */
+        const scr=$('screen-parent');
+        if(scr && scr.classList.contains('active')) renderAudioQA();
+      }catch(e){}
+      return m;
+    }).catch(()=>null);
+  }catch(e){ return Promise.resolve(null); }
 }
 /* Parent-supplied recordings (IndexedDB). A new recording resets approval
    to UNREVIEWED — it must be listened to and approved again. */
@@ -367,14 +503,23 @@ const PhonemeDB = {
       rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null);
     }catch(e){ res(null); } })).catch(()=>null); }
 };
+/* A phonemeId is NOT a filename: 'a_short' lives in a.mp3 (the untouched
+   starter asset) and 'oo_long' in oo_long.mp3. Always resolve through the
+   catalog rather than concatenating the id. */
+function phonemeFile(id){
+  const e = Phonics.byId[Phonics.resolve(id)];
+  return e ? PH_DIR + e.file : null;
+}
 AudioSys.resolvePhoneme = function(id){
   // Effective asset: parent recording wins; else the bundled human recording.
-  return PhonemeDB.get(id).then(blob=>{
+  const pid = Phonics.resolve(id);
+  if(!pid) return Promise.resolve(null);
+  return PhonemeDB.get(pid).then(blob=>{
     if(blob){ try{ return URL.createObjectURL(blob); }catch(e){} }
-    return PH_DIR+id+'.mp3';
+    return phonemeFile(pid);
   });
 };
-const PHONEME_WORD = {s:'sun',a:'apple',t:'tap',p:'pan',i:'igloo',n:'net',m:'moon',d:'dog',g:'gap',o:'otter',c:'cat',k:'kite',l:'lion'};
+const PHONEME_WORD = Phonics.catalog.reduce(function(m,p){ m[p.id]=p.word; return m; }, {});
 const AudioStat = { phoneme:{}, voice:{}, word:{} }; // 'ok' | 'missing'
 AudioSys._lastSpeak = { text:'', t:0 };
 AudioSys._scene = 'kingdom';
@@ -403,7 +548,7 @@ AudioSys.probe = function(srcs){
 AudioSys.warm = function(){
   // Preload the sounds the next minutes will need (call after user gesture).
   try{
-    S.unlocked.concat(['l']).forEach(id=>{ try{ const a=new Audio(); a.preload='auto'; a.src=PH_DIR+id+'.mp3'; a.load(); }catch(e){} });
+    S.unlocked.concat(['l']).forEach(id=>{ try{ const a=new Audio(); a.preload='auto'; a.src=phonemeFile(id); a.load(); }catch(e){} });
     ['you-did-it','oops','good-try','sound-it-out','blend-together','kitten-free'].forEach(k=>{ const a=new Audio(); a.preload='auto'; a.src=VOICE_DIR+k+'.mp3'; a.load(); });
   }catch(e){}
 };
@@ -533,13 +678,19 @@ AudioSys.praiseSound = function(id){
     return;
   }
   Speech.request(4, 'praise:'+id, 'clip', (cancelled, done, trackEl)=>{
-    Speech.playFile(VOICE_DIR+'yes-'+id+'.mp3', null, trackEl).then((ok)=>{
-      AudioStat.voice['yes-'+id] = ok?'ok':'missing';
+    Speech.playFile(VOICE_DIR+'yes-'+G(id)+'.mp3', null, trackEl).then((ok)=>{
+      AudioStat.voice['yes-'+G(id)] = ok?'ok':'missing';
       if(cancelled()){ done('cancelled'); return; }
       if(!ok){
-        done('missing');
-        after(80, ()=> AudioSys.speak('Yes! '+String(id).toUpperCase()+'!', {prio:4}));
-        after(1400, ()=> { AudioSys.playPhoneme(id); });
+        /* No recorded "Yes, B!" clip for this sound yet. Do NOT let TTS say
+           the letter NAME — in a phonics activity that teaches exactly the
+           wrong thing. Use the generic recorded praise, then the real
+           human phoneme. Letter names never come from a speech synth. */
+        Speech.playFile(VOICE_DIR+'you-did-it.mp3', null, trackEl).then(()=>{
+          if(cancelled()){ done('cancelled'); return; }
+          done('done');
+          after(320, ()=> { AudioSys.playPhoneme(id); });
+        });
         return;
       }
       setTimeout(()=>{
@@ -748,7 +899,7 @@ function showMouthCue(id){
     const mouth = (g==='s')?'😁' : (g==='m'||g==='n')?'😗' : ('aeiou'.includes(g))?'😮' : (g==='l')?'😛' : '😯';
     const d=document.createElement('div');
     d.id='mouth-cue'; d.className='mouth-cue';
-    d.innerHTML='<span class="mouth-face">'+mouth+'</span><span class="mouth-letter">'+String(id).toUpperCase()+'</span>';
+    d.innerHTML='<span class="mouth-face">'+mouth+'</span><span class="mouth-letter">'+GU(id)+'</span>';
     area.appendChild(d);
     setTimeout(()=>{ if(d.parentNode) d.remove(); }, 2200);
   }catch(e){}
@@ -767,6 +918,13 @@ function after(ms, fn){
 }
 function enterLog(name){ try{ Speech.log('scene', name+' e'+SceneEpoch+' g'+ActivityGen); }catch(e){} }
 function showScreen(name){
+  /* Full-bleed scenes are opt-in per activity; never leak into the next one. */
+  try{
+    const gs=document.getElementById('screen-game');
+    if(gs) gs.classList.remove('screen-full');
+    const ga=document.getElementById('game-area');
+    if(ga) ga.classList.remove('scene-full');
+  }catch(e){}
   SceneEpoch++;
   enterLog('enter:'+name);
   if(typeof Speech!=='undefined') Speech.cancel('navigation:'+name);
@@ -909,6 +1067,11 @@ function nextActivity(){
   attemptsThisItem=0; firstTryFlag=true;
   const act=sessionQueue[sessionIdx];
   $('game-title-pill').textContent=act.title||sessionName;
+  /* Full-bleed is opt-in per activity — reset before each one runs. */
+  try{
+    $('screen-game').classList.remove('screen-full');
+    $('game-area').classList.remove('scene-full');
+  }catch(e){}
   act.run(act.params||{});
 }
 function activityDone(){
@@ -956,7 +1119,7 @@ function celebrateRight(skillId, praise){
   }
   const unlocked = maybeUnlockNext();
   if(unlocked && PHONEMES[unlocked]){
-    setTimeout(()=>{ twinkleSay('New magic sound! '+unlocked.toUpperCase()+'! '+PHONEMES[unlocked].emoji); }, 1400);
+    setTimeout(()=>{ twinkleSay('New magic sound! '+GU(unlocked)+'! '+PHONEMES[unlocked].emoji); }, 1400);
   }
   checkMilestones();
 }
@@ -1095,7 +1258,7 @@ Games.bubbles = function(params){
   if(!focus) return needGrownup(area);
   const mode = params.mode || (Math.random()<0.5?'name':'sound');
   $('game-area').dataset.scene='rainbow';
-  const distract = shuffle(PHONEME_ORDER.filter(p=>p!==focus)).slice(0,2);
+  const distract = distractors(focus, 2);
   const letters = shuffle([focus].concat(distract));
   if(mode==='sound'){
   say('find-sound', 'Which letter makes this sound?');
@@ -1107,13 +1270,13 @@ Games.bubbles = function(params){
     replay.querySelector('button').onclick=()=>AudioSys.playPhoneme(focus);
     area.appendChild(replay);
   } else {
-    setInstruction('Find '+focus.toUpperCase()+'!', 'Find '+focus.toUpperCase()+'!');
-    twinkleSay('Can you find '+focus.toUpperCase()+'? 🫧', {silent:true});
-    AudioSys.speak('Find '+focus.toUpperCase()+'!');
+    setInstruction('Find '+GU(focus)+'!', 'Find '+GU(focus)+'!');
+    twinkleSay('Can you find '+GU(focus)+'? 🫧', {silent:true});
+    AudioSys.speak('Find '+GU(focus)+'!');
   }
   const row=document.createElement('div'); row.className='choices';
   letters.forEach(L=>{
-    const b=document.createElement('button'); b.className='bubble'; b.textContent=L.toUpperCase();
+    const b=document.createElement('button'); b.className='bubble'; b.textContent=GU(L);
     if(L===focus) b.dataset.correct='1';
     b.style.animationDelay=(Math.random()*1.5)+'s';
     b.onclick=()=>{
@@ -1121,7 +1284,7 @@ Games.bubbles = function(params){
       if(L===focus){
         b.classList.add('pop'); AudioSys.sfx('pop');
         after(350, ()=>{
-          celebrateRight('letter:'+focus, mode==='sound' ? 'Yes! '+focus.toUpperCase()+' makes '+PHONEMES[focus].cue+'!' : 'Yes! That is '+focus.toUpperCase()+'!');
+          celebrateRight('letter:'+focus, mode==='sound' ? 'Yes! '+GU(focus)+' makes '+PHONEMES[focus].cue+'!' : 'Yes! That is '+GU(focus)+'!');
           addStars(2);
           const rb=document.createElement('div'); rb.className='rainbow-bar';
           const cols=['#ef4444','#f97316','#facc15','#22c55e','#3b82f6','#8b5cf6','#ec4899'];
@@ -1137,60 +1300,198 @@ Games.bubbles = function(params){
   area.appendChild(row);
 };
 
-/* 5. Unicorn sound crystals */
+/* 5. Unicorn Sound Crystals — the flagship phonics activity.
+   Full-bleed felt meadow: no centred white card, no dashboard chrome.
+   The unicorn, Twinkle, the flowers and the crystals all live in one
+   scene, and the instruction lives in the scene rather than above it. */
 Games.crystals = function(params){
   params=params||{};
   const focus=usablePhonemes([params.focus||S.currentFocus])[0] || null;
   const area=$('game-area'); area.innerHTML='';
   if(!focus) return needGrownup(area);
+  area.dataset.scene='meadow';
+  area.classList.add('scene-full');
+  /* Let the scene own the whole screen: no instruction bar, no card. */
+  const gs=$('screen-game'); if(gs) gs.classList.add('screen-full');
   say('find-sound', 'Which letter makes this sound?');
-  twinkleSay('The unicorn lost her sound crystal! Listen! 🦄💎', {silent:true});
-  const uni=document.createElement('div'); uni.className='center unicorn-holder';
-  uni.innerHTML = (typeof unicornHTML==='function') ? unicornHTML('idle') : ((typeof unicornSVG==='function') ? unicornSVG() : '<div style="font-size:90px">🦄</div>');
-  area.appendChild(uni);
+
+  const scene=document.createElement('div'); scene.className='meadow';
+  scene.innerHTML = feltMeadowBg();
+  area.appendChild(scene);
   try{ if(typeof Art!=='undefined') Art.bg(area, 'bg-meadow'); }catch(e){}
-  const hear=document.createElement('div'); hear.className='center';
-  hear.innerHTML='<button class="big-magic-btn">🔊 Hear the magic sound</button>';
-  hear.querySelector('button').onclick=()=>AudioSys.playPhoneme(focus);
-  area.appendChild(hear);
-  setTimeout(()=>AudioSys.playPhoneme(focus), 2200);
-  const row=document.createElement('div'); row.className='choices';
-  const opts=shuffle([focus].concat(shuffle(PHONEME_ORDER.filter(p=>p!==focus)).slice(0,2)));
-  const colors=['linear-gradient(180deg,#67e8f9,#3b82f6)','linear-gradient(180deg,#f0abfc,#8b5cf6)','linear-gradient(180deg,#fda4af,#ec4899)'];
+
+  /* --- cast --- */
+  const uni=document.createElement('div'); uni.className='meadow-unicorn unicorn-holder';
+  uni.innerHTML = (typeof unicornHTML==='function') ? unicornHTML('idle') : '';
+  scene.appendChild(uni);
+
+  const tw=document.createElement('div'); tw.className='meadow-twinkle';
+  tw.innerHTML = (typeof twinkleHTML==='function') ? twinkleHTML('meadow','pointing') : '';
+  scene.appendChild(tw);
+
+  /* --- the one instruction, as an object in the world --- */
+  const orb=document.createElement('button');
+  orb.className='hear-orb'; orb.setAttribute('aria-label','Hear the magic sound');
+  orb.innerHTML='<span class="orb-ring"></span><span class="orb-note">🔊</span>';
+  orb.onclick=()=>{ AudioSys.playPhoneme(focus); orb.classList.remove('ping'); void orb.offsetWidth; orb.classList.add('ping'); };
+  scene.appendChild(orb);
+  after(1900, ()=>{ if(document.body.contains(orb)){ orb.classList.add('ping'); AudioSys.playPhoneme(focus); } });
+
+  /* --- three sticker gems --- */
+  const row=document.createElement('div'); row.className='crystal-row';
+  const opts=shuffle([focus].concat(distractors(focus, 2)));
+  const gemFills=[[FELT.sky,FELT.skyD],[FELT.lilac,FELT.lilacD],[FELT.pink,FELT.pinkD]];
   opts.forEach((L,i)=>{
-    const b=document.createElement('button'); b.className='crystal'; b.style.background=colors[i%3]; b.textContent=L.toUpperCase();
+    const b=document.createElement('button'); b.className='gem';
+    b.style.setProperty('--gd', (i*0.12)+'s');
+    b.innerHTML=feltGem(gemFills[i%3][0], gemFills[i%3][1]) + '<span class="gem-letter">'+GU(L)+'</span>';
     if(L===focus) b.dataset.correct='1';
     b.onclick=()=>{
-      if(L===focus){
-        AudioSys.sfx('magic');
-        // the crystal zips across the meadow into the unicorn's horn
-        try{
-          const r1=b.getBoundingClientRect(), u1=uni.getBoundingClientRect();
-          const fly=document.createElement('div');
-          fly.className='crystal-fly'; fly.textContent=L.toUpperCase();
-          fly.style.background=b.style.background||'#a78bfa';
-          fly.style.left=(r1.left+r1.width/2-34)+'px'; fly.style.top=(r1.top)+'px';
-          document.body.appendChild(fly);
-          requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
-            fly.style.left=(u1.left+u1.width/2-34)+'px'; fly.style.top=(u1.top+10)+'px';
-            fly.style.transform='scale(.55) rotate(20deg)'; fly.style.opacity='.9';
-          }); });
-          setTimeout(()=>{ fly.remove(); }, 850);
-        }catch(e){}
-        setTimeout(()=>{
-          try{ if(typeof unicornHTML==='function') uni.innerHTML=unicornHTML('happy'); else if(typeof unicornSVG==='function') uni.innerHTML=unicornSVG('happy'); }catch(e){}
-          uni.classList.add('happy');
-          AudioSys.sfx('sparkle'); sparkles(22);
-        }, 620);
-        celebrateRight('sound:'+focus, 'Yes! '+L.toUpperCase()+' makes '+PHONEMES[focus].cue+'! The unicorn is so happy!');
-        addStars(3);
-        after(2800, activityDone);
-      } else gentleNo(b);
+      if(L!==focus){ gentleNo(b); return; }
+      row.querySelectorAll('.gem').forEach(g=>{ if(g!==b) g.classList.add('gem-dim'); });
+      crystalSuccess(b, uni, tw, focus, L);
     };
     row.appendChild(b);
   });
-  area.appendChild(row);
+  scene.appendChild(row);
 };
+
+/* The success beat, in the order the spec asks for:
+   squash -> pop up -> fly to the unicorn -> horn lights -> unicorn bounces
+   -> happy pose -> mane/tail wobble -> sticker stars burst -> Twinkle reacts.
+   Everything is easing + overshoot on transforms; no skeletal rig. */
+function crystalSuccess(gem, uni, tw, focus, letter){
+  AudioSys.sfx('magic');
+  gem.classList.add('gem-squash');                                  /* 1 */
+
+  after(140, ()=>{
+    gem.classList.remove('gem-squash');
+    gem.classList.add('gem-pop');                                   /* 2 */
+  });
+
+  after(300, ()=>{                                                  /* 3 */
+    try{
+      const g=gem.getBoundingClientRect(), u=uni.getBoundingClientRect();
+      const fly=document.createElement('div');
+      fly.className='gem-fly';
+      fly.innerHTML=gem.innerHTML;
+      fly.style.left=(g.left+g.width/2)+'px';
+      fly.style.top=(g.top+g.height/2)+'px';
+      document.body.appendChild(fly);
+      gem.classList.add('gem-gone');
+      requestAnimationFrame(()=>{ requestAnimationFrame(()=>{
+        /* aim at the horn: top-centre of the unicorn box */
+        fly.style.left=(u.left+u.width/2)+'px';
+        fly.style.top=(u.top+u.height*0.10)+'px';
+        fly.style.transform='translate(-50%,-50%) scale(.35) rotate(24deg)';
+        fly.style.opacity='0';
+      }); });
+      setTimeout(()=>{ try{fly.remove();}catch(e){} }, 820);
+    }catch(e){}
+  });
+
+  after(940, ()=>{                                                  /* 4,5,6,7 */
+    uni.classList.add('horn-lit','uni-bounce');
+    try{ if(typeof unicornHTML==='function') uni.innerHTML=unicornHTML('happy'); }catch(e){}
+    uni.classList.add('mane-wobble');
+    AudioSys.sfx('sparkle');
+  });
+
+  after(1080, ()=> stickerBurst(uni));                              /* 8 */
+
+  after(1200, ()=>{                                                 /* 9 */
+    try{ if(typeof twinkleHTML==='function') tw.innerHTML=twinkleHTML('meadow','happy'); }catch(e){}
+    tw.classList.add('tw-cheer');
+  });
+
+  celebrateRight('sound:'+focus, 'Yes! '+GU(letter)+' makes '+PHONEMES[focus].cue+'! The unicorn is so happy!');
+  addStars(3);
+  after(2900, activityDone);
+}
+
+/* A burst of felt stars pinned to an element's centre. Pure transform +
+   opacity so it stays cheap on a tablet. */
+function stickerBurst(anchor, count){
+  if(!S.settings.motion) return;
+  let host=$('sparkle-layer'); if(!host) return;
+  let cx=window.innerWidth/2, cy=window.innerHeight/2;
+  try{ const r=anchor.getBoundingClientRect(); cx=r.left+r.width/2; cy=r.top+r.height*0.4; }catch(e){}
+  const cols=[FELT.butter, FELT.pink, FELT.mint, FELT.lilac, FELT.white];
+  const n=count||14;
+  for(let i=0;i<n;i++){
+    const a=(Math.PI*2/n)*i + Math.random()*0.4;
+    const dist=90+Math.random()*90;
+    const s=document.createElement('div');
+    s.className='burst-star';
+    s.style.left=cx+'px'; s.style.top=cy+'px';
+    s.style.setProperty('--dx',(Math.cos(a)*dist).toFixed(0)+'px');
+    s.style.setProperty('--dy',(Math.sin(a)*dist).toFixed(0)+'px');
+    s.style.setProperty('--rot',((Math.random()*180-90)|0)+'deg');
+    s.style.setProperty('--dly',(i*0.018).toFixed(3)+'s');
+    s.innerHTML='<svg viewBox="0 0 40 40" aria-hidden="true">'+feltStar(20,20,17,cols[i%cols.length])+'</svg>';
+    host.appendChild(s);
+    setTimeout(()=>{ try{s.remove();}catch(e){} }, 1100);
+  }
+}
+
+/* Felt gem shape used by the crystals and by the flying copy. */
+function feltGem(fill, deep){
+  return '<svg class="gem-svg felt" viewBox="0 0 120 148" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
+    + FELT_DEFS
+    + '<path class="pc" d="M60 4 L114 46 L94 138 L26 138 L6 46 Z" fill="'+fill+'"/>'
+    + '<path d="M60 4 L94 138 L60 138 Z" fill="'+deep+'" opacity=".35"/>'
+    + '<path d="M60 4 L26 138 L60 138 Z" fill="#fff" opacity=".22"/>'
+    + '<path d="M6 46 L114 46" stroke="#fff" stroke-width="4" opacity=".55"/>'
+    + '<path d="M22 62 q10 -14 24 -18" stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round" opacity=".75"/>'
+    + '</svg>';
+}
+
+/* The meadow itself: felt hills, distant castle, clouds, flowers, motes. */
+function feltMeadowBg(){
+  let s='<svg class="meadow-bg felt" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" '
+    + 'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+FELT_DEFS
+    + '<defs><linearGradient id="meadow-sky" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#CDEAFA"/><stop offset=".6" stop-color="#E9E2FB"/>'
+    + '<stop offset="1" stop-color="#FBEFDA"/></linearGradient></defs>'
+    + '<rect width="1200" height="700" fill="url(#meadow-sky)"/>'
+    + '<circle cx="150" cy="110" r="52" fill="'+FELT.butter+'" opacity=".85"/>';
+  [[330,90,.85],[700,68,1],[1020,130,.75]].forEach(function(c){
+    s+='<g class="cloud" transform="translate('+c[0]+','+c[1]+') scale('+c[2]+')" style="--d:'+(c[2]*8).toFixed(1)+'s">'
+      + '<ellipse class="pc" cx="0" cy="0" rx="48" ry="30" fill="'+FELT.white+'"/>'
+      + '<ellipse class="pc" cx="42" cy="9" rx="36" ry="23" fill="'+FELT.white+'"/>'
+      + '<ellipse class="pc" cx="-40" cy="10" rx="31" ry="20" fill="'+FELT.white+'"/></g>';
+  });
+  /* distant castle */
+  s+='<g opacity=".62" transform="translate(880,300) scale(1.5)">'
+    + '<rect class="pc" x="0" y="30" width="18" height="52" rx="6" fill="'+FELT.lilacL+'"/>'
+    + '<rect class="pc" x="58" y="30" width="18" height="52" rx="6" fill="'+FELT.lilacL+'"/>'
+    + '<rect class="pc" x="20" y="42" width="36" height="40" rx="6" fill="'+FELT.white+'"/>'
+    + '<path class="pc" d="M-4 32 L9 8 L22 32 z" fill="'+FELT.pink+'"/>'
+    + '<path class="pc" d="M54 32 L67 8 L80 32 z" fill="'+FELT.pink+'"/>'
+    + '<path class="pc" d="M16 44 L38 20 L60 44 z" fill="'+FELT.pinkD+'"/></g>';
+  /* hills */
+  s+='<path class="pc" d="M-20 452 q200 -96 420 -24 q210 68 400 -22 q190 -88 420 12 l0 300 l-1260 0 z" fill="'+FELT.mint+'"/>'
+    + '<path class="pc" d="M-20 540 q240 -80 470 -12 q250 62 480 -26 q160 -60 300 6 l0 220 l-1260 0 z" fill="'+FELT.grass+'"/>'
+    + feltStitch('M10 558 q230 -66 450 -6 q250 60 470 -24 q150 -54 290 4','rgba(255,255,255,.6)',3);
+  /* bushes + flowers */
+  [[110,600,1],[360,636,.8],[1090,608,.9]].forEach(function(b){
+    s+='<g transform="translate('+b[0]+','+b[1]+') scale('+b[2]+')">'
+      + feltLobe(0,0,46,31, FELT.grassD) + feltLobe(-32,9,31,22, FELT.grass) + feltLobe(34,10,29,20, FELT.grass) + '</g>';
+  });
+  [[60,672,1.1,FELT.pink],[250,694,1,FELT.butter],[470,676,.9,FELT.lilac],
+   [980,690,1.05,FELT.pink],[1150,664,.9,FELT.butter]].forEach(function(f){
+    s+='<g transform="translate('+f[0]+','+f[1]+') scale('+f[2]+')">'
+      + '<path d="M0 34 q-4 -22 0 -34" stroke="'+FELT.grassD+'" stroke-width="5" fill="none" stroke-linecap="round"/>'
+      + feltFlower(0,0,20,f[3]) + '</g>';
+  });
+  /* floating magical motes */
+  for(let i=0;i<10;i++){
+    const x=110+i*112, y=200+((i*83)%230), sc=(0.45+((i*17)%6)/10).toFixed(2);
+    s+='<g class="wsparkle" style="--i:'+i+'" transform="translate('+x+','+y+') scale('+sc+')">'
+      + feltStar(0,0,13, FELT.white)+'</g>';
+  }
+  return s+'</svg>';
+}
 
 /* 6. First sound mirror */
 Games.firstSound = function(params){
@@ -1229,8 +1530,11 @@ Games.firstSound = function(params){
 /* 7. Rainbow letter match (upper/lower) */
 Games.matchCase = function(){
   const area=$('game-area'); area.innerHTML='';
-  const letters = shuffle(S.unlocked.filter(x=>PHONEMES[x]).slice(0,3));
-  while(letters.length<3){ const c=PHONEME_ORDER.find(p=>!letters.includes(p)); letters.push(c); }
+  /* Letter-shape matching still only uses sounds a human has approved, so
+     Layla never meets a grapheme the app cannot say out loud. */
+  let letters = shuffle(usablePhonemes(S.unlocked)).slice(0,3);
+  if(letters.length<2) letters = usablePhonemes(PHONEME_ORDER).slice(0,3);
+  if(!letters.length) return needGrownup(area);
   setInstruction('Match BIG and little letters!', 'Match the big letter with its little letter friend!');
   twinkleSay('Each pair brings back a rainbow color! 🌈', {silent:true});
   AudioSys.playVoice('match-letters', 'Match the big letter with its little letter friend!');
@@ -1241,12 +1545,12 @@ Games.matchCase = function(){
   let selected=null;
   letters.forEach(L=>{
     const b=document.createElement('button'); b.className='choice-card'; b.dataset.up=L;
-    b.innerHTML='<span class="big-letter">'+L.toUpperCase()+'</span>';
+    b.innerHTML='<span class="big-letter">'+GU(L)+'</span>';
     b.onclick=()=>{
       AudioSys.sfx('flip');
       top.querySelectorAll('.choice-card').forEach(x=>x.style.borderColor='#f0abfc');
       b.style.borderColor='#fbbf24'; selected=L;
-      AudioSys.speak('Big '+L.toUpperCase()+'.');
+      AudioSys.speak('Big '+GU(L)+'.');
     };
     top.appendChild(b);
   });
@@ -1258,7 +1562,7 @@ Games.matchCase = function(){
       if(L===selected){
         b.classList.add('correct');
         const up=top.querySelector('[data-up="'+L+'"]'); if(up) up.classList.add('correct');
-        AudioSys.sfx('success'); AudioSys.speak('Yes! '+L.toUpperCase()+' and '+L.toLowerCase()+' match!');
+        AudioSys.sfx('success'); AudioSys.speak('Yes! '+GU(L)+' and '+G(L)+' match!');
         record('case:'+L, firstTryFlag&&attemptsThisItem===0);
         pairs++; addStars(1); sparkles(10);
         selected=null;
@@ -1294,8 +1598,10 @@ Games.rescue = function(params){
     + ((typeof cottageDoorSVG==='function') ? cottageDoorSVG() : '<div style="font-size:44px">🚪</div>');
   area.appendChild(wrap);
   const stage=document.createElement('div'); stage.className='blend-stage';
-  w.ph.forEach(p=>{
-    const d=document.createElement('div'); d.className='blend-letter'; d.textContent=p; stage.appendChild(d);
+  /* Show the SPELLING under each sound — 'moon' is m-oo-n, three sounds. */
+  w.ph.forEach((p,i)=>{
+    const d=document.createElement('div'); d.className='blend-letter';
+    d.textContent=(w.gr&&w.gr[i])||G(p); stage.appendChild(d);
   });
   area.appendChild(stage);
   const btnRow=document.createElement('div'); btnRow.className='center';
@@ -1375,21 +1681,29 @@ Games.buildWord = function(params){
   area.appendChild(pic);
   const slots=document.createElement('div'); slots.className='slot-row';
   const slotEls=[];
+  /* A slot wants a SOUND (dataset.want) but shows a SPELLING (dataset.gr). */
   w.ph.forEach((p,i)=>{
-    const s=document.createElement('div'); s.className='slot'+(i===0?' next':''); s.dataset.want=p; slots.appendChild(s); slotEls.push(s);
+    const s=document.createElement('div'); s.className='slot'+(i===0?' next':'');
+    s.dataset.want=p; s.dataset.gr=(w.gr&&w.gr[i])||G(p);
+    slots.appendChild(s); slotEls.push(s);
   });
   area.appendChild(slots);
-  const pool=shuffle(w.ph.concat(shuffle(PHONEME_ORDER.filter(p=>!w.ph.includes(p))).slice(0,2)));
+  /* Tiles pair the sound with the letters that spell it in THIS word, so
+     'cat' offers a c-tile for /k/ while 'kite' would offer a k-tile. */
+  const own = w.ph.map((p,i)=>({ph:p, gr:(w.gr&&w.gr[i])||G(p)}));
+  const extra = shuffle(usablePhonemes(PHONEME_ORDER).filter(p=>w.ph.indexOf(p)<0))
+                  .slice(0,2).map(p=>({ph:p, gr:G(p)}));
+  const pool=shuffle(own.concat(extra));
   const tiles=document.createElement('div'); tiles.className='tile-row';
   let next=0;
   pool.forEach(ch=>{
-    const b=document.createElement('button'); b.className='tile'; b.textContent=ch;
+    const b=document.createElement('button'); b.className='tile'; b.textContent=ch.gr;
     b.onclick=()=>{
       if(next>=slotEls.length) return;
       const slot=slotEls[next];
-      if(ch===slot.dataset.want){
-        slot.textContent=ch; slot.classList.add('filled'); slot.classList.remove('next');
-        b.classList.add('used'); AudioSys.playPhoneme(ch);
+      if(ch.ph===slot.dataset.want && ch.gr===slot.dataset.gr){
+        slot.textContent=ch.gr; slot.classList.add('filled'); slot.classList.remove('next');
+        b.classList.add('used'); AudioSys.playPhoneme(ch.ph);
         next++; if(slotEls[next]) slotEls[next].classList.add('next');
         if(next>=slotEls.length){
           record('spell:'+w.t, firstTryFlag&&attemptsThisItem===0);
@@ -1401,7 +1715,7 @@ Games.buildWord = function(params){
             after(2600, activityDone);
           }});
         }
-      } else { attemptsThisItem++; gentleNo(b, 'Hmm, we need '+slot.dataset.want+'. Listen!'); AudioSys.playPhoneme(slot.dataset.want); }
+      } else { attemptsThisItem++; gentleNo(b, 'Hmm, we need '+String(slot.dataset.gr).toUpperCase()+'. Listen!'); AudioSys.playPhoneme(slot.dataset.want); }
     };
     tiles.appendChild(b);
   });
@@ -1455,7 +1769,7 @@ Games.ballet = function(){
   let idx=0, target=steps[0];
   const floor=document.createElement('div'); floor.className='ballet-floor';
   steps.forEach(s=>{
-    const b=document.createElement('button'); b.className='ballet-tile'; b.textContent=s.toUpperCase(); b.dataset.s=s;
+    const b=document.createElement('button'); b.className='ballet-tile'; b.textContent=GU(s); b.dataset.s=s;
     b.onclick=()=>{
       if(s===target){
         b.style.background='linear-gradient(180deg,#fef3c7,#fcd34d)'; AudioSys.sfx('success');
@@ -1515,7 +1829,7 @@ Games.rhyme = function(){
 /* 13. Tracing */
 Games.trace = function(params){
   params=params||{};
-  const L=(params.letter||S.currentFocus||'s').toUpperCase();
+  const L=GU(params.letter||S.currentFocus||'s');
   const area=$('game-area'); area.innerHTML='';
   setInstruction('Trace the sparkly '+L+'!', 'Trace the letter '+L+' with your finger!');
   twinkleSay('Slow and sparkly! ✨', {silent:true});
@@ -1670,37 +1984,61 @@ function goCastleWithReward(r){
   openCastle();
   setClosetTab(tabForCat(r.cat));
 }
+/* Reward reveal. The prize is NOT in the DOM while the chest is shut —
+   not hidden, not transparent, not present. It is built at reveal time, so
+   there is nothing to glimpse, inspect, or flash on a slow frame.
+   Beat order: closed -> shake -> pop open -> glow -> item rises -> name
+   -> Try It On. */
 function showReward(r){
   rewardState='closed'; rewardCurrent=r;
   const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
-  ri.textContent=r.emoji; rn.textContent=r.name;
+  ri.innerHTML=''; rn.textContent='';
   ri.classList.remove('revealed'); rn.classList.remove('revealed');
-  ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'🎁');
-  ch.classList.remove('open','shaking');
+  ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'');
+  ch.classList.remove('open','shaking','glowing');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
   $('reward-modal').classList.remove('hidden');
   twinkleSay('Something magical is waiting! Tap the chest! 🎁', {silent:true});
   twinklePose('happy');
+
   $('btn-reward-open').onclick=()=>{
     if(rewardState!=='closed') return;
     rewardState='opening';
-    ch.classList.add('shaking');
+    $('btn-reward-open').classList.add('hidden');
+    ch.classList.add('shaking');                                   /* shake */
     AudioSys.sfx('chest');
-    setTimeout(()=>{
+
+    after(700, ()=>{
       if(rewardState!=='opening') return;
-      if(typeof chestHTML==='function'){ ch.innerHTML=chestHTML(true); }
-    else if(typeof chestSVG==='function'){ ch.innerHTML=chestSVG(true); }
-      ch.classList.remove('shaking'); ch.classList.add('open');
-      ri.classList.add('revealed'); rn.classList.add('revealed');
+      /* pop open */
+      if(typeof chestHTML==='function') ch.innerHTML=chestHTML(true);
+      else if(typeof chestSVG==='function') ch.innerHTML=chestSVG(true);
+      ch.classList.remove('shaking');
+      ch.classList.add('open','glowing');                          /* glow  */
+      AudioSys.sfx('sparkle');
+    });
+
+    after(1150, ()=>{
+      if(rewardState!=='opening') return;
+      /* only NOW does the prize exist */
+      ri.innerHTML = (typeof rewardFeltArt==='function') ? rewardFeltArt(r) : '';
+      requestAnimationFrame(()=>ri.classList.add('revealed'));     /* rises */
+      AudioSys.sfx('fanfare'); confettiBlast();
+      if(typeof stickerBurst==='function') stickerBurst(ri, 16); else sparkles(24);
+    });
+
+    after(1600, ()=>{
+      if(rewardState!=='opening') return;
+      rn.textContent=r.name;
+      rn.classList.add('revealed');                                /* name  */
       rewardState='revealed';
-      AudioSys.sfx('fanfare'); confettiBlast(); sparkles(24);
       AudioSys.playVoice('look-unlocked', 'Look what you unlocked! '+r.name+'!');
-      // auto-equip wearable so it is immediately usable
-      const slot = r.cat;
+      /* auto-equip wearables so "try it on" is instant */
+      const slot=r.cat;
       if(slot && S.equipped.hasOwnProperty(slot)){ S.equipped[slot]=r.id; save(); }
-      $('btn-reward-open').classList.add('hidden');
-      const b=$('btn-reward-castle'); b.classList.remove('hidden');
+      const b=$('btn-reward-castle');
+      b.classList.remove('hidden');                                /* CTA   */
       AudioSys.playVoice('try-it-on', "Let's try it on!");
       b.onclick=()=>{
         const r2=rewardCurrent||r, afterFn=rewardAfterCastle;
@@ -1708,7 +2046,7 @@ function showReward(r){
         goCastleWithReward(r2);
         if(afterFn) after(1400, afterFn);
       };
-    }, 750);
+    });
   };
 }
 function awardSticker(id, silent){
@@ -1765,15 +2103,11 @@ function renderCloset(){
   REWARDS.filter(r=>r.cat===closetTab).forEach(r=>{
     const owned=S.rewards.includes(r.id);
     const d=document.createElement('button'); d.className='closet-item'+(owned?'':' locked')+(S.equipped[closetTab]===r.id?' equipped':'');
-    let icon = owned?r.emoji:'🔒';
+    /* Trays show the real garment as a felt cut-out, never an emoji.
+       Locked slots show a blank felt tag so the tray still reads as a tray. */
+    let icon = '<span class="tray-locked">?</span>';
     try{
-      if(owned && typeof dressSwatch==='function'){
-        if(r.cat==='dress') icon=dressSwatch(r.id);
-        else if(r.cat==='crown') icon=crownSwatch(r.id);
-        else if(r.cat==='shoes') icon=shoeSwatch(r.id);
-        else if(r.cat==='wings') icon=wingSwatch();
-        else if(r.cat==='necklace') icon=necklaceSwatch();
-      }
+      if(owned && typeof rewardFeltArt==='function') icon = rewardFeltArt(r);
     }catch(e){}
     d.innerHTML='<span>'+icon+'</span><span class="cname">'+(owned?r.name:'???')+'</span>'+(S.equipped[closetTab]===r.id?'<span class="equip-badge">💖</span>':'');
     d.onclick=()=>{
@@ -1805,24 +2139,35 @@ function renderRoom(){
     if(stars) stars.setAttribute('opacity', eq.wallpaper==='wall-star' ? '1' : '.55');
     const ch = room.querySelector('.room-chandelier');
     if(ch) ch.style.display = eq.furniture==='lamp-chandelier' ? '' : 'none';
-    const pet = room.querySelector('.room-pet-emoji');
-    if(pet){
-      const p = REWARDS.find(r=>r.id===eq.pet);
-      pet.textContent = p?p.emoji:'🐱';
-    }
-    const win = room.querySelector('.room-window text');
-    if(win){
-      const w = REWARDS.find(r=>r.id===eq.window);
-      win.textContent = w ? w.emoji : '🌈';
-    }
+    /* Room props are felt cut-outs, not emoji. Each hook is an empty <g> in
+       the room SVG; drop a nested <svg> in and size it by its own viewBox,
+       so a swatch can be reused verbatim from the dressing-room trays. */
+    const placeIn = (host, art, x, y, w) => {
+      if(!host) return;
+      host.innerHTML = '';
+      if(!art) return;
+      host.innerHTML = art;                       // nested <svg> is valid in <g>
+      const svg = host.querySelector('svg');
+      if(!svg) return;
+      const vb = (svg.getAttribute('viewBox')||'0 0 160 120').split(/[\s,]+/).map(Number);
+      svg.setAttribute('x', x);
+      svg.setAttribute('y', y);
+      svg.setAttribute('width', w);
+      svg.setAttribute('height', (w * (vb[3]/vb[2])).toFixed(1));
+      svg.removeAttribute('class');
+    };
+    const byId = id => REWARDS.find(r=>r.id===id);
+    placeIn(room.querySelector('.room-pet'),        eq.pet    ? rewardFeltArt(byId(eq.pet))    : '', 108, 386,  86);
+    placeIn(room.querySelector('.room-window-art'), eq.window ? rewardFeltArt(byId(eq.window)) : '', 352,  78, 156);
+    placeIn(room.querySelector('.room-shelf-art'),  eq.crown  ? rewardFeltArt(byId(eq.crown))  : '', 494, 206,  72);
     const dec = room.querySelector('.room-decor');
     if(dec){
       dec.innerHTML='';
-      const owned = REWARDS.filter(r=>r.cat==='decor'&&S.rewards.includes(r.id)).slice(0,3);
-      const spots=[[330,300],[370,320],[290,320]];
-      owned.forEach((d,i)=>{
-        const t=document.createElementNS ? document.createElementNS('http://www.w3.org/2000/svg','text') : document.createElement('span');
-        if(t.setAttribute){ t.setAttribute('x',spots[i][0]); t.setAttribute('y',spots[i][1]); t.setAttribute('font-size','34'); t.textContent=d.emoji; dec.appendChild(t); }
+      const spots=[[92,54],[726,104],[44,286]];
+      REWARDS.filter(r=>r.cat==='decor' && S.rewards.includes(r.id)).slice(0,3).forEach((d,i)=>{
+        const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+        dec.appendChild(g);
+        placeIn(g, rewardFeltArt(d), spots[i][0], spots[i][1], 84);
       });
     }
   }
@@ -2076,118 +2421,361 @@ AudioSys.inspect = function(src){
     }catch(e){ done({ok:false}); }
   });
 };
-const PHONEME_TARGETS = {s:'sustained /s/ as in sun', a:'short a as in sat', t:'brief /t/ — no added vowel',
-  p:'brief /p/ — no added vowel', i:'short i as in sit', n:'sustained /n/', m:'sustained /m/',
-  d:'brief /d/', g:'brief /g/', o:'short o as in otter', c:'brief /k/ as in cat',
-  k:'brief /k/ as in kite', l:'name letters only — no phonics use'};
+/* ============ SOUND LIBRARY — bulk human approval ====================
+   The parent is the only thing that can put a sound in front of Layla.
+   This screen exists to make listening to ~43 recordings quick rather
+   than to make approving them quick: there is no "approve all", and a
+   row cannot be approved until it has actually been played.
+
+   Layout is one compact row per sound:
+       [ai]  /eɪ/ long a as in rain   ▶  ✓  ✗   UNREVIEWED
+   with a moving cursor so the parent can work through the list on the
+   keyboard alone:
+       Space / P  play the current sound
+       A          approve   R  reject   U  back to unreviewed
+       J / ↓      next      K / ↑  previous
+       Enter      approve the current sound and play the next one
+   ==================================================================== */
 let qaPlayed = {};
 let qaRec = null;
+let qaFilter = 'all';          // all | UNREVIEWED | APPROVED | REJECTED
+let qaCursor = 0;              // index into the currently visible rows
+let qaKeysBound = false;
+
+function qaTarget(id){
+  const e = Phonics.byId[Phonics.resolve(id)];
+  return e ? e.target : '';
+}
+/* Rows currently shown, in teaching order. */
+function qaVisibleIds(){
+  return PHONEME_ORDER.filter(function(id){
+    if(qaFilter==='all') return true;
+    const man = manifestOf(id);
+    if(qaFilter==='MISSING') return !!(man && man.approvalStatus==='MISSING');
+    return approvalOf(id).st === qaFilter;
+  });
+}
+function qaSetApproval(id, st){
+  const a = approvalOf(id);
+  if(st==='APPROVED'){
+    const man = manifestOf(id);
+    if(man && man.approvalStatus==='MISSING'){ toast('No audio file for this sound.'); return false; }
+    if(!qaPlayed[id]){ toast('Play it first — listen, then approve. 👂'); return false; }
+    a.st='APPROVED';
+    a.dev=false;
+    /* Bind the approval to the exact bytes that were listened to. */
+    a.hash = (man && man.sha256) || null;
+  } else {
+    a.st = st;
+    if(st!=='APPROVED') a.hash = null;
+  }
+  save();
+  return true;
+}
+function qaPlay(id){
+  qaPlayed[id] = true;
+  const a = approvalOf(id);
+  if(a.custom){
+    PhonemeDB.get(id).then(function(blob){
+      if(!blob){ AudioSys.playPhoneme(id, {audit:true}); return; }
+      try{
+        const url=URL.createObjectURL(blob);
+        Speech.request(2,'audit-mine:'+id,'word',function(c,done,tr){ Speech.playFile(url,null,tr).then(function(){ done('done'); }); });
+      }catch(e){ AudioSys.playPhoneme(id, {audit:true}); }
+    });
+  } else {
+    /* audit:true bypasses the approval gate — this screen is the only
+       place an unapproved sound is ever allowed to make a noise. */
+    AudioSys.playPhoneme(id, {audit:true});
+  }
+  qaPaint();
+}
+function qaMove(delta){
+  const ids = qaVisibleIds();
+  if(!ids.length) return;
+  qaCursor = Math.max(0, Math.min(ids.length-1, qaCursor+delta));
+  qaPaint(true);
+}
+/* Advance after a decision.
+   Under a filter like "To review", the row just decided DROPS OUT of the
+   list, so the next sound slides into the index the cursor already holds.
+   Moving +1 there would silently skip a sound — which is the one thing this
+   screen must never do. So only step forward when the list did not shrink. */
+function qaAdvanceAfterDecision(){
+  const before = qaVisibleIds().length;
+  const ids = qaVisibleIds();
+  if(qaFilter === 'all'){ qaMove(1); return; }
+  if(qaCursor >= ids.length) qaCursor = Math.max(0, ids.length - 1);
+  qaPaint(true);
+}
+function qaCurrentId(){
+  const ids = qaVisibleIds();
+  return ids[Math.min(qaCursor, ids.length-1)] || null;
+}
+function qaBindKeys(){
+  if(qaKeysBound) return;
+  qaKeysBound = true;
+  document.addEventListener('keydown', function(ev){
+    const scr=$('screen-parent');
+    if(!scr || !scr.classList.contains('active')) return;
+    const t=ev.target;
+    if(t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+    const id = qaCurrentId();
+    const k = ev.key;
+    if(k===' ' || k==='p' || k==='P'){ if(id) qaPlay(id); ev.preventDefault(); return; }
+    if(k==='j' || k==='J' || k==='ArrowDown'){ qaMove(1); ev.preventDefault(); return; }
+    if(k==='k' || k==='K' || k==='ArrowUp'){ qaMove(-1); ev.preventDefault(); return; }
+    if(k==='a' || k==='A'){ if(id && qaSetApproval(id,'APPROVED')) qaPaint(); ev.preventDefault(); return; }
+    if(k==='r' || k==='R'){ if(id){ qaSetApproval(id,'REJECTED'); qaPaint(); } ev.preventDefault(); return; }
+    if(k==='u' || k==='U'){ if(id){ qaSetApproval(id,'UNREVIEWED'); qaPaint(); } ev.preventDefault(); return; }
+    if(k==='Enter'){
+      if(id && qaSetApproval(id,'APPROVED')){
+        qaAdvanceAfterDecision();
+        const nxt=qaCurrentId(); if(nxt && nxt!==id) qaPlay(nxt);
+      }
+      ev.preventDefault(); return;
+    }
+  });
+}
+
 function renderAudioQA(){
   const box=$('audio-qa'); if(!box) return;
+  /* If the manifest has not arrived yet, fetch it — it re-renders on load. */
+  if(!PHONEME_MANIFEST){ try{ loadPhonemeManifest(); }catch(e){} }
+  qaBindKeys();
   renderAudioDebug();
-  const ids = FOCUS_PHONEMES.concat(PHONEME_ORDER.filter(x=>FOCUS_PHONEMES.indexOf(x)<0), ['l']);
   box.innerHTML='';
+
+  const counts = approvalCounts();
+  const total = PHONEME_ORDER.length;
+  const prov = (PHONEME_MANIFEST && PHONEME_MANIFEST._provider) || Phonics.provider;
+
+  /* ---- summary + licence ---- */
   const sum=$('audio-qa-summary');
-  const approvedFocus = FOCUS_PHONEMES.filter(id=>approvalOf(id).st==='APPROVED').length;
-  sum.innerHTML='Focus sounds human-approved: <b>'+approvedFocus+'/6</b> (s a t p i n). '
-    +'<br><span style="font-size:12px">Nothing enters Layla\u2019s games until you listen (\u25B6 Hear) and tap \u2705 Approve. '
-    +'Approve upcoming sounds too, so play never stalls. Focus-six recordings: s5s5/phonics by Xiaochao Liu, MIT License.</span>'
-    +'<br><span id="qa-vw">Checking voice & words…</span>';
-  ids.forEach(id=>{
-    const row=document.createElement('div'); row.className='qa-row qa-tall';
-    const apv=approvalOf(id);
-    const man=(typeof PHONEME_MANIFEST!=='undefined'&&PHONEME_MANIFEST&&PHONEME_MANIFEST[id])||null;
-    const invalid = man && !man.valid;
-    const top=document.createElement('div'); top.className='qa-top';
-    const lab=document.createElement('b'); lab.textContent=id.toUpperCase();
-    const tgt=document.createElement('span'); tgt.className='qa-target'; tgt.textContent=PHONEME_TARGETS[id]||'';
-    const st=document.createElement('span'); st.className='qa-st';
-    top.appendChild(lab); top.appendChild(tgt); top.appendChild(st);
-    row.appendChild(top);
-    const ctl=document.createElement('div'); ctl.className='qa-ctl';
-    const bHear=document.createElement('button'); bHear.textContent='\u25B6 Hear';
-    bHear.onclick=()=>{ qaPlayed[id]=true; AudioSys.playPhoneme(id,{audit:true}); paintQAStatus(); };
-    const bRec=document.createElement('button'); bRec.textContent='\u25CF Record';
-    const bMine=document.createElement('button'); bMine.textContent='\u25B6 Mine';
-    const bFileL=document.createElement('label'); bFileL.className='qa-file'; bFileL.textContent='\uD83D\uDCC1';
+  if(sum){
+    sum.innerHTML =
+      '<div class="qa-tally">'
+      + '<b>' + counts.APPROVED + '</b> approved · '
+      + '<b>' + counts.UNREVIEWED + '</b> to review · '
+      + '<b>' + counts.REJECTED + '</b> rejected'
+      + (counts.MISSING ? ' · <b style="color:#dc2626">' + counts.MISSING + '</b> missing' : '')
+      + ' &nbsp;of ' + total + '</div>'
+      + '<div class="qa-note">Only <b>approved</b> sounds ever reach Layla. Nothing here is '
+      + 'approved automatically — play it, decide, then tap ✓ or ✗.</div>'
+      + '<div class="qa-note qa-keys">Keyboard: <b>Space</b> play · <b>A</b> approve · '
+      + '<b>R</b> reject · <b>J/K</b> move · <b>Enter</b> approve &amp; play next</div>'
+      + '<div class="qa-note qa-licence">Source: <b>' + prov.provider + '</b> · '
+      + prov.license + ' · <a href="' + prov.sourceUrl + '" target="_blank" rel="noopener">repo</a> · '
+      + '<a href="' + prov.licenseUrl + '" target="_blank" rel="noopener">licence</a><br>'
+      + prov.attribution + ' — redistribution ' + prov.redistribution.split(' (')[0]
+      + ', commercial use ' + prov.commercialUse.split(' (')[0] + '.</div>'
+      + '<div id="qa-vw" class="qa-note">Checking voice &amp; word clips…</div>';
+  }
+
+  /* ---- filter chips ---- */
+  const bar=document.createElement('div'); bar.className='qa-filters';
+  [['all','All ('+total+')'],
+   ['UNREVIEWED','To review ('+counts.UNREVIEWED+')'],
+   ['APPROVED','Approved ('+counts.APPROVED+')'],
+   ['REJECTED','Rejected ('+counts.REJECTED+')']].forEach(function(f){
+    const b=document.createElement('button');
+    b.className='qa-filter'+(qaFilter===f[0]?' on':'');
+    b.textContent=f[1];
+    b.onclick=function(){ qaFilter=f[0]; qaCursor=0; renderAudioQA(); };
+    bar.appendChild(b);
+  });
+  box.appendChild(bar);
+
+  const ids = qaVisibleIds();
+  if(!ids.length){
+    const empty=document.createElement('div'); empty.className='qa-note';
+    empty.textContent='Nothing in this filter.';
+    box.appendChild(empty);
+    return;
+  }
+  if(qaCursor >= ids.length) qaCursor = ids.length-1;
+
+  /* ---- rows, grouped by teaching phase ---- */
+  let lastPhase=null;
+  const list=document.createElement('div'); list.className='qa-list';
+  ids.forEach(function(id, idx){
+    const entry = Phonics.byId[id];
+    const man = manifestOf(id);
+    const missing = !!(man && man.approvalStatus==='MISSING');
+
+    if(entry && entry.phase!==lastPhase){
+      lastPhase = entry.phase;
+      const ph = Phonics.phases.filter(function(x){ return x.id===lastPhase; })[0];
+      const h=document.createElement('div'); h.className='qa-phase';
+      h.innerHTML='<b>'+(ph?ph.label:lastPhase)+'</b> <span>'+(ph?ph.note:'')+'</span>';
+      list.appendChild(h);
+    }
+
+    const row=document.createElement('div');
+    row.className='qa-line';
+    row.dataset.id=id;
+    if(idx===qaCursor) row.classList.add('cursor');
+    row.onclick=function(ev){
+      if(ev.target.closest('button,label')) return;
+      qaCursor=idx; qaPaint(true);
+    };
+
+    /* grapheme chip — all the spellings this one sound has */
+    const gr=document.createElement('span'); gr.className='qa-gr';
+    gr.innerHTML = entry.graphemes.map(function(g,i){
+      return '<b'+(i===0?' class="pri"':'')+'>'+g+'</b>';
+    }).join('<i>/</i>');
+    row.appendChild(gr);
+
+    /* phoneme label */
+    const lab=document.createElement('span'); lab.className='qa-lab';
+    lab.innerHTML='<span class="qa-ipa">/'+entry.ipa+'/</span>'
+      + '<span class="qa-pid">'+entry.id+'</span>'
+      + '<span class="qa-tgt">'+qaTarget(id)+'</span>';
+    row.appendChild(lab);
+
+    /* controls */
+    const ctl=document.createElement('span'); ctl.className='qa-ctl';
+    const bPlay=document.createElement('button'); bPlay.className='qa-play'; bPlay.textContent='▶';
+    bPlay.title='Play this sound';
+    bPlay.onclick=function(){ qaCursor=idx; qaPlay(id); };
+    const bOk=document.createElement('button'); bOk.className='qa-ok'; bOk.textContent='✓'; bOk.title='Approve (A)';
+    bOk.onclick=function(){ qaCursor=idx; if(qaSetApproval(id,'APPROVED')){ if(qaFilter==='all') qaPaint(); else renderAudioQA(); } };
+    const bNo=document.createElement('button'); bNo.className='qa-no'; bNo.textContent='✗'; bNo.title='Reject (R)';
+    bNo.onclick=function(){ qaCursor=idx; qaSetApproval(id,'REJECTED'); if(qaFilter==='all') qaPaint(); else renderAudioQA(); };
+    [bPlay,bOk,bNo].forEach(function(b){ ctl.appendChild(b); });
+    row.appendChild(ctl);
+
+    /* status */
+    const st=document.createElement('span'); st.className='qa-status';
+    row.appendChild(st);
+
+    /* per-row detail drawer: provenance + parent's own recording */
+    const more=document.createElement('div'); more.className='qa-more';
+    const bRec=document.createElement('button'); bRec.className='qa-mini'; bRec.textContent='● Record';
+    const timerEl=document.createElement('span'); timerEl.className='qa-timer';
+    bRec.onclick=function(){ qaRecordToggle(id, bRec, timerEl); };
+    const bFileL=document.createElement('label'); bFileL.className='qa-file qa-mini'; bFileL.textContent='📁 Replace';
     const bFile=document.createElement('input'); bFile.type='file'; bFile.accept='audio/*'; bFile.style.display='none';
     bFileL.appendChild(bFile);
-    const bOk=document.createElement('button'); bOk.textContent='\u2705'; bOk.title='Approve';
-    const bNo=document.createElement('button'); bNo.textContent='\u274C'; bNo.title='Reject';
-    const timerEl=document.createElement('span'); timerEl.className='qa-timer';
-    bRec.onclick=()=>qaRecordToggle(id, bRec, timerEl);
-    bMine.onclick=()=>{
-      PhonemeDB.get(id).then(blob=>{
-        if(!blob){ toast('No parent recording yet. Tap \u25CF Record or \uD83D\uDCC1 first.'); return; }
-        qaPlayed[id]=true;
-        try{ const url=URL.createObjectURL(blob); Speech.request(2,'audit-mine:'+id,'word',(c,done,tr)=>{ Speech.playFile(url,null,tr).then(()=>done('done')); }); }catch(e){}
-        paintQAStatus();
-      });
-    };
-    bFile.onchange=()=>{
+    bFile.onchange=function(){
       const f=bFile.files && bFile.files[0];
       if(!f) return;
-      PhonemeDB.put(id, f).then(()=>{
-        const a2=approvalOf(id); a2.st='UNREVIEWED'; a2.custom=true; a2.played=false; save();
+      PhonemeDB.put(id, f).then(function(){
+        const a=approvalOf(id); a.st='UNREVIEWED'; a.custom=true; a.played=false; a.hash=null; save();
         qaPlayed[id]=false;
-        toast('Saved. Listen (\u25B6 Mine) then approve. \uD83D\uDCC1');
+        toast('Saved. Play it, then approve. 📁');
         renderAudioQA();
-      }).catch(()=>toast('Could not save that file.'));
+      }).catch(function(){ toast('Could not save that file.'); });
       bFile.value='';
     };
-    bOk.onclick=()=>{
-      if(invalid){ toast('Manifest marks this INVALID — cannot approve.'); return; }
-      if(!qaPlayed[id]){ toast('Tap \u25B6 Hear first — listen, then approve. \uD83D\uDC42'); return; }
-      approvalOf(id).st='APPROVED'; save();
-      toast(id.toUpperCase()+' approved! \u2705');
-      renderAudioQA();
-    };
-    bNo.onclick=()=>{ approvalOf(id).st='REJECTED'; save(); renderAudioQA(); };
-    [bHear,bRec,bMine,bFileL,bOk,bNo,timerEl].forEach(el=>ctl.appendChild(el));
-    row.appendChild(ctl);
-    const src=document.createElement('div'); src.className='qa-src';
-    box.appendChild(row);
-    const paint=()=>{
-      const a2=approvalOf(id);
-      let label, color;
-      if(invalid){ label='INVALID — DO NOT USE'; color='#dc2626'; }
-      else if(a2.st==='APPROVED'){ label='\u2705 APPROVED (human)'; color='#16a34a'; }
-      else if(a2.st==='REJECTED'){ label='\u274C REJECTED'; color='#dc2626'; }
-      else { label='\u23F3 UNREVIEWED'; color='#92400e'; }
-      if(a2.custom) label+=' · parent recording';
-      st.textContent=label; st.style.color=color;
-      PhonemeDB.get(id).then(blob=>{
-        const mine = blob?' · has parent recording':'';
-        src.textContent='src: '+((man&&man.sourceAuthor)||'bundled')+' · '+(man?man.license:'')+(man&&man.duration?' · '+man.duration+'s':'')+mine;
-      });
-    };
-    row._paint=paint; paint();
-    AudioSys.probe([PH_DIR+id+'.mp3']).then((ok)=>{
-      AudioStat.phoneme[id]=ok?'ok':'missing';
-      if(!ok){
-        const miss=S.audioMissing||(S.audioMissing=[]);
-        if(!miss.includes(id)){ miss.push(id); save(); }
+    const srcTxt=document.createElement('span'); srcTxt.className='qa-src';
+    more.appendChild(bRec); more.appendChild(bFileL); more.appendChild(timerEl); more.appendChild(srcTxt);
+    row.appendChild(more);
+
+    row._paint=function(){
+      const a=approvalOf(id);
+      let label, cls;
+      if(missing){ label='MISSING FILE'; cls='miss'; }
+      else if(a.st==='APPROVED'){ label = a.dev ? '✓ dev-approved (not reviewed)' : '✓ APPROVED'; cls = a.dev?'dev':'ok'; }
+      else if(a.st==='REJECTED'){ label='✗ REJECTED'; cls='no'; }
+      else { label = qaPlayed[id] ? '◷ heard — decide' : '◷ UNREVIEWED'; cls='un'; }
+      if(a.custom) label += ' · your recording';
+      st.textContent=label;
+      st.className='qa-status s-'+cls;
+      row.classList.toggle('is-approved', a.st==='APPROVED' && !missing);
+      row.classList.toggle('is-rejected', a.st==='REJECTED');
+      row.classList.toggle('is-missing', missing);
+      bOk.disabled = missing;
+      if(man){
+        srcTxt.textContent = man.provider + ' · ' + man.license
+          + (man.duration ? ' · ' + man.duration + 's' : '')
+          + (man.truePeakDb!=null ? ' · peak ' + Number(man.truePeakDb).toFixed(1) + ' dB' : '')
+          + (man.locked ? ' · locked starter asset' : '');
+      } else {
+        srcTxt.textContent = 'no manifest entry';
       }
-    });
+    };
+    row._paint();
+    list.appendChild(row);
   });
-  const vps = VOICE_KEYS.map(k=>AudioSys.probe(VOICE_DIR+k+'.mp3').then(ok=>{AudioStat.voice[k]=ok?'ok':'missing'; return ok; }));
-  const wps = WORD_KEYS.map(k=>AudioSys.probe(WORD_DIR+k+'.mp3').then(ok=>{AudioStat.word[k]=ok?'ok':'missing'; return ok; }));
-  Promise.all(vps.concat(wps)).then((rs)=>{
+  box.appendChild(list);
+
+  /* ---- cursor toolbar ---- */
+  const barB=document.createElement('div'); barB.className='qa-toolbar';
+  const mk=function(txt, fn, cls){
+    const b=document.createElement('button'); b.className='qa-tool '+(cls||''); b.textContent=txt; b.onclick=fn; return b;
+  };
+  barB.appendChild(mk('▶ Play current', function(){ const id=qaCurrentId(); if(id) qaPlay(id); }));
+  barB.appendChild(mk('✓ Approve & next', function(){
+    const id=qaCurrentId();
+    if(id && qaSetApproval(id,'APPROVED')){
+      qaAdvanceAfterDecision();
+      const n=qaCurrentId(); if(n && n!==id) qaPlay(n);
+    }
+  }, 'ok'));
+  barB.appendChild(mk('✗ Reject & next', function(){
+    const id=qaCurrentId();
+    if(id){
+      qaSetApproval(id,'REJECTED');
+      qaAdvanceAfterDecision();
+      const n=qaCurrentId(); if(n && n!==id) qaPlay(n);
+    }
+  }, 'no'));
+  barB.appendChild(mk('▶ Play next', function(){ qaMove(1); const id=qaCurrentId(); if(id) qaPlay(id); }));
+  box.appendChild(barB);
+
+  qaPaint(true);
+
+  /* voice + word clip presence (unchanged behaviour, reported compactly) */
+  const vps = VOICE_KEYS.map(function(k){ return AudioSys.probe(VOICE_DIR+k+'.mp3').then(function(ok){ AudioStat.voice[k]=ok?'ok':'missing'; return ok; }); });
+  const wps = WORD_KEYS.map(function(k){ return AudioSys.probe(WORD_DIR+k+'.mp3').then(function(ok){ AudioStat.word[k]=ok?'ok':'missing'; return ok; }); });
+  Promise.all(vps.concat(wps)).then(function(rs){
     const vok = rs.slice(0,vps.length).filter(Boolean).length;
     const wok = rs.slice(vps.length).filter(Boolean).length;
     const el=$('qa-vw');
-    if(el) el.innerHTML = 'Voice clips: <b>'+vok+'/'+VOICE_KEYS.length+'</b> · Words: <b>'+wok+'/'+WORD_KEYS.length+'</b>'
-      + ((vok===VOICE_KEYS.length&&wok===WORD_KEYS.length)?' \u2713':' <b style="color:#dc2626">— check files</b>');
+    if(el) el.innerHTML = 'Twinkle voice clips: <b>'+vok+'/'+VOICE_KEYS.length+'</b> · whole-word clips: <b>'+wok+'/'+WORD_KEYS.length+'</b>'
+      + ((vok===VOICE_KEYS.length&&wok===WORD_KEYS.length)?' ✓':' <b style="color:#dc2626">— check files</b>');
     renderParentWarning();
     renderAudioDebug();
   });
+
+  /* file presence for each phoneme */
+  PHONEME_ORDER.forEach(function(id){
+    const f=phonemeFile(id); if(!f) return;
+    AudioSys.probe([f]).then(function(ok){
+      AudioStat.phoneme[id]=ok?'ok':'missing';
+      if(!ok){
+        const miss=S.audioMissing||(S.audioMissing=[]);
+        if(miss.indexOf(id)<0){ miss.push(id); save(); }
+      }
+    });
+  });
 }
-function paintQAStatus(){
+function qaPaint(scroll){
   try{
     const box=$('audio-qa'); if(!box) return;
-    Array.prototype.forEach.call(box.querySelectorAll('.qa-row'), r=>{ if(r._paint) r._paint(); });
+    const ids=qaVisibleIds();
+    Array.prototype.forEach.call(box.querySelectorAll('.qa-line'), function(r,i){
+      if(r._paint) r._paint();
+      r.classList.toggle('cursor', ids[qaCursor]===r.dataset.id);
+    });
+    if(scroll){
+      const cur=box.querySelector('.qa-line.cursor');
+      if(cur && cur.scrollIntoView) cur.scrollIntoView({block:'nearest'});
+    }
+    const sum=$('audio-qa-summary');
+    if(sum){
+      const c=approvalCounts();
+      const t=sum.querySelector('.qa-tally');
+      if(t) t.innerHTML='<b>'+c.APPROVED+'</b> approved · <b>'+c.UNREVIEWED+'</b> to review · <b>'
+        +c.REJECTED+'</b> rejected'+(c.MISSING?' · <b style="color:#dc2626">'+c.MISSING+'</b> missing':'')
+        +' &nbsp;of '+PHONEME_ORDER.length;
+    }
   }catch(e){}
 }
+function paintQAStatus(){ qaPaint(false); }
+
 function qaRecordToggle(id, btn, timerEl){
   const doneRec=(keep)=>{
     const cur=qaRec; qaRec=null;
@@ -2226,10 +2814,11 @@ function qaRecordToggle(id, btn, timerEl){
     }).catch(()=>toast('Microphone blocked. Use \uD83D\uDCC1 file replacement.'));
   }catch(e){ toast('Recording unavailable here.'); }
 }
-/* ART SLOTS (strategy reset): the vertical slice is designed for polished
-   illustration assets. Until a human supplies them, temporary coherent SVG
-   fallbacks render. This registry is the explicit supply list — no slot is
-   silently treated as finished art. Status shown in Parent > Art. */
+/* ART SLOTS. The felt / sticker / paper-doll SVG art IS the art direction
+   now — not a placeholder waiting to be replaced. These slots stay as an
+   OPTIONAL override: if a human ever supplies a painted asset for a slot it
+   is used instead, otherwise the felt art renders. Status shown in
+   Parent > Art. */
 const ART_SLOTS = [
   {id:'bg-kingdom', label:'Kingdom backdrop', spec:'1920×1080 JPG/WebP, sky top / land bottom third'},
   {id:'bg-meadow', label:'Unicorn Meadow backdrop', spec:'1920×1080, meadow with space for unicorn center'},
@@ -2332,7 +2921,7 @@ function renderArtStatus(){
   box.innerHTML='';
   const note=document.createElement('div');
   note.className='parent-summary';
-  note.textContent='Supply transparent PNG/WebP per slot (specs shown). Uploads apply instantly in child mode. Until then, temporary coherent-SVG fallbacks render — the child never sees this panel.';
+  note.textContent='The felt/sticker artwork is the finished art direction — nothing here is missing. These slots are an optional override: drop in a transparent PNG/WebP and it replaces the felt art for that slot instantly. The child never sees this panel.';
   box.appendChild(note);
   ART_SLOTS.forEach(s=>{
     const d=document.createElement('div'); d.className='qa-row qa-tall';
@@ -2386,25 +2975,30 @@ function renderParentWarning(){
 }
 function renderParent(){
   const p=$('parent-progress'); p.innerHTML='';
+  const appr=approvalCounts();
   const rows=[
-    ['Sounds introduced', S.unlocked.length+' / '+PHONEME_ORDER.length],
+    ['Sounds approved by you', appr.APPROVED+' / '+PHONEME_ORDER.length+(appr.UNREVIEWED?'  ('+appr.UNREVIEWED+' waiting)':'')],
+    ['Sounds introduced to Layla', S.unlocked.length],
     ['Words decoded', S.wordsRead.length],
-    ['Current focus', (S.currentFocus||'s').toUpperCase()+' ('+(PHONEMES[S.currentFocus]?PHONEMES[S.currentFocus].cue:'')+')'],
+    ['Current focus', GU(S.currentFocus||'s')+' ('+(PHONEMES[S.currentFocus]?PHONEMES[S.currentFocus].cue:'')+')'],
     ['Reading streak', S.streak+' days'],
     ['Total reading minutes', S.minutes]
   ];
   rows.forEach(([k,v])=>{const d=document.createElement('div'); d.className='prog-row'; d.innerHTML='<span>'+k+'</span><b style="margin-left:auto">'+v+'</b>'; p.appendChild(d);});
-  PHONEME_ORDER.forEach(id=>{
+  /* Only chart sounds Layla can actually meet: approved, or already
+     introduced. Charting all 43 would bury the ones that matter. */
+  const charted = PHONEME_ORDER.filter(id=>isPhonemeUsable(id) || S.unlocked.indexOf(id)>=0);
+  charted.forEach(id=>{
     const m=S.mastery['sound:'+id];
     const sc=m?m.score:0;
     const d=document.createElement('div'); d.className='prog-row';
-    d.innerHTML='<span>'+id.toUpperCase()+'</span><div class="prog-bar"><div class="prog-fill" style="width:'+Math.round(sc*100)+'%"></div></div><span>'+(S.unlocked.includes(id)?Math.round(sc*100)+'%':'🔒')+'</span>';
+    d.innerHTML='<span>'+GU(id)+'</span><div class="prog-bar"><div class="prog-fill" style="width:'+Math.round(sc*100)+'%"></div></div><span>'+(S.unlocked.includes(id)?Math.round(sc*100)+'%':'🔒')+'</span>';
     p.appendChild(d);
   });
-  const strong=PHONEME_ORDER.filter(id=>(S.mastery['sound:'+id]||{score:0}).score>0.6).map(x=>x.toUpperCase());
+  const strong=charted.filter(id=>(S.mastery['sound:'+id]||{score:0}).score>0.6).map(x=>GU(x));
   renderParentWarning();
   try{ renderArtStatus(); }catch(e){}
-  const weak=PHONEME_ORDER.filter(id=>S.unlocked.includes(id)&&(S.mastery['sound:'+id]||{score:0}).score<0.4).map(x=>x.toUpperCase());
+  const weak=charted.filter(id=>S.unlocked.includes(id)&&(S.mastery['sound:'+id]||{score:0}).score<0.4).map(x=>GU(x));
   $('parent-summary').innerHTML=
     (strong.length?'<div>✅ Layla confidently recognizes <b>'+strong.join(', ')+'</b>.</div>':'<div>🌱 Layla is just beginning — lots of gentle review.</div>')+
     (S.wordsRead.length?'<div>📖 She is beginning to blend sounds into words ('+S.wordsRead.slice(-4).join(', ')+').</div>':'<div>📖 Blending will unlock once a few sounds feel strong.</div>')+
@@ -2425,7 +3019,7 @@ function renderParent(){
    ['Story',()=>openStorybook()]
   ].forEach(([label,fn])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{showScreen('game'); fn();}; pg.appendChild(b);});
   const tg=$('test-grid'); tg.innerHTML='';
-  [['Unlock all sounds',()=>{S.unlocked=PHONEME_ORDER.slice(); S.currentFocus='m'; save(); toast('All sounds unlocked!'); renderParent();}],
+  [['Unlock all approved sounds',()=>{S.unlocked=usablePhonemes(PHONEME_ORDER); if(S.unlocked.length) S.currentFocus=S.unlocked[0]; save(); toast(S.unlocked.length+' approved sounds unlocked.'); renderParent();}],
    ['Trigger blending 🎉',()=>{S.blendingUnlocked=true; save(); showMilestone('You read a word!','sat','You put the sounds together: s-a-t... sat!', {clip:'you-read-a-word'});}],
    ['Trigger sentence 📚',()=>{S.sentenceUnlocked=true; save(); showMilestone('LAYLA READ A SENTENCE!','Sam sat.','You read a whole sentence!', {clip:'sentence-win'});}],
    ['Unlock rewards 🎁',()=>{REWARDS.forEach(r=>{if(!S.rewards.includes(r.id))S.rewards.push(r.id)}); save(); toast('All treasures unlocked!');}],
@@ -2435,6 +3029,8 @@ function renderParent(){
    ['Jump: story',()=>openStorybook()],
    ['Mute music',()=>{S.settings.music=0; save(); AudioSys.applyVolumes(); renderParent();}]
   ].forEach(([label,fn])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=fn; tg.appendChild(b);});
+  /* The sound library is the point of this screen, so build it every time. */
+  try{ renderAudioQA(); }catch(e){}
 }
 document.addEventListener('input',e=>{
   if(e.target.id==='set-voice'){S.settings.voice=e.target.value/100; save();}
@@ -2457,7 +3053,14 @@ function init(){
   // Dev screenshot hooks (?scene=kingdom|castle|stickers|parent|story&game=crystals&approve=1). Not linked in child UI.
   try{
     const QS = new URLSearchParams(location.search||'');
-    if(QS.get('approve')==='1'){ FOCUS_PHONEMES.forEach(id=>{ approvalOf(id).st='APPROVED'; }); save(); }
+    /* Screenshot hook ONLY, and deliberately limited to the six starter
+       sounds a human has already approved. It never touches a newly imported
+       sound, and anything it marks is flagged dev:true so the review screen
+       shows it as not-human-reviewed. */
+    if(QS.get('approve')==='1'){
+      STARTER_PHONEMES.forEach(id=>{ const a=approvalOf(id); if(a.st!=='APPROVED'){ a.st='APPROVED'; a.dev=true; } });
+      save();
+    }
     const sc = QS.get('scene'), gm = QS.get('game');
     if(gm && Games[gm]){ AudioSys.ensure(); runSession('Shot',[{title:gm, run:()=>Games[gm]({focus:'s'})}],null); return; }
     if(sc==='kingdom'){ showScreen('kingdom'); refreshKingdom(false); return; }

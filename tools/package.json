@@ -1,0 +1,10 @@
+{
+  "name": "layla-phonics-tools",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Build-time tooling for importing licensed phonics audio. Not shipped with the app.",
+  "type": "commonjs",
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0"
+  }
+}
