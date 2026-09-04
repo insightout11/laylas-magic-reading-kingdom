@@ -1,0 +1,10 @@
+{
+  "name": "Layla's Magic Reading Kingdom",
+  "short_name": "Reading Kingdom",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#fdf4ff",
+  "theme_color": "#c084fc",
+  "description": "A magical early-reading adventure for Layla.",
+  "icons": []
+}

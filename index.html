@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Layla's Magic Reading Kingdom</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#c084fc">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
+</head>
+<body>
+<div id="sparkle-layer" aria-hidden="true"></div>
+<div id="confetti-layer" aria-hidden="true"></div>
+
+<!-- SPLASH -->
+<section id="screen-splash" class="screen active">
+  <div class="splash-castle" aria-hidden="true">🏰</div>
+  <div class="splash-rainbow" aria-hidden="true">🌈</div>
+  <div class="splash-main">
+    <div class="splash-twinkle" id="splash-twinkle" aria-hidden="true">
+      <div class="twinkle-cat">🐱</div>
+      <div class="twinkle-wings">🧚</div>
+      <div class="twinkle-crown">👑</div>
+    </div>
+    <h1 class="game-title"><span class="title-layla">Layla's</span><span class="title-sub">Magic Reading Kingdom</span></h1>
+    <p class="splash-tagline">A magical place where reading comes to life!</p>
+    <button id="btn-start-magic" class="big-magic-btn">✨ Start the Magic ✨</button>
+    <button id="btn-continue" class="ghost-btn hidden">Continue playing 💖</button>
+    <p class="splash-hint">🔊 Turn the sound on for the full magic!</p>
+  </div>
+  <div class="splash-welcome-back hidden" id="welcome-back"></div>
+</section>
+
+<!-- KINGDOM MAP -->
+<section id="screen-kingdom" class="screen">
+  <header class="kingdom-header">
+    <div class="banner-ribbon">Welcome to the Kingdom!</div>
+    <div class="header-row">
+      <button class="icon-nav-btn" id="nav-home" title="Kingdom">🏠</button>
+      <div class="stars-pill">⭐ <span id="star-count">0</span></div>
+      <div class="header-spacer"></div>
+      <button class="icon-nav-btn" id="nav-stickers-top" title="Stickers">⭐</button>
+      <button class="icon-nav-btn" id="nav-castle-top" title="My Castle">👑</button>
+      <button class="icon-nav-btn parent-lock" id="nav-parent-top" title="Parents">⚙️</button>
+    </div>
+  </header>
+
+  <div class="kingdom-map" id="kingdom-map">
+    <button class="landmark" data-land="rainbow" id="land-rainbow">
+      <span class="land-emoji">🌈</span><span class="land-label">Rainbow Road</span>
+      <span class="land-glow" aria-hidden="true"></span>
+      <span class="land-progress" id="prog-rainbow"></span>
+    </button>
+    <button class="landmark" data-land="unicorn" id="land-unicorn">
+      <span class="land-emoji">🦄</span><span class="land-label">Unicorn Meadow</span>
+      <span class="land-glow" aria-hidden="true"></span>
+      <span class="land-progress" id="prog-unicorn"></span>
+    </button>
+    <button class="landmark castle-land" data-land="castle" id="land-castle">
+      <span class="land-emoji">🏰</span><span class="land-label">Princess Castle</span>
+      <span class="land-glow" aria-hidden="true"></span>
+    </button>
+    <button class="landmark" data-land="kitten" id="land-kitten">
+      <span class="land-emoji">🐱</span><span class="land-label">Kitten Cottage</span>
+      <span class="land-glow" aria-hidden="true"></span>
+      <span class="land-progress" id="prog-kitten"></span>
+    </button>
+    <div class="landmark locked" data-land="ballet" id="land-ballet">
+      <span class="land-emoji">🩰</span><span class="land-label">Ballet Stage 🔒</span>
+      <span class="lock-note">Coming soon!</span>
+    </div>
+    <div class="landmark locked" data-land="story" id="land-story">
+      <span class="land-emoji">📚</span><span class="land-label">Storybook Tower 🔒</span>
+      <span class="lock-note" id="story-lock-note">Read 3 words to open!</span>
+    </div>
+    <div class="landmark locked" data-land="fairy" id="land-fairy">
+      <span class="land-emoji">🧚</span><span class="land-label">Fairy Garden 🔒</span>
+      <span class="lock-note">Coming soon!</span>
+    </div>
+  </div>
+
+  <div class="twinkle-guide" id="twinkle-guide">
+    <div class="twinkle-avatar" id="twinkle-avatar" aria-hidden="true">🐱‍👤</div>
+    <div class="speech-bubble" id="twinkle-speech">Hi Layla! Where shall we go today? 💖</div>
+    <button class="replay-btn" id="btn-replay-twinkle" aria-label="Hear again">🔊</button>
+  </div>
+
+  <nav class="kingdom-nav">
+    <button class="nav-pill" id="nav-stickers">⭐ Stickers</button>
+    <button class="nav-pill castle-pill" id="nav-castle">👑 Castle</button>
+    <button class="nav-pill" id="nav-parents">⚙️ Parents</button>
+  </nav>
+</section>
+
+<!-- GAME STAGE -->
+<section id="screen-game" class="screen">
+  <header class="game-topbar">
+    <button id="btn-kingdom" class="round-btn" aria-label="Back to kingdom">🏠</button>
+    <div class="game-title-pill" id="game-title-pill">Find Layla</div>
+    <div class="game-progress-dots" id="game-dots"></div>
+    <button id="btn-hear" class="round-btn hear-btn" aria-label="Hear instruction">🔊</button>
+  </header>
+  <div class="instruction-bar">
+    <button class="mini-hear" id="btn-hear2" aria-label="Hear again">🔊</button>
+    <span id="instruction-text">Can you find Layla?</span>
+  </div>
+  <div id="game-area" class="game-area"></div>
+  <div class="twinkle-mini" id="twinkle-mini"><span id="twinkle-mini-cat">🐱</span><span id="twinkle-mini-text"></span></div>
+</section>
+
+<!-- CASTLE -->
+<section id="screen-castle" class="screen">
+  <header class="game-topbar">
+    <button class="round-btn back-to-kingdom" aria-label="Back">🏠</button>
+    <div class="game-title-pill">💖 Layla's Castle 💖</div>
+    <button class="round-btn hear-btn castle-hear" aria-label="Hear">🔊</button>
+  </header>
+  <div class="castle-layout">
+    <div class="castle-room" id="castle-room">
+      <div class="room-wall" id="room-wall"></div>
+      <div class="name-plaque">LAYLA 👑</div>
+      <div class="castle-window" id="castle-window">🌈</div>
+      <div class="castle-princess" id="castle-princess" aria-label="Princess Layla">👸</div>
+      <div class="castle-pet" id="castle-pet">🐱</div>
+      <div class="castle-decor" id="castle-decor-row"></div>
+      <div class="castle-furniture" id="castle-furniture">🛏️</div>
+    </div>
+    <div class="closet">
+      <div class="closet-tabs" id="closet-tabs"></div>
+      <div class="closet-grid" id="closet-grid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- STICKERS -->
+<section id="screen-stickers" class="screen">
+  <header class="game-topbar">
+    <button class="round-btn back-to-kingdom" aria-label="Back">🏠</button>
+    <div class="game-title-pill">⭐ My Sticker Book ⭐</div>
+    <button class="round-btn hear-btn sticker-hear" aria-label="Hear">🔊</button>
+  </header>
+  <div class="sticker-book" id="sticker-book"></div>
+</section>
+
+<!-- STORYBOOK -->
+<section id="screen-story" class="screen">
+  <header class="game-topbar">
+    <button class="round-btn back-to-kingdom" aria-label="Back">🏠</button>
+    <div class="game-title-pill">📚 Storybook Tower 📚</div>
+    <button class="round-btn hear-btn story-hear" aria-label="Hear">🔊</button>
+  </header>
+  <div class="storybook">
+    <button class="story-nav" id="story-prev">‹</button>
+    <div class="story-page">
+      <div class="story-page-title" id="story-page-title">Read it yourself</div>
+      <div class="story-sentence" id="story-sentence"></div>
+      <div class="story-art" id="story-art">🐱</div>
+      <div class="story-help">Tap a word if you need help. 💖</div>
+      <div class="story-actions">
+        <button class="magic-btn" id="btn-story-hear">🔊 Hear the page</button>
+        <button class="magic-btn secondary" id="btn-story-read">🌟 I read it!</button>
+      </div>
+    </div>
+    <button class="story-nav" id="story-next">›</button>
+  </div>
+</section>
+
+<!-- PARENT GATE -->
+<div id="parent-gate" class="modal hidden">
+  <div class="modal-card">
+    <h2>For grown-ups 🌟</h2>
+    <p>Hold the button for <b>3 seconds</b> to enter Parent Mode.</p>
+    <button id="hold-to-enter">Hold me 💜</button>
+    <div class="hold-bar"><div id="hold-fill"></div></div>
+    <button class="link-btn" id="gate-cancel">Back to the magic</button>
+  </div>
+</div>
+
+<!-- PARENT DASHBOARD -->
+<section id="screen-parent" class="screen">
+  <header class="game-topbar">
+    <button class="round-btn back-to-kingdom" aria-label="Back">🏠</button>
+    <div class="game-title-pill">🌟 Parent Dashboard 🌟</div>
+    <button class="round-btn" id="btn-parent-close" aria-label="Close">✕</button>
+  </header>
+  <div class="parent-grid">
+    <div class="parent-card">
+      <h3>Reading Progress</h3>
+      <div id="parent-progress"></div>
+    </div>
+    <div class="parent-card">
+      <h3>💬 What to tell Layla</h3>
+      <div id="parent-summary" class="parent-summary"></div>
+    </div>
+    <div class="parent-card">
+      <h3>🔊 Audio Settings</h3>
+      <label>Voice volume <input type="range" id="set-voice" min="0" max="100" value="100"></label>
+      <label>Music <input type="range" id="set-music" min="0" max="100" value="35"></label>
+      <label>Sound effects <input type="range" id="set-sfx" min="0" max="100" value="100"></label>
+      <label class="check"><input type="checkbox" id="set-autoplay" checked> Auto-play instructions</label>
+      <label class="check"><input type="checkbox" id="set-motion" checked> Sparkles & animation</label>
+    </div>
+    <div class="parent-card">
+      <h3>🎯 Practice Something</h3>
+      <div class="practice-grid" id="practice-grid"></div>
+    </div>
+    <div class="parent-card">
+      <h3>🧪 Test Mode</h3>
+      <div class="practice-grid" id="test-grid"></div>
+      <button class="danger-btn" id="btn-reset">Reset all progress</button>
+    </div>
+  </div>
+</section>
+
+<!-- REWARD MODAL -->
+<div id="reward-modal" class="modal hidden">
+  <div class="modal-card reward-card">
+    <div class="reward-banner">You earned a treasure! 🎁</div>
+    <div class="reward-chest" id="reward-chest">🎁</div>
+    <div class="reward-item" id="reward-item">👗</div>
+    <div class="reward-name" id="reward-name">Sparkly Rainbow Dress</div>
+    <button class="big-magic-btn" id="btn-reward-open">Open it! ✨</button>
+    <button class="magic-btn secondary hidden" id="btn-reward-castle">Let's try it on! 💖</button>
+  </div>
+</div>
+
+<!-- CELEBRATION MODAL -->
+<div id="milestone-modal" class="modal hidden">
+  <div class="modal-card milestone-card">
+    <div class="milestone-stars">🌟🌟🌟</div>
+    <h2 id="milestone-title">You read a word!</h2>
+    <div class="milestone-word" id="milestone-word">sat</div>
+    <p id="milestone-text">Amazing!</p>
+    <button class="big-magic-btn" id="btn-milestone-ok">Yay! 💖</button>
+  </div>
+</div>
+
+<!-- SESSION END -->
+<div id="session-modal" class="modal hidden">
+  <div class="modal-card">
+    <h2 id="session-title">Beautiful playing! 🌈</h2>
+    <p id="session-text">You helped the kingdom!</p>
+    <div class="session-choices">
+      <button class="big-magic-btn" id="btn-again">🌟 Another adventure!</button>
+      <button class="magic-btn secondary" id="btn-to-castle">🏰 Play in my castle</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
