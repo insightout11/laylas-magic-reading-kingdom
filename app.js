@@ -1,10 +1,10 @@
 /* ============================================================
    LAYLA'S MAGIC READING KINGDOM — app.js
    Vanilla JS, no build step. Tablet-first.
-   Systems: Audio (speak + pure phoneme synth), Progression,
-   Mastery, 14 games, Castle, Stickers, Storybook, Parents.
-   Phoneme mp3s can replace synth by adding:
-     audio/phonemes/<id>.mp3  (auto-detected, no code change)
+   Systems: layered Audio (voice clips + human phonemes + TTS fallback),
+   Progression, Mastery, 14 games, Castle, Stickers, Storybook, Parents.
+   Phonemes are real human recordings (see audio/phonemes/manifest.json).
+   There is deliberately NO synthetic phoneme fallback in child mode.
    ============================================================ */
 'use strict';
 
@@ -231,83 +231,6 @@ const AudioSys = {
     }catch(e){ talking(false); }
   },
   stopSpeak(){ Speech.cancel('stopSpeak'); },
-  /* Pure phoneme synth — replaceable by audio/phonemes/<id>.mp3 */
-  playPhoneme(id){
-    showMouthCue(id);
-    // Try mp3 override silently; fall back to WebAudio synth (exactly once).
-    let settled = false;
-    const fallback = ()=>{ if(!settled){ settled = true; this.synthPhoneme(id); } };
-    try{
-      const a = new Audio('audio/phonemes/'+id+'.mp3');
-      a.volume = Math.max(0, Math.min(1, S.settings.voice));
-      a.oncanplaythrough = ()=>{ if(settled) return; settled = true; this.duck(true); a.play().catch(()=>this.synthPhoneme(id)); a.onended=()=>{this.duck(false);}; setTimeout(()=>this.duck(false), 2500); };
-      a.onerror = fallback;
-      setTimeout(fallback, 400);
-      return;
-    }catch(e){ fallback(); }
-  },
-  synthPhoneme(id){
-    const ctx = this.ensure(); if(!ctx) return;
-    this.duck(true);
-    const t = ctx.currentTime;
-    const out = ctx.createGain(); out.gain.value = 0.9 * Math.max(0.15,S.settings.voice);
-    out.connect(ctx.destination);
-    const P = PHONEMES[id]; const g = P?P.g:id;
-    const noiseBuf = ()=>{
-      const b = ctx.createBuffer(1, ctx.sampleRate*1.2, ctx.sampleRate);
-      const d = b.getChannelData(0);
-      for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-      return b;
-    };
-    if(g==='s'){
-      const src=ctx.createBufferSource(); src.buffer=noiseBuf();
-      const f=ctx.createBiquadFilter(); f.type='highpass'; f.frequency.value=5500;
-      const e=ctx.createGain(); e.gain.setValueAtTime(0.001,t); e.gain.exponentialRampToValueAtTime(0.7,t+0.08); e.gain.setValueAtTime(0.7,t+0.9); e.gain.exponentialRampToValueAtTime(0.001,t+1.15);
-      src.connect(f); f.connect(e); e.connect(out); src.start(t); src.stop(t+1.2);
-    } else if(g==='m'||g==='n'){
-      const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=(g==='m'?170:220);
-      const o2=ctx.createOscillator(); o2.type='triangle'; o2.frequency.value=(g==='m'?340:440);
-      const gg=ctx.createGain(); gg.gain.value=0.4;
-      const e=ctx.createGain(); e.gain.setValueAtTime(0.001,t); e.gain.exponentialRampToValueAtTime(0.9,t+0.1); e.gain.setValueAtTime(0.9,t+0.6); e.gain.exponentialRampToValueAtTime(0.001,t+0.85);
-      o.connect(gg); o2.connect(gg); gg.connect(e); e.connect(out);
-      o.start(t); o2.start(t); o.stop(t+0.9); o2.stop(t+0.9);
-    } else if(g==='l'){
-      const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.setValueAtTime(220,t); o.frequency.linearRampToValueAtTime(180,t+0.5);
-      const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=900; f.Q.value=4;
-      const e=ctx.createGain(); e.gain.setValueAtTime(0.001,t); e.gain.exponentialRampToValueAtTime(0.6,t+0.08); e.gain.exponentialRampToValueAtTime(0.001,t+0.7);
-      o.connect(f); f.connect(e); e.connect(out); o.start(t); o.stop(t+0.75);
-    } else if('aeiou'.includes(g)){
-      const base = {a:260, e:300, i:350, o:240, u:220}[g]||280;
-      const o=ctx.createOscillator(); o.type='sawtooth'; o.frequency.value=base;
-      const f1=ctx.createBiquadFilter(); f1.type='bandpass';
-      f1.frequency.value = g==='a'?750 : g==='i'?450 : g==='o'?550 : 650; f1.Q.value=5;
-      const f2=ctx.createBiquadFilter(); f2.type='bandpass';
-      f2.frequency.value = g==='a'?1700 : g==='i'?2100 : g==='o'?1000 : 1400; f2.Q.value=6;
-      const e=ctx.createGain(); e.gain.setValueAtTime(0.001,t); e.gain.exponentialRampToValueAtTime(0.8,t+0.08); e.gain.setValueAtTime(0.8,t+0.45); e.gain.exponentialRampToValueAtTime(0.001,t+0.65);
-      o.connect(f1); o.connect(f2); f1.connect(e); f2.connect(e); e.connect(out);
-      o.start(t); o.stop(t+0.7);
-    } else {
-      // stops: t,p,d,g,k,c,b — short burst + tiny vowel tail so it is hearable but not "tee"
-      const src=ctx.createBufferSource(); src.buffer=noiseBuf();
-      const f=ctx.createBiquadFilter(); f.type='bandpass'; f.frequency.value=(g==='t'||g==='k'||g==='c')?3000:1200; f.Q.value=1.2;
-      const e=ctx.createGain(); e.gain.setValueAtTime(0.9,t); e.gain.exponentialRampToValueAtTime(0.001,t+0.14);
-      src.connect(f); f.connect(e); e.connect(out); src.start(t); src.stop(t+0.2);
-      const o=ctx.createOscillator(); o.type='sine'; o.frequency.value=300;
-      const e2=ctx.createGain(); e2.gain.setValueAtTime(0.001,t+0.1); e2.gain.exponentialRampToValueAtTime(0.35,t+0.14); e2.gain.exponentialRampToValueAtTime(0.001,t+0.3);
-      o.connect(e2); e2.connect(out); o.start(t+0.1); o.stop(t+0.35);
-    }
-    // sparkle tail
-    this.sfx('twinkle', 0.25, 0.35);
-    setTimeout(()=>this.duck(false), 1100);
-  },
-  playWordSlow(wordObj){
-    // phonemes individually then blended — the flagship blending audio
-    const phs = wordObj.ph;
-    this.duck(true);
-    phs.forEach((p,i)=> setTimeout(()=>this.synthPhoneme(p), i*950));
-    setTimeout(()=>{ this.speak(wordObj.t, {rate:0.7}); }, phs.length*950+150);
-    setTimeout(()=>this.duck(false), phs.length*950+1800);
-  },
   sfx(name, vol, delay){
     try{
       if(S.settings.sfx<=0) return;
