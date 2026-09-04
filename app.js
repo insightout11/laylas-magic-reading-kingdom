@@ -346,8 +346,8 @@ function loadPhonemeManifest(){
 const PhonemeDB = {
   _db:null,
   open(){ return new Promise((res,rej)=>{ if(this._db) return res(this._db);
-    try{ const rq=indexedDB.open('layla-kingdom',1);
-      rq.onupgradeneeded=()=>{ try{rq.result.createObjectStore('phonemes');}catch(e){} };
+    try{ const rq=indexedDB.open('layla-kingdom',2);
+      rq.onupgradeneeded=()=>{ try{rq.result.createObjectStore('phonemes');}catch(e){} try{rq.result.createObjectStore('art');}catch(e){} };
       rq.onsuccess=()=>{ this._db=rq.result; res(rq.result); };
       rq.onerror=()=>rej(rq.error||'db');
     }catch(e){ rej(e); } }); },
@@ -833,7 +833,7 @@ function twinklePose(p){
   twinkleMood=p||null;
   try{
     const m=$('twinkle-mini-cat');
-    if(m && typeof twinkleSVG==='function') m.innerHTML=twinkleSVG('mini', p||'idle');
+    if(m) m.innerHTML = (typeof twinkleHTML==='function') ? twinkleHTML('mini', p||'idle') : twinkleSVG('mini', p||'idle');
   }catch(e){}
 }
 /* Major-figure art: one coherent SVG icon set; unknown words get a uniform badge. */
@@ -1141,8 +1141,9 @@ Games.crystals = function(params){
   say('find-sound', 'Which letter makes this sound?');
   twinkleSay('The unicorn lost her sound crystal! Listen! 🦄💎', {silent:true});
   const uni=document.createElement('div'); uni.className='center unicorn-holder';
-  uni.innerHTML = (typeof unicornSVG==='function') ? unicornSVG() : '<div style="font-size:90px">🦄</div>';
+  uni.innerHTML = (typeof unicornHTML==='function') ? unicornHTML('idle') : ((typeof unicornSVG==='function') ? unicornSVG() : '<div style="font-size:90px">🦄</div>');
   area.appendChild(uni);
+  try{ if(typeof Art!=='undefined') Art.bg(area, 'bg-meadow'); }catch(e){}
   const hear=document.createElement('div'); hear.className='center';
   hear.innerHTML='<button class="big-magic-btn">🔊 Hear the magic sound</button>';
   hear.querySelector('button').onclick=()=>AudioSys.playPhoneme(focus);
@@ -1172,7 +1173,7 @@ Games.crystals = function(params){
           setTimeout(()=>{ fly.remove(); }, 850);
         }catch(e){}
         setTimeout(()=>{
-          try{ if(typeof unicornSVG==='function') uni.innerHTML=unicornSVG('happy'); }catch(e){}
+          try{ if(typeof unicornHTML==='function') uni.innerHTML=unicornHTML('happy'); else if(typeof unicornSVG==='function') uni.innerHTML=unicornSVG('happy'); }catch(e){}
           uni.classList.add('happy');
           AudioSys.sfx('sparkle'); sparkles(22);
         }, 620);
@@ -1669,7 +1670,7 @@ function showReward(r){
   const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
   ri.textContent=r.emoji; rn.textContent=r.name;
   ri.classList.remove('revealed'); rn.classList.remove('revealed');
-  ch.innerHTML=(typeof chestSVG==='function')?chestSVG(false):'🎁';
+  ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'🎁');
   ch.classList.remove('open','shaking');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
@@ -1683,7 +1684,8 @@ function showReward(r){
     AudioSys.sfx('chest');
     setTimeout(()=>{
       if(rewardState!=='opening') return;
-      if(typeof chestSVG==='function'){ ch.innerHTML=chestSVG(true); }
+      if(typeof chestHTML==='function'){ ch.innerHTML=chestHTML(true); }
+    else if(typeof chestSVG==='function'){ ch.innerHTML=chestSVG(true); }
       ch.classList.remove('shaking'); ch.classList.add('open');
       ri.classList.add('revealed'); rn.classList.add('revealed');
       rewardState='revealed';
@@ -2224,41 +2226,139 @@ function qaRecordToggle(id, btn, timerEl){
    fallbacks render. This registry is the explicit supply list — no slot is
    silently treated as finished art. Status shown in Parent > Art. */
 const ART_SLOTS = [
-  {id:'bg-kingdom', label:'Kingdom backdrop (full scene)'},
-  {id:'bg-meadow', label:'Unicorn Meadow (full scene)'},
-  {id:'bg-bedroom', label:'Princess Bedroom (full scene)'},
-  {id:'bg-rainbow', label:'Rainbow Road (full scene)'},
-  {id:'bg-cottage', label:'Kitten Cottage (full scene)'},
-  {id:'twinkle-idle', label:'Twinkle idle sprite'},
-  {id:'twinkle-talking', label:'Twinkle talking sprite'},
-  {id:'twinkle-happy', label:'Twinkle happy sprite'},
-  {id:'twinkle-flying', label:'Twinkle flying sprite'},
-  {id:'twinkle-pointing', label:'Twinkle pointing sprite'},
-  {id:'unicorn-idle', label:'Unicorn idle sprite'},
-  {id:'unicorn-listening', label:'Unicorn listening sprite'},
-  {id:'unicorn-happy', label:'Unicorn happy sprite'},
-  {id:'princess-neutral', label:'Princess neutral sprite'},
-  {id:'princess-happy', label:'Princess happy sprite'},
-  {id:'princess-twirl', label:'Princess twirl frames'},
-  {id:'obj-crystal', label:'Sound crystal'},
-  {id:'obj-chest-closed', label:'Treasure chest closed'},
-  {id:'obj-chest-open', label:'Treasure chest open'},
-  {id:'obj-dresses', label:'Dress set (4)'},
-  {id:'obj-crowns', label:'Crown set (3)'},
-  {id:'obj-shoes', label:'Shoe set (2)'}
+  {id:'bg-kingdom', label:'Kingdom backdrop', spec:'1920×1080 JPG/WebP, sky top / land bottom third'},
+  {id:'bg-meadow', label:'Unicorn Meadow backdrop', spec:'1920×1080, meadow with space for unicorn center'},
+  {id:'bg-bedroom', label:'Princess Bedroom backdrop', spec:'1600×1000, wall top 2/3, floor bottom'},
+  {id:'bg-rainbow', label:'Rainbow Road backdrop', spec:'1920×1080'},
+  {id:'bg-cottage', label:'Kitten Cottage backdrop', spec:'1920×1080'},
+  {id:'twinkle-idle', label:'Twinkle idle', spec:'transparent PNG ~600px, facing front-right'},
+  {id:'twinkle-talking', label:'Twinkle talking', spec:'same pose, open mouth'},
+  {id:'twinkle-happy', label:'Twinkle happy', spec:'same pose, closed happy eyes'},
+  {id:'twinkle-flying', label:'Twinkle flying', spec:'wings up, slight tilt'},
+  {id:'twinkle-pointing', label:'Twinkle pointing', spec:'paw extended right'},
+  {id:'unicorn-idle', label:'Unicorn idle', spec:'transparent PNG ~900px, side view, facing right'},
+  {id:'unicorn-listening', label:'Unicorn listening', spec:'head tilted, ear forward'},
+  {id:'unicorn-happy', label:'Unicorn happy', spec:'hop or rear, joyful face'},
+  {id:'princess-neutral', label:'Princess neutral', spec:'transparent PNG ~800px full body, arms relaxed'},
+  {id:'princess-happy', label:'Princess happy', spec:'same pose, smile + wave'},
+  {id:'princess-twirl', label:'Princess twirl', spec:'3 frames or striped dress variant'},
+  {id:'obj-crystal', label:'Sound crystal', spec:'transparent ~300px, glowing, space for letter'},
+  {id:'obj-chest-closed', label:'Chest closed', spec:'transparent ~500px'},
+  {id:'obj-chest-open', label:'Chest open', spec:'same chest, lid open + glow'},
+  {id:'obj-dresses', label:'Dress set (4)', spec:'matching princess template'},
+  {id:'obj-crowns', label:'Crown set (3)', spec:'matching placement'},
+  {id:'obj-shoes', label:'Shoe set (2)', spec:'matching placement'}
 ];
+/* ART RUNTIME: every visual resolves through a named slot.
+   Order: parent upload (IndexedDB) > assets/<slot>.webp|png > SVG fallback.
+   Children never see missing-art states; parents see exact status. */
+const AssetDB = {
+  _db:null,
+  open(){ return new Promise((res,rej)=>{ if(this._db) return res(this._db);
+    try{ const rq=indexedDB.open('layla-kingdom',2);
+      rq.onupgradeneeded=()=>{ try{rq.result.createObjectStore('phonemes');}catch(e){} try{rq.result.createObjectStore('art');}catch(e){} };
+      rq.onsuccess=()=>{ this._db=rq.result; res(rq.result); };
+      rq.onerror=()=>rej(rq.error||'db');
+    }catch(e){ rej(e); } }); },
+  put(id, blob){ return this.open().then(db=>new Promise((res,rej)=>{ try{
+      const tx=db.transaction('art','readwrite');
+      tx.objectStore('art').put(blob,'slot:'+id);
+      tx.oncomplete=()=>res(true); tx.onerror=()=>rej(tx.error);
+    }catch(e){ rej(e); } })); },
+  get(id){ return this.open().then(db=>new Promise((res)=>{ try{
+      const tx=db.transaction('art','readonly');
+      const rq=tx.objectStore('art').get('slot:'+id);
+      rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null);
+    }catch(e){ res(null); } })).catch(()=>null); },
+  del(id){ return this.open().then(db=>new Promise((res)=>{ try{
+      const tx=db.transaction('art','readwrite');
+      tx.objectStore('art').delete('slot:'+id);
+      tx.oncomplete=()=>res(true); tx.onerror=()=>res(true);
+    }catch(e){ res(true); } })).catch(()=>true); }
+};
+const Art = {
+  cache:{},
+  probeImg(srcs){
+    return new Promise((res)=>{
+      if(typeof Image==='undefined'){ res(null); return; }
+      const list=srcs.slice();
+      const next=()=>{
+        if(!list.length){ res(null); return; }
+        const s=list.shift();
+        try{
+          const im=new Image();
+          im.onload=()=>res(s); im.onerror=next; im.src=s;
+          setTimeout(()=>{ if(im && !im.complete) next(); }, 6000);
+        }catch(e){ next(); }
+      };
+      next();
+    });
+  },
+  load(id){
+    if(id in this.cache) return Promise.resolve(this.cache[id]);
+    return AssetDB.get(id).then(blob=>{
+      if(blob){ try{ const u=URL.createObjectURL(blob); this.cache[id]=u; return u; }catch(e){} }
+      return Art.probeImg(['assets/'+id+'.webp','assets/'+id+'.png']).then(u=>{
+        this.cache[id]=u; return u;
+      });
+    });
+  },
+  preload(ids){ return Promise.all((ids||[]).map(id=>this.load(id).catch(()=>null))); },
+  bg(container, slot){
+    // Full-bleed illustrated backdrop if supplied; else the SVG scene stays.
+    try{
+      this.load(slot).then(u=>{
+        if(!u || !container || !document.body.contains(container)) return;
+        if(container.querySelector(':scope > img.art-bg')) return;
+        container.insertAdjacentHTML('afterbegin', '<img class="art-bg" src="'+u+'" alt="">');
+        container.classList.add('has-art-bg');
+      });
+    }catch(e){}
+  },
+  img(id, cls, fallback){
+    const u=this.cache[id];
+    if(u) return '<img class="slot-art '+(cls||'')+'" src="'+u+'" alt="" draggable="false">';
+    return fallback;
+  },
+  forget(id){ try{ delete this.cache[id]; }catch(e){} }
+};
 function renderArtStatus(){
   const box=$('art-status'); if(!box) return;
   box.innerHTML='';
   const note=document.createElement('div');
   note.className='parent-summary';
-  note.textContent='All scenes currently use temporary coherent-SVG fallbacks. Supply illustrated PNG/WebP (transparent) per slot; code needs no changes.';
+  note.textContent='Supply transparent PNG/WebP per slot (specs shown). Uploads apply instantly in child mode. Until then, temporary coherent-SVG fallbacks render — the child never sees this panel.';
   box.appendChild(note);
   ART_SLOTS.forEach(s=>{
-    const d=document.createElement('div'); d.className='qa-row';
-    d.innerHTML='<b>'+s.id+'</b><span class="qa-st" style="color:#92400e">⏳ awaiting illustration</span>';
-    const lab=document.createElement('span'); lab.style.fontSize='12px'; lab.textContent=s.label;
-    d.appendChild(lab); box.appendChild(d);
+    const d=document.createElement('div'); d.className='qa-row qa-tall';
+    const top=document.createElement('div'); top.className='qa-top';
+    const lab=document.createElement('b'); lab.textContent=s.id;
+    const st=document.createElement('span'); st.className='qa-st'; st.textContent='…';
+    const prev=document.createElement('span'); prev.className='qa-prev';
+    top.appendChild(lab); top.appendChild(prev); top.appendChild(st);
+    const spec=document.createElement('div'); spec.className='qa-src'; spec.textContent=s.spec||'';
+    const ctl=document.createElement('div'); ctl.className='qa-ctl';
+    const up=document.createElement('label'); up.className='qa-file'; up.textContent='📁 Upload';
+    const fi=document.createElement('input'); fi.type='file'; fi.accept='image/*'; fi.style.display='none';
+    up.appendChild(fi);
+    const rm=document.createElement('button'); rm.textContent='✕ Remove';
+    ctl.appendChild(up); ctl.appendChild(rm);
+    d.appendChild(top); d.appendChild(spec); d.appendChild(ctl);
+    box.appendChild(d);
+    const paint=(url)=>{
+      if(url){ st.textContent='🖼️ illustrated ✓'; st.style.color='#16a34a'; prev.innerHTML='<img src="'+url+'" alt="">'; }
+      else { st.textContent='⏳ temporary fallback'; st.style.color='#92400e'; prev.innerHTML=''; }
+    };
+    AssetDB.get(s.id).then(blob=>{
+      if(blob){ try{ paint(URL.createObjectURL(blob)); return; }catch(e){} }
+      Art.probeImg(['assets/'+s.id+'.webp','assets/'+s.id+'.png']).then(u=>paint(u));
+    });
+    fi.onchange=()=>{
+      const f=fi.files&&fi.files[0]; if(!f) return;
+      AssetDB.put(s.id, f).then(()=>{ Art.forget(s.id); renderArtStatus(); toast('Artwork applied! 🎨'); }).catch(()=>toast('Could not save that file.'));
+      fi.value='';
+    };
+    rm.onclick=()=>{ AssetDB.del(s.id).then(()=>{ Art.forget(s.id); renderArtStatus(); }); };
   });
 }
 function renderAudioDebug(){

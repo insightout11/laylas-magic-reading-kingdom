@@ -213,6 +213,7 @@ const ROOM_SVG = ''
 function mountCastleRoom(){
   const room = document.getElementById('castle-room');
   if(!room) return;
+  try{ if(typeof Art!=='undefined') Art.bg(room, 'bg-bedroom'); }catch(e){}
   if(!room.querySelector('.room-svg')){
     room.innerHTML = ROOM_SVG + '<div id="princess-mount" aria-label="Princess Layla"></div>';
     room.querySelectorAll('[data-zone]').forEach(z=>{

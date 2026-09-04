@@ -245,6 +245,7 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 .qa-file{background:#fff; border:2px solid var(--lilac); border-radius:999px; padding:8px 14px; font-weight:800; cursor:pointer; min-height:44px; display:inline-flex; align-items:center;}
 .qa-timer{font-size:13px; color:#dc2626; font-weight:800;}
 .qa-src{font-size:12px; color:var(--ink-soft); font-weight:600;}
+.qa-prev img{width:52px; height:52px; object-fit:contain; background:#fff; border-radius:10px; border:2px solid #e9d5ff;}
 .qa-st{margin-left:auto; font-size:14px; font-weight:800;}
 .audio-debug{background:#1e1b4b; color:#c4b5fd; border-radius:14px; padding:10px 14px; font-family:ui-monospace,monospace; font-size:12px; line-height:1.6; white-space:pre-wrap; max-height:220px; overflow:auto;}
 /* ---- full-viewport kingdom: the child is IN the world, not looking at a board ---- */
@@ -275,7 +276,7 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 /* full-bleed activity scenes */
 #screen-game{padding-bottom:10px;}
 .game-area{margin-left:0; margin-right:0; border-radius:0; border-left:none; border-right:none; min-height:44vh;}
-.game-area[data-scene="meadow"]{background:linear-gradient(180deg,#a9dfc0 0%,#d3f2dc 38%,#fdf3d8 72%,#f0dfb2 100%);}
+.game-area[data-scene="meadow"]{background:linear-gradient(180deg,#a8dabb 0%,#c9ecd4 30%,#eef7da 55%,#f7ecc8 80%,#eed9a8 100%);}
 .mouth-cue{position:absolute; right:12px; top:12px; bottom:auto;}
 .mouth-face{font-size:44px;}
 .mouth-letter{font-size:36px;}
@@ -304,6 +305,17 @@ body::before{content:''; position:fixed; inset:0; pointer-events:none; z-index:0
 .twinkle-svg.pose-fly .tw-wing-l,.twinkle-svg.pose-fly .tw-wing-r{animation-duration:.28s;}
 .twinkle-svg.pose-point{transform:rotate(4deg);}
 .obj-svg{width:60px; height:auto;}
+.slot-art{max-width:100%; height:auto; pointer-events:none;}
+.twinkle-svg.slot-art,.twinkle-fly .slot-art{width:100%;}
+#twinkle-mini-cat .slot-art{width:36px;}
+.splash-twinkle .slot-art{width:130px;}
+.unicorn-holder .slot-art{width:min(64vw,230px);}
+.reward-chest .slot-art{width:min(64vw,220px);}
+.world-bg-art,.art-bg{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;}
+.world.has-art-bg .world-svg{display:none;}
+.game-area.has-art-bg,.castle-room.has-art-bg{background:none;}
+.game-area{position:relative;}
+.castle-room{position:relative;}
 .word-badge{display:inline-flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:50%; background:#fff; border:3px solid #f0abfc; font-size:36px; box-shadow:var(--shadow);}
 .kitten-svg{width:100%; height:auto; max-width:150px;}
 .audio-warn{background:#fef2f2; border:2px solid #ef4444; color:#991b1b; border-radius:14px; padding:10px 14px; font-weight:700; margin-bottom:10px;}

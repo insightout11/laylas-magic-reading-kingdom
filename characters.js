@@ -217,19 +217,46 @@ function moonSVG(){
   + '<polygon points="60,18 61.5,22 66,22 62.5,24.5 63.5,29 60,26.5 56.5,29 57.5,24.5 54,22 58.5,22" fill="#fff"/>'
   + '</svg>';
 }
+function twinkleHTML(cls, pose){
+  try{ if(typeof Art!=='undefined') return Art.img('twinkle-'+(pose||'idle'), 'twinkle-svg '+cls, twinkleSVG(cls, pose)); }catch(e){}
+  return twinkleSVG(cls, pose);
+}
+function unicornHTML(mood){
+  try{ if(typeof Art!=='undefined') return Art.img('unicorn-'+(mood||'idle'), 'unicorn-svg', unicornSVG(mood)); }catch(e){}
+  return unicornSVG(mood);
+}
+function chestHTML(open){
+  try{ if(typeof Art!=='undefined') return Art.img(open?'obj-chest-open':'obj-chest-closed', 'chest-svg', chestSVG(open)); }catch(e){}
+  return chestSVG(open);
+}
 function initWorld(){
   const map = document.getElementById('kingdom-map');
   if(map && !map.querySelector('.world-svg')){
     map.insertAdjacentHTML('afterbegin', WORLD_SCENE);
   }
   const fly = document.getElementById('twinkle-fly');
-  if(fly) fly.innerHTML = twinkleSVG('fly', 'fly');
+  if(fly) fly.innerHTML = twinkleHTML('fly', 'flying');
   const av = document.getElementById('twinkle-avatar');
-  if(av) av.innerHTML = twinkleSVG('guide');
+  if(av) av.innerHTML = twinkleHTML('guide', 'idle');
   const mini = document.getElementById('twinkle-mini-cat');
-  if(mini) mini.innerHTML = twinkleSVG('mini');
+  if(mini) mini.innerHTML = twinkleHTML('mini', 'idle');
   const sp = document.getElementById('splash-twinkle');
-  if(sp) sp.innerHTML = twinkleSVG('splash');
+  if(sp) sp.innerHTML = twinkleHTML('splash', 'idle');
+  try{
+    if(typeof Art!=='undefined'){
+      Art.preload(['twinkle-idle','twinkle-talking','twinkle-happy','twinkle-flying','twinkle-pointing','bg-kingdom']).then(()=>{
+        try{
+          if(Art.cache['bg-kingdom'] && map && !map.querySelector('.world-bg-art')){
+            map.insertAdjacentHTML('afterbegin', '<img class="world-bg-art" src="'+Art.cache['bg-kingdom']+'" alt="">');
+            map.classList.add('has-art-bg');
+          }
+          const fly2=document.getElementById('twinkle-fly'); if(fly2) fly2.innerHTML=twinkleHTML('fly','flying');
+          const av2=document.getElementById('twinkle-avatar'); if(av2) av2.innerHTML=twinkleHTML('guide','idle');
+          const sp2=document.getElementById('splash-twinkle'); if(sp2) sp2.innerHTML=twinkleHTML('splash','idle');
+        }catch(e){}
+      });
+    }
+  }catch(e){}
   try{
     if(!window.__posMarks){
       window.__posMarks=function(){
