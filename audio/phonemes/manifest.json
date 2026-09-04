@@ -10,7 +10,8 @@
   "duration": 0.24,
   "peak": 0.8,
   "valid": true,
-  "note": "loud nasal core lowmid=0.91 high=0.02"
+  "note": "loud nasal core lowmid=0.91 high=0.02",
+  "target": "sustained /m/"
  },
  "n": {
   "file": "audio/phonemes/n.mp3",
@@ -23,7 +24,8 @@
   "duration": 0.25,
   "peak": 0.8,
   "valid": true,
-  "note": "single human pulse 0.25s, voiced nasal core 0.15s + natural fade"
+  "note": "single human pulse 0.25s, voiced nasal core 0.15s + natural fade",
+  "target": "sustained /n/"
  },
  "l": {
   "file": "audio/phonemes/l.mp3",
@@ -36,7 +38,8 @@
   "duration": 0.38,
   "peak": 0.8,
   "valid": true,
-  "note": "single human pulse, halves-cos=0.96"
+  "note": "single human pulse, halves-cos=0.96",
+  "target": ""
  },
  "t": {
   "file": "audio/phonemes/t.mp3",
@@ -49,7 +52,8 @@
   "duration": 0.45,
   "peak": 0.84,
   "valid": true,
-  "note": "burst+aspiration, tail aperiodic (0.13)"
+  "note": "burst+aspiration, tail aperiodic (0.13)",
+  "target": "brief /t/, no added vowel"
  },
  "p": {
   "file": "audio/phonemes/p.mp3",
@@ -62,7 +66,8 @@
   "duration": 0.45,
   "peak": 0.79,
   "valid": true,
-  "note": "burst+aspiration, tail aperiodic (0.20)"
+  "note": "burst+aspiration, tail aperiodic (0.20)",
+  "target": "brief /p/, no added vowel"
  },
  "d": {
   "file": "audio/phonemes/d.mp3",
@@ -75,7 +80,8 @@
   "duration": 0.38,
   "peak": 0.8,
   "valid": true,
-  "note": "voiced bar+burst, tail aperiodic (0.17)"
+  "note": "voiced bar+burst, tail aperiodic (0.17)",
+  "target": "brief /d/"
  },
  "k": {
   "file": "audio/phonemes/k.mp3",
@@ -88,7 +94,8 @@
   "duration": 0.06,
   "peak": 0.77,
   "valid": true,
-  "note": "natural burst onset, no voicing (per=0.24)"
+  "note": "natural burst onset, no voicing (per=0.24)",
+  "target": "brief /k/ as in kite"
  },
  "g": {
   "file": "audio/phonemes/g.mp3",
@@ -101,7 +108,8 @@
   "duration": 0.32,
   "peak": 0.79,
   "valid": true,
-  "note": "voiced burst region, tail (0.44)"
+  "note": "voiced burst region, tail (0.44)",
+  "target": "brief /g/"
  },
  "s": {
   "file": "audio/phonemes/s.mp3",
@@ -114,7 +122,8 @@
   "duration": 0.85,
   "peak": 0.8,
   "valid": true,
-  "note": "sustained fricative"
+  "note": "sustained fricative",
+  "target": "sustained /s/ as in sun"
  },
  "a": {
   "file": "audio/phonemes/a.mp3",
@@ -127,7 +136,8 @@
   "duration": 0.5,
   "peak": 0.78,
   "valid": true,
-  "note": "vowel F1~730/F2~1750 verified"
+  "note": "vowel F1~730/F2~1750 verified",
+  "target": "short a as in sat"
  },
  "i": {
   "file": "audio/phonemes/i.mp3",
@@ -140,7 +150,8 @@
   "duration": 0.5,
   "peak": 0.62,
   "valid": true,
-  "note": "vowel F1~420/F2~2050 verified"
+  "note": "vowel F1~420/F2~2050 verified",
+  "target": "short i as in sit"
  },
  "o": {
   "file": "audio/phonemes/o.mp3",
@@ -153,6 +164,7 @@
   "duration": 0.5,
   "peak": 0.44,
   "valid": true,
-  "note": "vowel F1~560/F2~950 verified"
+  "note": "vowel F1~560/F2~950 verified",
+  "target": "short o as in otter"
  }
 }

@@ -52,36 +52,36 @@
   </header>
 
   <div class="world" id="kingdom-map">
-    <button class="landmark scene-mark" data-land="rainbow" id="land-rainbow">
+    <button class="landmark scene-mark" data-land="rainbow" id="land-rainbow" data-sx="300" data-sy="500">
       <span class="land-emoji">🌈</span><span class="land-label">Rainbow Road</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-rainbow"></span>
     </button>
-    <button class="landmark scene-mark" data-land="unicorn" id="land-unicorn">
+    <button class="landmark scene-mark" data-land="unicorn" id="land-unicorn" data-sx="850" data-sy="560">
       <span class="land-emoji">🦄</span><span class="land-label">Unicorn Meadow</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-unicorn"></span>
     </button>
-    <button class="landmark scene-mark castle-land" data-land="castle" id="land-castle">
+    <button class="landmark scene-mark castle-land" data-land="castle" id="land-castle" data-sx="605" data-sy="505">
       <span class="land-emoji">🏰</span><span class="land-label">Princess Castle</span>
       <span class="land-glow" aria-hidden="true"></span>
     </button>
-    <button class="landmark scene-mark" data-land="kitten" id="land-kitten">
+    <button class="landmark scene-mark" data-land="kitten" id="land-kitten" data-sx="410" data-sy="560">
       <span class="land-emoji">🐱</span><span class="land-label">Kitten Cottage</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-kitten"></span>
     </button>
-    <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet">
+    <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet" data-sx="1030" data-sy="510">
       <span class="land-emoji">🩰</span><span class="land-label">Ballet Stage 🔒</span>
-      <span class="lock-note">Coming soon!</span>
+      <span class="lock-note">💤</span>
     </div>
-    <div class="landmark scene-mark locked" data-land="story" id="land-story">
+    <div class="landmark scene-mark locked" data-land="story" id="land-story" data-sx="845" data-sy="480">
       <span class="land-emoji">📚</span><span class="land-label">Storybook Tower 🔒</span>
-      <span class="lock-note" id="story-lock-note">Read 3 words to open!</span>
+      <span class="lock-note" id="story-lock-note">🔒 3 words</span>
     </div>
-    <div class="landmark scene-mark locked" data-land="fairy" id="land-fairy">
+    <div class="landmark scene-mark locked" data-land="fairy" id="land-fairy" data-sx="480" data-sy="600">
       <span class="land-emoji">🧚</span><span class="land-label">Fairy Garden 🔒</span>
-      <span class="lock-note">Coming soon!</span>
+      <span class="lock-note">💤</span>
     </div>
   </div>
 
@@ -219,6 +219,8 @@
       <button class="magic-btn" id="btn-audio-qa" style="margin-top:8px">🔊 Check all sounds</button>
       <h3 style="margin-top:14px">🔍 Audio Debug</h3>
       <div id="audio-debug" class="audio-debug">Open the parent panel to see live audio state.</div>
+      <h3 style="margin-top:14px">🎨 Art Status (vertical slice)</h3>
+      <div id="art-status"></div>
       <br><button class="danger-btn" id="btn-reset">Reset all progress</button>
     </div>
   </div>

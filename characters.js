@@ -35,7 +35,7 @@ function twinkleSVG(cls, pose){
 }
 
 const WORLD_SCENE = ''
-+ '<svg class="world-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" aria-hidden="true">'
++ '<svg class="world-svg" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid meet" aria-hidden="true">'
 + '<defs>'
 + '<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8d8ff"/><stop offset=".55" stop-color="#d9c8ff"/><stop offset="1" stop-color="#ffd9ec"/></linearGradient>'
 + '<radialGradient id="sunGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff7c2"/><stop offset=".6" stop-color="#fde68a" stop-opacity=".8"/><stop offset="1" stop-color="#fde68a" stop-opacity="0"/></radialGradient>'
@@ -107,13 +107,13 @@ const WORLD_SCENE = ''
 + '<ellipse cx="905" cy="652" rx="52" ry="15" fill="#7dd3fc" stroke="#fff" stroke-width="4"/>'
 + '<path d="M875,650 Q895,645 915,649" stroke="#fff" stroke-width="3" fill="none" opacity=".8"/>'
 + '<g class="flower-sway" font-size="26" text-anchor="middle"><text x="700" y="640">🌷</text><text x="760" y="660">🌸</text><text x="990" y="650">🌷</text><text x="940" y="668">🌼</text></g></g>'
-+ '<g><ellipse cx="480" cy="660" rx="150" ry="42" fill="#a7f3d0"/>'
-+ '<g class="flower-sway f2" font-size="26" text-anchor="middle"><text x="420" y="665">🌸</text><text x="480" y="678">🍄</text><text x="540" y="665">🌷</text></g></g>'
++ '<g><ellipse cx="480" cy="630" rx="150" ry="42" fill="#a7f3d0"/>'
++ '<g class="flower-sway f2" font-size="26" text-anchor="middle"><text x="420" y="635">🌸</text><text x="480" y="648">🍄</text><text x="540" y="635">🌷</text></g></g>'
 + '<g><rect x="90" y="560" width="16" height="60" fill="#a16207"/><ellipse class="tree-sway" cx="98" cy="545" rx="34" ry="30" fill="#22c55e" stroke="#15803d" stroke-width="3"/>'
 + '<rect x="1090" y="540" width="16" height="60" fill="#a16207"/><ellipse class="tree-sway f2" cx="1098" cy="525" rx="34" ry="30" fill="#22c55e" stroke="#15803d" stroke-width="3"/></g>'
 + '<ellipse class="mist" cx="1030" cy="400" rx="120" ry="70" fill="url(#mist)"/>'
 + '<ellipse class="mist m2" cx="845" cy="330" rx="95" ry="85" fill="url(#mist)"/>'
-+ '<ellipse class="mist m3" cx="480" cy="650" rx="130" ry="50" fill="url(#mist)"/>'
++ '<ellipse class="mist m3" cx="480" cy="620" rx="130" ry="50" fill="url(#mist)"/>'
 + '<g class="balloon"><ellipse cx="1080" cy="120" rx="30" ry="36" fill="#f9a8d4" stroke="#fff" stroke-width="4"/><path d="M1052,108 Q1066,120 1062,140 M1108,108 Q1094,120 1098,140" stroke="#f472b6" stroke-width="3" fill="none"/><rect x="1072" y="152" width="16" height="12" rx="3" fill="#a16207"/><path d="M1074,152 L1080,138 M1086,152 L1080,138" stroke="#a16207" stroke-width="2"/></g>'
 + '<g fill="#3d9e63"><path d="M0,700 Q25,630 50,700 Z"/><path d="M90,700 Q115,640 140,700 Z"/><path d="M1060,700 Q1085,640 1110,700 Z"/><path d="M1150,700 Q1175,645 1200,700 Z"/></g>'
 + '<g><rect x="58" y="636" width="7" height="40" fill="#16a34a"/><g fill="#f472b6"><ellipse cx="61" cy="618" rx="9" ry="14"/><ellipse cx="61" cy="648" rx="9" ry="14"/><ellipse cx="46" cy="633" rx="14" ry="9"/><ellipse cx="76" cy="633" rx="14" ry="9"/></g><circle cx="61" cy="633" r="8" fill="#fde047"/></g>'
@@ -231,6 +231,24 @@ function initWorld(){
   const sp = document.getElementById('splash-twinkle');
   if(sp) sp.innerHTML = twinkleSVG('splash');
   try{
+    if(!window.__posMarks){
+      window.__posMarks=function(){
+        try{
+          const map2=document.getElementById('kingdom-map');
+          if(!map2) return;
+          const r=map2.getBoundingClientRect();
+          const sc=Math.min(r.width/1200, r.height/700);
+          const ox=(r.width-1200*sc)/2, oy=(r.height-700*sc)/2;
+          map2.querySelectorAll('.scene-mark').forEach(m=>{
+            const sx=parseFloat(m.getAttribute('data-sx')), sy=parseFloat(m.getAttribute('data-sy'));
+            if(isNaN(sx)||isNaN(sy)) return;
+            m.style.left=(ox+sx*sc)+'px'; m.style.top=(oy+sy*sc)+'px';
+          });
+        }catch(err){}
+      };
+      window.addEventListener('resize', window.__posMarks);
+    }
+    window.__posMarks();
     map.querySelectorAll('.scene-mark').forEach(m=>{
       const e = m.querySelector('.land-emoji');
       const ic = markIcon(m.getAttribute('data-land'));
@@ -267,12 +285,12 @@ function unicornSVG(mood){
   s += '<ellipse cx="110" cy="172" rx="78" ry="12" fill="#9fd8b4"/>';
   // flowing pastel tail
   s += '<path class="uni-tail" d="M46,104 Q20,112 26,142 Q29,154 37,146 Q30,124 52,116 Z" fill="#c4b5fd" stroke="#8b5cf6" stroke-width="2.5"/>';
-  s += '<path class="uni-tail t2" d="M52,110 Q34,122 40,144" fill="none" stroke="#f0abfc" stroke-width="5" stroke-linecap="round"/>';
+  s += '<path class="uni-tail t2" d="M52,110 Q34,122 40,144" fill="none" stroke="#f0abfc" stroke-width="7" stroke-linecap="round"/>';
   // legs with rounded hooves
-  s += '<rect x="72" y="122" width="13" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
-  s += '<rect x="94" y="122" width="13" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
-  s += '<rect x="128" y="122" width="13" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
-  s += '<rect x="148" y="122" width="13" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="71" y="122" width="15" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="93" y="122" width="15" height="42" rx="6" fill="#ffffff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="127" y="122" width="15" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
+  s += '<rect x="147" y="122" width="15" height="42" rx="6" fill="#f7f1ff" stroke="#e3d3f5" stroke-width="2.5"/>';
   s += '<ellipse cx="78" cy="166" rx="9" ry="6" fill="#c4b5fd"/><ellipse cx="100" cy="166" rx="9" ry="6" fill="#c4b5fd"/>';
   s += '<ellipse cx="134" cy="166" rx="9" ry="6" fill="#d8b4fe"/><ellipse cx="154" cy="166" rx="9" ry="6" fill="#d8b4fe"/>';
   // body with soft belly shade
@@ -303,10 +321,10 @@ function unicornSVG(mood){
   // big expressive eye (or happy closed arc)
   s += happy
     ? '<path d="M170,40 Q176,35 182,40" fill="none" stroke="#40264f" stroke-width="3" stroke-linecap="round"/>'
-    : '<ellipse cx="176" cy="41" rx="6.5" ry="8" fill="#fff"/>'
-      + '<circle cx="177" cy="43" r="4" fill="#40264f"/><circle cx="178.5" cy="41" r="1.4" fill="#fff"/>'
+    : '<ellipse cx="176" cy="41" rx="7.5" ry="9" fill="#fff"/>'
+      + '<circle cx="177" cy="43" r="4.5" fill="#40264f"/><circle cx="178.5" cy="41" r="1.4" fill="#fff"/>'
       + '<path d="M169,34 Q176,31 183,34" fill="none" stroke="#40264f" stroke-width="2" stroke-linecap="round"/>';
-  s += '<ellipse cx="168" cy="50" rx="3.4" ry="2.4" fill="#f9a8d4"/>';
+  s += '<ellipse cx="168" cy="50" rx="4.2" ry="3" fill="#f9a8d4"/>';
   // sparkles
   s += '<polygon points="60,60 61.5,64 66,64 62.5,66.5 63.5,71 60,68.5 56.5,71 57.5,66.5 54,64 58.5,64" fill="#fde047"/>';
   s += '<circle cx="204" cy="70" r="2.5" fill="#fff"/><circle cx="46" cy="70" r="2" fill="#fff"/>';
