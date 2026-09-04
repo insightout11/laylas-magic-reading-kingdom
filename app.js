@@ -228,7 +228,7 @@ const AudioSys = {
       speechSynthesis.speak(u);
     }catch(e){ talking(false); }
   },
-  stopSpeak(){ try{ speechSynthesis.cancel(); }catch(e){} talking(false); },
+  stopSpeak(){ Speech.cancel('stopSpeak'); },
   /* Pure phoneme synth — replaceable by audio/phonemes/<id>.mp3 */
   playPhoneme(id){
     showMouthCue(id);
@@ -386,22 +386,8 @@ const AudioStat = { phoneme:{}, voice:{}, word:{} }; // 'ok' | 'missing'
 AudioSys._lastSpeak = { text:'', t:0 };
 AudioSys._scene = 'kingdom';
 
-AudioSys._playSrc = function(src, volume){
-  // Play one file; resolves true if sound started, false if missing/blocked.
-  return new Promise((resolve)=>{
-    let done=false;
-    const fin=(v)=>{ if(!done){ done=true; resolve(v); } };
-    try{
-      const el = new Audio();
-      el.preload='auto';
-      el.volume = Math.max(0, Math.min(1, volume==null ? S.settings.voice : volume));
-      el.oncanplaythrough=()=>{ el.play().then(()=>fin(true)).catch(()=>fin(false)); };
-      el.onerror=()=>fin(false);
-      el.src=src; el.load();
-      setTimeout(()=>fin(false), 7000);
-    }catch(e){ fin(false); }
-  });
-};
+/* NOTE: all playback goes through Speech (single channel). There is no
+   direct Audio() playback and no speechSynthesis.speak() outside Speech. */
 AudioSys.probe = function(srcs){
   // Silent existence check (no playback) across fallback extensions.
   const list = (Array.isArray(srcs)?srcs:[srcs]).slice();
@@ -440,91 +426,120 @@ AudioSys.pickVoice = function(){
       || vs[0];
   }catch(e){ return null; }
 };
-const _origSpeak = AudioSys.speak.bind(AudioSys);
 AudioSys.speak = function(text, opts){
   opts = opts||{};
-  try{
-    if(!('speechSynthesis' in window)) return;
-    if(!opts.force && S.settings.voice<=0) return;
-    // Debounce accidental double-taps of the same line.
-    const now = Date.now();
-    if(!opts.important && text===AudioSys._lastSpeak.text && now-AudioSys._lastSpeak.t<600) return;
-    AudioSys._lastSpeak = { text, t: now };
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    const v = AudioSys.pickVoice();
-    if(v) u.voice = v;
-    u.rate = opts.rate || 0.92;
-    u.pitch = opts.pitch || 1.05;
-    u.volume = Math.max(0, Math.min(1, S.settings.voice));
-    u.lang = (v&&v.lang)||'en-US';
-    talking(true);
-    u.onend = ()=>talking(false);
-    u.onerror = ()=>talking(false);
-    speechSynthesis.speak(u);
-  }catch(e){ talking(false); }
+  if(!('speechSynthesis' in window)) return;
+  if(!opts.force && S.settings.voice<=0) return;
+  Speech.request(opts.prio||3, 'tts:'+String(text).slice(0,26), 'tts', (cancelled, done, trackEl)=>{
+    Speech._ttsInto(text, opts, trackEl, cancelled, done);
+  });
 };
 /* Twinkle character voice clip; falls back to improved TTS for the text. */
 AudioSys.playVoice = function(key, fallbackText, opts){
   opts = opts||{};
-  talking(true);
-  return AudioSys._playSrc(VOICE_DIR+key+'.mp3').then((ok)=>{
-    AudioStat.voice[key] = ok?'ok':'missing';
-    if(ok){ setTimeout(()=>talking(false), 800); }
-    else{
-      talking(false);
+  const prio = opts.prio || (opts.feedback ? 4 : 3);
+  Speech.request(prio, 'voice:'+key, 'clip', (cancelled, done, track)=>{
+    if(S.settings.voice<=0 && !opts.force){ done('muted'); return; }
+    Speech.playFile(VOICE_DIR+key+'.mp3', null, track).then((ok)=>{
+      AudioStat.voice[key] = ok?'ok':'missing';
+      if(cancelled()){ done('cancelled'); return; }
+      done(ok?'done':'missing');
       if(!ok){
         const miss = S.audioMissingVoice||(S.audioMissingVoice=[]);
         if(!miss.includes(key)){ miss.push(key); save(); }
+        if(fallbackText && (S.settings.autoplay||opts.force)){
+          setTimeout(()=>{ AudioSys.speak(fallbackText, opts); }, 80);
+        }
       }
-      if(fallbackText && (S.settings.autoplay||opts.force)) AudioSys.speak(fallbackText, opts);
-    }
-    return ok;
+    });
   });
 };
-/* Phoneme playback: real asset ONLY. No synth, no letter names. */
+/* Phoneme playback: real asset ONLY (exact .mp3 filename). No synth, no letter names. */
 AudioSys.playPhoneme = function(id){
   showMouthCue(id);
-  const base = PH_DIR+id;
-  AudioSys._playSrc(base+'.mp3').then((ok)=>{
-    if(ok){ AudioStat.phoneme[id]='ok'; return; }
-    AudioSys._playSrc(base+'.wav').then((ok2)=>{
-      AudioStat.phoneme[id] = ok2?'ok':'missing';
-      if(!ok2){
+  Speech.request(1, 'phoneme:'+id, 'phoneme', (cancelled, done, track)=>{
+    AudioSys.duck(true); AudioSys._ducked=true;
+    Speech.playFile(PH_DIR+id+'.mp3', null, track).then((ok)=>{
+      AudioStat.phoneme[id] = ok?'ok':'missing';
+      if(!ok){
         AudioSys.sfx('boop', 0.35);
         const miss = S.audioMissing||(S.audioMissing=[]);
         if(!miss.includes(id)){ miss.push(id); save(); }
       }
+      AudioSys.duck(false); AudioSys._ducked=false;
+      done(ok?'done':'missing');
     });
   });
 };
-/* Whole-word audio after clean sequential phonemes (no letter names). */
-AudioSys.playWordSlow = function(wordObj){
-  const phs = wordObj.ph;
-  AudioSys.duck(true);
-  phs.forEach((p,i)=> setTimeout(()=>AudioSys.playPhoneme(p), i*950));
-  setTimeout(()=>{
-    AudioSys._playSrc(WORD_DIR+wordObj.t+'.mp3').then((ok)=>{
-      AudioStat.word[wordObj.t] = ok?'ok':'missing';
-      if(!ok) AudioSys.speak(wordObj.t, {rate:0.7});
-    });
-  }, phs.length*950+150);
-  setTimeout(()=>AudioSys.duck(false), phs.length*950+2200);
+/* Whole-word audio after clean sequential phonemes (no letter names).
+   Sequenced on ended-events (never fixed overlaps); holds the channel so
+   nothing can talk over the blend. hooks: onPhoneme(i), onBlended(). */
+AudioSys.playWordSlow = function(wordObj, hooks){
+  hooks = hooks||{};
+  Speech.request(2, 'blend:'+wordObj.t, 'word', (cancelled, done, trackEl)=>{
+    AudioSys.duck(true); AudioSys._ducked=true;
+    const finish=(why)=>{ AudioSys.duck(false); AudioSys._ducked=false; done(why); };
+    (async ()=>{
+      for(let i=0;i<wordObj.ph.length;i++){
+        if(cancelled()){ finish('cancelled'); return; }
+        try{ hooks.onPhoneme && hooks.onPhoneme(i, wordObj.ph[i]); }catch(e){}
+        const ok = await Speech.playFile(PH_DIR+wordObj.ph[i]+'.mp3', null, trackEl);
+        if(ok) AudioStat.phoneme[wordObj.ph[i]]='ok';
+        else{
+          AudioStat.phoneme[wordObj.ph[i]] = AudioStat.phoneme[wordObj.ph[i]]||'missing';
+          const miss=S.audioMissing||(S.audioMissing=[]);
+          if(!miss.includes(wordObj.ph[i])){ miss.push(wordObj.ph[i]); save(); }
+        }
+        await new Promise(r=>setTimeout(r,140));
+      }
+      if(cancelled()){ finish('cancelled'); return; }
+      try{ hooks.onBlended && hooks.onBlended(); }catch(e){}
+      await new Promise(r=>setTimeout(r,400));
+      if(cancelled()){ finish('cancelled'); return; }
+      const okW = await Speech.playFile(WORD_DIR+wordObj.t+'.mp3', null, trackEl);
+      AudioStat.word[wordObj.t] = okW?'ok':'missing';
+      finish('done');
+      try{ hooks.onDone && hooks.onDone(!okW); }catch(e){}
+      if(!okW) setTimeout(()=>AudioSys.speak(wordObj.t, {rate:0.7}), 80);
+    })();
+  });
 };
 AudioSys.playWord = function(word, slow){
-  const f = WORD_DIR+word+'.mp3';
   const track = WORDS.some(w=>w.t===word);
-  return AudioSys._playSrc(f).then((ok)=>{
-    if(track) AudioStat.word[word] = ok?'ok':'missing';
-    if(!ok) AudioSys.speak(word, {rate: slow?0.7:0.92});
-    return ok;
+  Speech.request(2, 'word:'+word, 'word', (cancelled, done, trackEl)=>{
+    AudioSys.duck(true); AudioSys._ducked=true;
+    Speech.playFile(WORD_DIR+word+'.mp3', null, trackEl).then((ok)=>{
+      if(track) AudioStat.word[word] = ok?'ok':'missing';
+      AudioSys.duck(false); AudioSys._ducked=false;
+      if(cancelled()){ done('cancelled'); return; }
+      done('done');
+      if(!ok) setTimeout(()=>AudioSys.speak(word, {rate: slow?0.7:0.92}), 80);
+    });
   });
 };
-/* Specific phonics praise: character voice names the letter, then the
-   clean isolated phoneme plays — never a letter name AS the sound. */
+/* Specific phonics praise in ONE channel hold: character voice names the
+   letter, then the clean isolated phoneme plays — never overlapping. */
 AudioSys.praiseSound = function(id){
-  AudioSys.playVoice('yes-'+id, 'Yes! '+String(id).toUpperCase()+'!').then(()=>{
-    setTimeout(()=>AudioSys.playPhoneme(id), 1100);
+  Speech.request(4, 'praise:'+id, 'clip', (cancelled, done, trackEl)=>{
+    Speech.playFile(VOICE_DIR+'yes-'+id+'.mp3', null, trackEl).then((ok)=>{
+      AudioStat.voice['yes-'+id] = ok?'ok':'missing';
+      if(cancelled()){ done('cancelled'); return; }
+      if(!ok){
+        done('missing');
+        setTimeout(()=>AudioSys.speak('Yes! '+String(id).toUpperCase()+'!', {prio:4}), 80);
+        setTimeout(()=>{ AudioSys.playPhoneme(id); }, 1400);
+        return;
+      }
+      setTimeout(()=>{
+        if(cancelled()){ done('cancelled'); return; }
+        AudioSys.duck(true); AudioSys._ducked=true;
+        Speech.playFile(PH_DIR+id+'.mp3', null, trackEl).then((ok2)=>{
+          if(ok2) AudioStat.phoneme[id]='ok';
+          AudioSys.duck(false); AudioSys._ducked=false;
+          done('done');
+        });
+      }, 500);
+    });
   });
 };
 /* Gentle scene music: different skies for different lands. */
@@ -592,9 +607,96 @@ function say(clip, text, speakText){
   currentInstruction = speakText||text;
   $('instruction-text').textContent = text;
   currentClip = clip||null;
+  twinklePose(null);
   if(clip){ AudioSys.playVoice(clip, currentInstruction); }
   else if(S.settings.autoplay) AudioSys.speak(currentInstruction);
 }
+
+/* ============ SPEECH MANAGER — strict single audio channel ============
+   Priority: 1 phoneme > 2 word/blend > 3 instruction > 4 feedback.
+   - Exactly ONE of {voice clip, TTS, phoneme, word} ever sounds.
+   - Higher priority preempts; equal replaces; lower queues (max 1).
+   - Same-tag replays within 400ms are dropped (replay-button debounce).
+   - Speech.cancel() on navigation clears channel + queue.
+   - All events logged for the Test Mode audio debug panel. */
+const Speech = {
+  cur:null, queued:null, token:0,
+  _lastTag:'', _lastTime:0, logBuf:[],
+  log(ev, detail){ try{ this.logBuf.push({t:new Date().toLocaleTimeString('en-GB'), ev, detail:String(detail||'').slice(0,90)}); if(this.logBuf.length>24) this.logBuf.shift(); }catch(e){} },
+  isSpeaking(){ return !!this.cur; },
+  state(){
+    try{ return { speaking:!!this.cur, kind:this.cur&&this.cur.kind, tag:this.cur&&this.cur.tag, queued:!!this.queued, music:!!AudioSys.musicOn, scene:AudioSys._scene, ducked:!!AudioSys._ducked }; }
+    catch(e){ return { speaking:!!this.cur }; }
+  },
+  _stopCur(reason){
+    const c=this.cur; this.cur=null; if(!c) return;
+    try{
+      if(c.kind==='tts'){ try{ speechSynthesis.cancel(); }catch(e){} }
+      else if(c.el){ try{ c.el.onended=null; c.el.onerror=null; c.el.pause(); }catch(e){} }
+    }catch(e){}
+    talking(false);
+    this.log('stop', (c.tag||c.kind)+' ← '+reason);
+  },
+  cancel(reason){ this.token++; this.queued=null; this._stopCur(reason||'cancel'); this.log('cancel', reason||''); },
+  clear(){ this.queued=null; },
+  request(prio, tag, kind, starter){
+    const now=Date.now(), key=tag||kind;
+    if((kind==='clip'||kind==='tts') && key===this._lastTag && now-this._lastTime<400){ this.log('debounced', key); return; }
+    this._lastTag=key; this._lastTime=now;
+    const job={prio, tag, kind, starter};
+    if(!this.cur){ this._run(job); return; }
+    if(prio<this.cur.prio){ this.log('preempt', this.cur.tag+' → '+tag); this._stopCur('preempt'); this._run(job); }
+    else if(prio===this.cur.prio){ this._stopCur('replace'); this._run(job); }
+    else { this.queued=job; this.log('queued', tag); }
+  },
+  _run(job){
+    const my=++this.token;
+    job.seq=(this._seq=(this._seq||0)+1);
+    this.cur={prio:job.prio, tag:job.tag, kind:job.kind, el:null, seq:job.seq};
+    talking(true);
+    this.log('start', job.tag+' ['+job.kind+' p'+job.prio+']');
+    let finished=false;
+    const finish=(why)=>{
+      if(finished) return; finished=true;
+      // Only release the channel if WE still hold it (stale starters from
+      // preempted jobs must never clear a newer job, even with equal tags).
+      if(this.cur && this.cur.seq===job.seq){ this.cur=null; talking(false); }
+      this.log('end', job.tag+(why?' ← '+why:''));
+      const q=this.queued; this.queued=null;
+      if(q && this.token===my) this._run(q);
+    };
+    try{ job.starter(()=>this.token!==my, finish, (el)=>{ if(this.cur&&this.cur.tag===job.tag) this.cur.el=el; }); }
+    catch(e){ finish('error'); }
+  },
+  playFile(src, volume, track){
+    // Resolves true when the file finished audibly, false if missing/blocked.
+    return new Promise((resolve)=>{
+      let done=false;
+      const fin=(v)=>{ if(!done){done=true; resolve(v);} };
+      try{
+        const el=new Audio(); el.preload='auto';
+        el.volume=Math.max(0,Math.min(1,volume==null?S.settings.voice:volume));
+        el.onended=()=>fin(true); el.onerror=()=>fin(false);
+        if(track) track(el);
+        el.src=src; el.load();
+        const pr=el.play(); if(pr&&pr.catch) pr.catch(()=>fin(false));
+        setTimeout(()=>fin(false), 9000);
+      }catch(e){ fin(false); }
+    });
+  },
+  _ttsInto(text, opts, trackEl, cancelled, done){
+    try{ speechSynthesis.cancel(); }catch(e){}
+    try{
+      const u=new SpeechSynthesisUtterance(text);
+      const v=AudioSys.pickVoice(); if(v) u.voice=v;
+      u.rate=opts.rate||0.92; u.pitch=opts.pitch||1.05;
+      u.volume=Math.max(0,Math.min(1,S.settings.voice));
+      u.lang=(v&&v.lang)||'en-US';
+      u.onend=()=>done('done'); u.onerror=()=>done('error');
+      speechSynthesis.speak(u);
+    }catch(e){ done('error'); }
+  }
+};
 function talking(on){
   const a=document.getElementById('twinkle-avatar');
   if(a) a.classList.toggle('talking', !!on);
@@ -620,6 +722,8 @@ function showMouthCue(id){
 /* ---------------- UI HELPERS ---------------- */
 const $ = id => document.getElementById(id);
 function showScreen(name){
+  if(typeof Speech!=='undefined') Speech.cancel('navigation:'+name);
+  try{ if('speechSynthesis' in window) speechSynthesis.cancel(); }catch(e){}
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','enter-zoom','enter-door','enter-page'));
   const el = $('screen-'+name);
   el.classList.add('active');
@@ -673,11 +777,28 @@ function twinkleSay(text, opts){
   opts = opts||{};
   $('twinkle-speech').textContent=text;
   $('twinkle-mini-text').textContent=text;
+  twinklePose(opts.pose||null);
   if(opts.silent) return;
   if(opts.clip){ if(S.settings.autoplay||opts.force) AudioSys.playVoice(opts.clip, text, opts); else currentInstruction=text; }
   else if(S.settings.autoplay||opts.force) AudioSys.speak(text, opts);
   else currentInstruction=text;
 }
+function twinklePose(p){
+  try{
+    const m=$('twinkle-mini-cat');
+    if(m && typeof twinkleSVG==='function') m.innerHTML=twinkleSVG('mini', p||'idle');
+  }catch(e){}
+}
+/* Major-figure art: illustrated SVG where it exists, emoji only for tiny objects. */
+function picFor(word, emoji){
+  try{
+    if(word==='cat'||emoji==='🐱') return kittenSVG();
+    if((word==='sun'||emoji==='☀️') && typeof sunSVG==='function') return sunSVG();
+    if((word==='moon'||emoji==='🌙') && typeof moonSVG==='function') return moonSVG();
+  }catch(e){}
+  return emoji;
+}
+function wordArt(w){ return picFor(w.t, w.emoji); }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); const t=a[i]; a[i]=a[j]; a[j]=t;} return a; }
 function addStars(n){ S.stars+=n; save(); const el=$('star-count'); if(el) el.textContent=S.stars; }
 
@@ -714,6 +835,7 @@ function gentleNo(cardEl, retrySpeech){
   const clip = attemptsThisItem%2 ? 'oops' : 'good-try';
   const m = retrySpeech || (clip==='oops' ? 'Oops! Listen again.' : "Good try! Let's hear it one more time.");
   AudioSys.playVoice(clip, m);
+  twinklePose('point');
   if(cardEl) setTimeout(()=>cardEl.classList.remove('gentle-no'),600);
   if(attemptsThisItem>=2){
     // scaffold: glow the right answer subtly
@@ -726,13 +848,21 @@ function gentleNo(cardEl, retrySpeech){
 function celebrateRight(skillId, praise){
   AudioSys.sfx('success');
   sparkles(16);
+  twinklePose('happy');
   if(skillId) record(skillId, firstTryFlag && attemptsThisItem===0);
   if(skillId && /^(sound|letter):/.test(skillId)){
     AudioSys.praiseSound(skillId.split(':')[1]);
   } else if(praise && S.settings.autoplay){
-    // Character voice celebrates, then the specific teaching point follows.
-    AudioSys.playVoice('you-did-it', null).then(()=>{
-      setTimeout(()=>AudioSys.speak(praise), 1000);
+    // One feedback job: character voice celebrates, then the specific
+    // teaching point follows on the same channel — never overlapping.
+    Speech.request(4, 'praise-words', 'clip', (cancelled, done, trackEl)=>{
+      Speech.playFile(VOICE_DIR+'you-did-it.mp3', null, trackEl).then(()=>{
+        if(cancelled()){ done('cancelled'); return; }
+        setTimeout(()=>{
+          if(cancelled()){ done('cancelled'); return; }
+          Speech._ttsInto(praise, {}, trackEl, cancelled, done);
+        }, 900);
+      });
     });
   } else if(praise && !S.settings.autoplay){
     currentInstruction = praise;
@@ -974,7 +1104,7 @@ Games.firstSound = function(params){
   const row=document.createElement('div'); row.className='choices mirror-frame';
   shuffle(set.options).forEach(o=>{
     const b=document.createElement('button'); b.className='choice-card pic-card';
-    b.innerHTML='<span class="pic-emoji">'+o.e+'</span><span class="pic-word">'+o.w+'</span>';
+    b.innerHTML='<span class="pic-emoji">'+picFor(o.w, o.e)+'</span><span class="pic-word">'+o.w+'</span>';
     if(o.w===set.answer) b.dataset.correct='1';
     b.onclick=()=>{
       if(o.w===set.answer){
@@ -1052,7 +1182,7 @@ Games.rescue = function(params){
   $('game-area').dataset.scene='cottage';
   twinkleSay('A kitten needs us! Sound it out with me! 🐱', {silent:true});
   const wrap=document.createElement('div'); wrap.className='center rescue-scene';
-  wrap.innerHTML='<div style="font-size:76px">🐱</div>'
+  wrap.innerHTML=((typeof kittenSVG==='function') ? kittenSVG() : '🐱')
     + ((typeof cottageDoorSVG==='function') ? cottageDoorSVG() : '<div style="font-size:44px">🚪</div>');
   area.appendChild(wrap);
   const stage=document.createElement('div'); stage.className='blend-stage';
@@ -1068,29 +1198,34 @@ Games.rescue = function(params){
   btnRow.querySelector('button').onclick=()=>{
     AudioSys.ensure();
     AudioSys.playVoice('blend-together', "Now let's blend them together!");
-    setTimeout(runBlend, 1500);
-  };
-  function runBlend(){
-    const letters=[...stage.children];
-    letters.forEach((el,i)=> setTimeout(()=>{ AudioSys.playPhoneme(w.ph[i]); el.style.transform='scale(1.25)'; el.style.borderColor='#fbbf24'; setTimeout(()=>el.style.transform='scale(1)',500); }, i*1000));
     setTimeout(()=>{
-      letters.forEach(el=>el.classList.add('together'));
-      stage.style.gap='2px';
-      AudioSys.playWord(w.t, true);
-      const bw=document.createElement('div'); bw.className='blend-word'; bw.textContent=w.t+'! '+w.emoji;
-      blendLabel.innerHTML=''; blendLabel.appendChild(bw);
+      AudioSys.playWordSlow(w, {
+        onPhoneme:(i)=>{
+          const el=stage.children[i];
+          if(el){ el.style.transform='scale(1.25)'; el.style.borderColor='#fbbf24'; setTimeout(()=>{el.style.transform='scale(1)';},500); }
+        },
+        onBlended:()=>showBlendChoices()
+      });
+    }, 1500);
+  };
+  function showBlendChoices(){
+    const letters=[...stage.children];
+    letters.forEach(el=>el.classList.add('together'));
+    stage.style.gap='2px';
+    const bw=document.createElement('div'); bw.className='blend-word'; bw.innerHTML=w.t+'! '+wordArt(w);
+    blendLabel.innerHTML=''; blendLabel.appendChild(bw);
       // picture choice to confirm
       const ch=document.createElement('div'); ch.className='choices';
       const right=w;
       const others=shuffle(WORDS.filter(x=>x.t!==w.t)).slice(0,2);
       shuffle([right].concat(others)).forEach(o=>{
         const b=document.createElement('button'); b.className='choice-card pic-card';
-        b.innerHTML='<span class="pic-emoji">'+o.emoji+'</span><span class="pic-word">'+o.t+'</span>';
+        b.innerHTML='<span class="pic-emoji">'+wordArt(o)+'</span><span class="pic-word">'+o.t+'</span>';
         if(o.t===w.t) b.dataset.correct='1';
         b.onclick=()=>{
           if(o.t===w.t){
             b.classList.add('correct');
-            wrap.innerHTML='<div style="font-size:90px">🐱💨💖</div><div>Kitty is free!</div>';
+            wrap.innerHTML=((typeof kittenSVG==='function') ? kittenSVG() : '🐱')+'<div>Kitty is free! 💖</div>';
             AudioSys.sfx('meow'); setTimeout(()=>AudioSys.sfx('fanfare'),400);
             AudioSys.playVoice('kitten-free', 'You put the sounds together: '+w.t+'!');
             record('blend:'+w.t, firstTryFlag&&attemptsThisItem===0);
@@ -1103,7 +1238,6 @@ Games.rescue = function(params){
         ch.appendChild(b);
       });
       blendLabel.appendChild(ch);
-    }, w.ph.length*1000+400);
   };
   // auto-play once for 4yo
   setTimeout(()=>{ if(document.body.contains(btnRow)) btnRow.querySelector('button').click(); }, 1200);
@@ -1128,7 +1262,7 @@ Games.buildWord = function(params){
   $('game-area').dataset.scene='cottage';
   twinkleSay(w.emoji+' shows '+w.t+'! Can you build it? 🧱', {silent:true});
   AudioSys.playWord(w.t);
-  const pic=document.createElement('div'); pic.className='center'; pic.style.fontSize='84px'; pic.textContent=w.emoji;
+  const pic=document.createElement('div'); pic.className='center word-pic'; pic.innerHTML=wordArt(w);
   area.appendChild(pic);
   const slots=document.createElement('div'); slots.className='slot-row';
   const slotEls=[];
@@ -1149,13 +1283,14 @@ Games.buildWord = function(params){
         b.classList.add('used'); AudioSys.playPhoneme(ch);
         next++; if(slotEls[next]) slotEls[next].classList.add('next');
         if(next>=slotEls.length){
-          AudioSys.playWordSlow(w);
           record('spell:'+w.t, firstTryFlag&&attemptsThisItem===0);
           if(!S.wordsRead.includes(w.t)) S.wordsRead.push(w.t);
           addStars(4); save(); sparkles(20); checkMilestones();
-          setTimeout(()=>{ AudioSys.speak('You built '+w.t+'!'); }, w.ph.length*950+1900);
-          maybeWordMilestone(w.t);
-          setTimeout(activityDone, w.ph.length*950+3400);
+          AudioSys.playWordSlow(w, { onDone:()=>{
+            AudioSys.speak('You built '+w.t+'!');
+            maybeWordMilestone(w.t);
+            setTimeout(activityDone, 2600);
+          }});
         }
       } else { attemptsThisItem++; gentleNo(b, 'Hmm, we need '+slot.dataset.want+'. Listen!'); AudioSys.playPhoneme(slot.dataset.want); }
     };
@@ -1175,7 +1310,7 @@ Games.dressup = function(){
   const row=document.createElement('div'); row.className='choices';
   shuffle([w].concat(shuffle(WORDS.filter(x=>x.t!==w.t)).slice(0,2))).forEach(o=>{
     const b=document.createElement('button'); b.className='choice-card';
-    b.innerHTML='<span style="font-family:Andika;font-size:44px;color:#5b2a6e">'+o.t+'</span><span class="pic-emoji" style="font-size:40px">'+o.emoji+'</span>';
+    b.innerHTML='<span style="font-family:Andika;font-size:44px;color:#5b2a6e">'+o.t+'</span><span class="pic-emoji" style="font-size:40px">'+wordArt(o)+'</span>';
     if(o.t===w.t) b.dataset.correct='1';
     b.onclick=()=>{
       AudioSys.playWord(o.t);
@@ -1189,7 +1324,8 @@ Games.dressup = function(){
     row.appendChild(b);
   });
   area.appendChild(row);
-  const p=document.createElement('div'); p.className='center'; p.style.fontSize='90px'; p.textContent='👸';
+  const p=document.createElement('div'); p.className='center dressup-princess';
+  p.innerHTML=(typeof princessSVG==='function')?princessSVG(S.equipped):'👸';
   area.appendChild(p);
 };
 
@@ -1201,7 +1337,8 @@ Games.ballet = function(){
   setInstruction('Tap the sound you hear!', 'Tap the stage tile that makes the sound you hear!');
   twinkleSay('The ballerina needs your ears! 🩰', {silent:true});
   $('game-area').dataset.scene='stage';
-  const dancer=document.createElement('div'); dancer.className='ballerina'; dancer.textContent='🩰';
+  const dancer=document.createElement('div'); dancer.className='ballerina';
+  dancer.innerHTML=(typeof ballerinaSVG==='function')?ballerinaSVG():'🩰';
   area.appendChild(dancer);
   let idx=0, target=steps[0];
   const floor=document.createElement('div'); floor.className='ballet-floor';
@@ -1210,13 +1347,13 @@ Games.ballet = function(){
     b.onclick=()=>{
       if(s===target){
         b.style.background='linear-gradient(180deg,#fef3c7,#fcd34d)'; AudioSys.sfx('success');
-        dancer.textContent=['🩰','💃','👯','🦢'][idx%4];
+        dancer.classList.remove('twirl'); void dancer.offsetWidth; dancer.classList.add('twirl');
         dancer.style.transform='rotate('+(idx*20)+'deg)';
         AudioSys.playVoice('beautiful', 'Beautiful step!');
         record('ballet:'+s, firstTryFlag&&attemptsThisItem===0);
         idx++;
         if(idx>=steps.length){
-          dancer.textContent='💃✨'; confettiBlast();
+          dancer.classList.add('finale'); confettiBlast();
           AudioSys.playVoice('bravo', 'Bravo! Beautiful dancing!');
           addStars(3);
           setTimeout(activityDone, 2200);
@@ -1242,7 +1379,8 @@ Games.rhyme = function(){
   twinkleSay('Which one rhymes? 🌸', {silent:true});
   AudioSys.playVoice('rhyme-ask', 'Which one rhymes with '+set.base+'?');
   $('game-area').dataset.scene='garden';
-  const garden=document.createElement('div'); garden.className='center'; garden.style.fontSize='60px'; garden.textContent='🌱';
+  const garden=document.createElement('div'); garden.className='center garden-bed';
+  garden.innerHTML=(typeof sproutSVG==='function')?sproutSVG():'🌱';
   area.appendChild(garden);
   const row=document.createElement('div'); row.className='choices';
   shuffle(set.rhymes.concat(set.others)).forEach(w=>{
@@ -1410,7 +1548,7 @@ function grantRandomReward(context){
 function showReward(r){
   $('reward-item').textContent=r.emoji;
   $('reward-name').textContent=r.name;
-  $('reward-chest').textContent='🎁';
+  $('reward-chest').innerHTML=(typeof chestSVG==='function')?chestSVG(false):'🎁';
   $('reward-chest').classList.remove('open');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
@@ -1418,8 +1556,11 @@ function showReward(r){
   AudioSys.sfx('chest');
   twinkleSay('You earned something! Open it! 🎁', {silent:true});
   AudioSys.playVoice('look-unlocked', 'Look what you unlocked!');
+  twinklePose('happy');
   $('btn-reward-open').onclick=()=>{
-    $('reward-chest').textContent='✨'; $('reward-chest').classList.add('open');
+    if(typeof chestSVG==='function'){ $('reward-chest').innerHTML=chestSVG(true); }
+    else $('reward-chest').textContent='✨';
+    $('reward-chest').classList.add('open');
     AudioSys.sfx('fanfare'); confettiBlast(); sparkles(24);
     AudioSys.speak('You earned '+r.name+'! Beautiful!');
     // auto-equip wearable
@@ -1442,6 +1583,7 @@ function showMilestone(title, word, text, opts){
   $('milestone-word').textContent=word;
   $('milestone-text').textContent=text;
   $('milestone-modal').classList.remove('hidden');
+  twinklePose('happy');
   confettiBlast(); sparkles(30,true); AudioSys.sfx('fanfare');
   if(opts.clip){
     AudioSys.playVoice(opts.clip, title).then(()=>setTimeout(()=>AudioSys.playWord(word), 1200));
@@ -1770,8 +1912,31 @@ function openParent(){
 $('btn-parent-close').onclick=goKingdom;
 const VOICE_KEYS = ['hi-layla','welcome-back','found-name','find-your-name','build-name','missing-letter','listen-carefully','hear-again','find-sound','first-sound','match-letters','sound-it-out','blend-together','you-did-it','you-read-a-word','sentence-win','look-unlocked','unicorn-help','go-castle','try-it-on','beautiful','bravo','oops','good-try','another-adventure','kitten-free','new-sound','rhyme-ask','trace-ask','paint-fun','story-help','castle-hello','sticker-hello','land-sleeping','big-first','name-spelled','rainbow-help','kitten-stuck','yes-s','yes-a','yes-t','yes-p','yes-i','yes-n','yes-m','yes-d','yes-g','yes-o','yes-c','yes-k'];
 const WORD_KEYS = ['sun','apple','tap','pan','igloo','net','moon','dog','gap','otter','cat','kite','sat','mat','pat','tip','sip','man','tin','pin','Sam','can','cap','mop','pot','am','at','it','in','on','sit','map'];
+AudioSys._inspectCache={};
+AudioSys.inspect = function(src){
+  // Decode the real file: reports true duration + peak level for QA.
+  if(AudioSys._inspectCache[src]) return Promise.resolve(AudioSys._inspectCache[src]);
+  return new Promise((resolve)=>{
+    const done=(v)=>{ AudioSys._inspectCache[src]=v; resolve(v); };
+    try{
+      fetch(src).then(r=>{ if(!r.ok) throw 0; return r.arrayBuffer(); })
+      .then(ab=>{
+        const AC = window.AudioContext||window.webkitAudioContext;
+        if(!AC) throw 0;
+        try{ AudioSys._inspectCtx = AudioSys._inspectCtx || new AC(); }
+        catch(e){ throw 0; }
+        return AudioSys._inspectCtx.decodeAudioData(ab);
+      }).then(buf=>{
+        const d=buf.getChannelData(0); let peak=0;
+        for(let i=0;i<d.length;i+=7){ const a=Math.abs(d[i]); if(a>peak) peak=a; }
+        done({ok:true, dur:buf.duration, peak});
+      }).catch(()=>done({ok:false}));
+    }catch(e){ done({ok:false}); }
+  });
+};
 function renderAudioQA(){
   const box=$('audio-qa'); if(!box) return;
+  renderAudioDebug();
   const ids = PHONEME_ORDER.concat(['l']);
   box.innerHTML='';
   const sum=$('audio-qa-summary');
@@ -1792,8 +1957,21 @@ function renderAudioQA(){
     }
     row.appendChild(st);
     box.appendChild(row);
-    AudioSys.probe([PH_DIR+id+'.mp3', PH_DIR+id+'.wav']).then((ok)=>{
-      AudioStat.phoneme[id]=ok?'ok':'missing'; st.textContent= ok?'Real audio ✓':'MISSING ✗'; st.style.color= ok?'#16a34a':'#dc2626';
+    AudioSys.probe([PH_DIR+id+'.mp3']).then((ok)=>{
+      AudioStat.phoneme[id]=ok?'ok':'missing';
+      if(!ok){ st.textContent='MISSING ✗'; st.style.color='#dc2626'; }
+      else{
+        st.textContent='found…'; st.style.color='#92400e';
+        AudioSys.inspect(PH_DIR+id+'.mp3').then((info)=>{
+          if(!info.ok){ st.textContent='unverified'; st.style.color='#92400e'; }
+          else{
+            const ready = info.dur>0.05 && info.dur<3.0 && info.peak>0.05;
+            st.textContent=(ready?'READY ✓ ':'DO NOT USE ✗ ')+info.dur.toFixed(2)+'s · '+Math.round(info.peak*100)+'%';
+            st.style.color= ready?'#16a34a':'#dc2626';
+            if(!ready){ const miss=S.audioMissing||(S.audioMissing=[]); if(!miss.includes(id)){miss.push(id); save();} }
+          }
+        });
+      }
       done++;
       if(done>=ids.length){
         const miss = ids.filter(x=>AudioStat.phoneme[x]==='missing');
@@ -1810,10 +1988,21 @@ function renderAudioQA(){
           if(el) el.innerHTML = 'Voice clips: <b>'+vok+'/'+VOICE_KEYS.length+'</b> · Words: <b>'+wok+'/'+WORD_KEYS.length+'</b>'
             + ((vok===VOICE_KEYS.length&&wok===WORD_KEYS.length)?' ✓':' <b style="color:#dc2626">— check files</b>');
           renderParentWarning();
+          renderAudioDebug();
         });
       }
     });
   });
+}
+function renderAudioDebug(){
+  const box=$('audio-debug'); if(!box || typeof Speech==='undefined') return;
+  const s=Speech.state();
+  let h='SPEECH: '+(s.speaking?(s.kind+' :: '+s.tag):'idle');
+  h+='\nQUEUE: '+(s.queued?'1 waiting':'empty');
+  h+='\nMUSIC: '+(s.music?('on · '+s.scene):'off')+' · DUCKED: '+(s.ducked?'yes':'no');
+  h+='\n--- last events ---';
+  Speech.logBuf.slice(-12).forEach(e=>{ h+='\n'+e.t+'  '+e.ev+'  '+e.detail; });
+  box.textContent=h;
 }
 function renderParentWarning(){
   const p=$('parent-progress'); if(!p) return;
