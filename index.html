@@ -210,6 +210,15 @@
       <div id="parent-progress"></div>
     </div>
     <div class="parent-card">
+      <h3>💾 Move to a new tablet</h3>
+      <div class="parent-summary">Save everything — stars, rewards, castle, mastery and approvals — into one file, then load it on the new device.</div>
+      <div class="practice-grid">
+        <button class="magic-btn" id="btn-export">⬇️ Save progress file</button>
+        <label class="magic-btn secondary" id="btn-import-label" style="text-align:center">⬆️ Load progress file<input type="file" id="file-import" accept="application/json,.json" style="display:none"></label>
+      </div>
+      <div id="move-status" class="parent-summary" style="margin-top:8px"></div>
+    </div>
+    <div class="parent-card">
       <h3>💬 What to tell Layla</h3>
       <div id="parent-summary" class="parent-summary"></div>
     </div>
@@ -224,6 +233,11 @@
     <div class="parent-card">
       <h3>🎯 Practice Something</h3>
       <div class="practice-grid" id="practice-grid"></div>
+    </div>
+    <div class="parent-card">
+      <h3>🎙️ Recording booth</h3>
+      <div class="parent-summary">One missing sound at a time. Record it, play it back, keep it — kept recordings work in her games immediately, including the /ʌ/ that unlocks nine words.</div>
+      <div id="record-booth"></div>
     </div>
     <div class="parent-card">
       <h3>🧪 Test Mode</h3>
@@ -281,6 +295,7 @@
 
 <script src="phonics.js?v=20260905092141"></script>
 <script src="content.js?v=20260905092141"></script>
+<script src="names.js?v=20260905092141"></script>
 <script src="feltkit.js?v=20260905092141"></script>
 <script src="characters.js?v=20260905092141"></script>
 <script src="princess.js?v=20260905092141"></script>

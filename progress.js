@@ -71,6 +71,15 @@ function adventure(){
     acts.push({title:'Sound Crystals', run:()=>Games.crystals({focus})});
   }
 
+  /* 2b. trace the letter just heard, so the hand reinforces the ear.
+     Single lowercase letters only — that is what she reads. */
+  if(focus && isPhonemeUsable(focus)){
+    const gl=GU(focus).toLowerCase();
+    if(gl.length===1 && typeof STROKES!=='undefined' && STROKES[gl]){
+      acts.push({title:'Trace '+gl, run:()=>Games.trace({letter:gl})});
+    }
+  }
+
   /* 3. review of the weakest thing, in a DIFFERENT game so it is not
         the same question twice */
   if(review && review!==focus){

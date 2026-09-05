@@ -83,6 +83,16 @@ const Tests = {
     S.heartWords=['a'];
     save();
     Bus.clear();
+    /* A test must never inherit the previous test's UI: hidden modals,
+       drained queues and a released activity, or assertions read stale DOM. */
+    try{
+      ['milestone-modal','reward-modal','session-modal','parent-gate'].forEach(function(id){
+        const el=document.getElementById(id); if(el) el.classList.add('hidden');
+      });
+      Flow.milestoneQueue.length=0;
+      Flow.narrationPending=false; Flow.rewardPending=false; Flow.castleInteractionComplete=true;
+      Act.abandon('test reset');
+    }catch(e){}
   },
   async _settle(ms){ await new Promise(function(r){ setTimeout(r, ms||1200); }); },
   /* Wait on a real event, not a guessed delay — the same rule the app now
@@ -118,7 +128,7 @@ const Tests = {
     await this._settle(400);
     this._log('A: activity actually completed', finished);
     const said = Bus.events.filter(function(e){ return e.type==='SPEECH_START'; })
-                           .map(function(e){ return (e.data&&(e.data.text||e.data.key))||''; }).join(' | ');
+                           .map(function(e){ return (e.data&&(e.data.text||e.data.key||e.data.tag))||''; }).join(' | ');
     const feedback = Bus.events.filter(function(e){ return e.type==='FEEDBACK_START'; });
     const mentionsAt = /\bat\b/i.test(said);
     const mentionsLayla = /layla|your name|name-spelled/i.test(said);
@@ -152,7 +162,7 @@ const Tests = {
     await this._settle(400);
     this._log('B: activity actually completed', finishedB);
     const said = Bus.events.filter(function(e){ return e.type==='SPEECH_START'; })
-                           .map(function(e){ return (e.data&&(e.data.text||e.data.key))||''; }).join(' | ');
+                           .map(function(e){ return (e.data&&(e.data.text||e.data.key||e.data.tag))||''; }).join(' | ');
     this._log('B: praise mentions Layla', /layla|name-spelled/i.test(said), said.slice(0,120));
     this._log('B: praise does NOT say "made the word at"', !/made the word at/i.test(said), said.slice(0,120));
   },
@@ -261,10 +271,205 @@ const Tests = {
       cleared ? 'cancelled on scene change' : 'dropped at fire time');
   },
 
+  /* Test H2 — "I did it!" with no drawing earns nothing; a real tracing passes. */
+  async testH2_traceScoring(){
+    const ink={cx:160,cy:210,rx:100,ry:120}, start={x:160,y:90};
+    this._log('H2: empty trail scores zero', traceScore([], start, ink)===0);
+    const good=[];
+    for(let i=0;i<120;i++){ good.push({x:160+Math.sin(i/8)*60, y:90+i*1.8}); }
+    this._log('H2: genuine tracing passes', traceScore(good, start, ink)>=0.45,
+      traceScore(good, start, ink).toFixed(2));
+    const far=[];
+    for(let i=0;i<120;i++){ far.push({x:10+i*0.2, y:10+i*0.2}); }
+    this._log('H2: scribble in the corner fails', traceScore(far, start, ink)<0.45,
+      traceScore(far, start, ink).toFixed(2));
+    this._log('H2: every lowercase letter has stroke data',
+      'abcdefghijklmnopqrstuvwxyz'.split('').every(ch=>!!STROKES[ch]));
+  },
+
+  /* Test H — shipped baseline seeds, never overrides; export/import round-trips. */
+  async testH_baselineAndPortability(){
+    this._reset();
+    Bus.clear();
+    await seedApprovalsFromBaseline();
+    const file = await fetch('audio/phonemes/approvals.json').then(r=>r.json()).catch(()=>null);
+    const dec = (file&&file.decisions)||{};
+    const wantAp = Object.keys(dec).filter(k=>dec[k].status==='APPROVED');
+    const wantRej = Object.keys(dec).filter(k=>dec[k].status==='REJECTED');
+    const gotAp = Object.keys(S.phonemeApproval||{}).filter(k=>S.phonemeApproval[k].st==='APPROVED');
+    const gotRej = Object.keys(S.phonemeApproval||{}).filter(k=>S.phonemeApproval[k].st==='REJECTED');
+    this._log('H: baseline seeds every shipped approval',
+      wantAp.length>0 && wantAp.every(k=>gotAp.indexOf(Phonics.resolve(k)||k)>=0),
+      gotAp.length+'/'+wantAp.length+' approved');
+    this._log('H: baseline seeds every shipped rejection',
+      wantRej.length>0 && wantRej.every(k=>gotRej.indexOf(Phonics.resolve(k)||k)>=0),
+      gotRej.length+'/'+wantRej.length+' rejected');
+    /* a local decision must survive a second seeding pass */
+    const flip = wantAp[0] ? (Phonics.resolve(wantAp[0])||wantAp[0]) : null;
+    if(flip){ approvalOf(flip).st='REJECTED'; save(); }
+    await seedApprovalsFromBaseline();
+    this._log('H: shipped file does not resurrect a local rejection',
+      !flip || approvalOf(flip).st==='REJECTED', flip||'no approved sound to flip');
+    /* changing one file's bytes lapses that sound only */
+    if(flip && PHONEME_MANIFEST && PHONEME_MANIFEST.sounds && PHONEME_MANIFEST.sounds[flip]){
+      const real = PHONEME_MANIFEST.sounds[flip].sha256;
+      approvalOf(flip).st='APPROVED'; approvalOf(flip).hash='deadbeef'; save();
+      const before = Object.keys(S.phonemeApproval).filter(k=>S.phonemeApproval[k].st==='APPROVED').length;
+      reconcileApprovals();
+      const after = Object.keys(S.phonemeApproval).filter(k=>S.phonemeApproval[k].st==='APPROVED').length;
+      this._log('H: byte change lapses exactly that sound', after===before-1, before+'→'+after);
+      PHONEME_MANIFEST.sounds[flip].sha256 = real;
+    }
+    /* export -> wipe -> import restores everything that matters */
+    S.stars=42; S.rewards.push('crown-gold'); S.mastery['sound:s']={p:3,ok:3,att:3,recent:[1,1,1],score:0.9,last:Date.now()};
+    if(flip){ approvalOf(flip).st='APPROVED'; approvalOf(flip).hash=(PHONEME_MANIFEST.sounds[flip]||{}).sha256||null; }
+    save();
+    const payload = await buildExportPayload();
+    const snapStars = S.stars, snapRew = S.rewards.length, snapAp = flip?approvalOf(flip).st:null;
+    try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+    S = defaultState();
+    await applyImportPayload(payload);
+    this._log('H: export/import restores stars+rewards+approvals',
+      S.stars===snapStars && S.rewards.length===snapRew && (!flip || approvalOf(flip).st===snapAp),
+      'stars '+S.stars+', rewards '+S.rewards.length);
+    this._log('H: garbage import is refused', await applyImportPayload({nope:1}).then(()=>false).catch(()=>true));
+  },
+
+  /* Test B2 — family names: gating, person-naming praise, no phonics leakage. */
+  async testB2_names(){
+    this._reset();
+    Bus.clear();
+    const avail0 = availableNames().map(function(n){ return n.id; });
+    this._log('B2: only Layla available at first', JSON.stringify(avail0)==='["layla"]', avail0.join(','));
+    S.mastery['name:build:layla']={p:2,ok:2,att:2,recent:[1,1],score:0.9,last:Date.now()};
+    save();
+    const avail1 = availableNames().map(function(n){ return n.id; });
+    this._log('B2: Lily unlocks after Layla is solid', avail1.indexOf('lily')>=0, avail1.join(','));
+    this._log('B2: Jackson stays locked early', avail1.indexOf('jackson')<0, avail1.join(','));
+    /* build JACKSON end to end */
+    const wordsBefore = Reading.readableWords().length;
+    showScreen('game');
+    runSession('T', [{title:'Name', run:function(){ Games.buildName({id:'jackson'}); }}], null);
+    await this._settle(700);
+    const slots = document.querySelectorAll('.slot');
+    this._log('B2: Jackson has seven slots', slots.length===7, String(slots.length));
+    for(let n=0;n<7;n++){
+      const slot=document.querySelector('.slot.next') || document.querySelectorAll('.slot')[n];
+      const want=slot?slot.dataset.want:null;
+      const tile=Array.prototype.filter.call(document.querySelectorAll('.tile:not(.used)'),
+        function(t){ return t.textContent===want; })[0];
+      if(tile) tile.click();
+      await this._settle(260);
+    }
+    const finished = await this._waitFor('ACTIVITY_COMPLETE');
+    await this._settle(400);
+    this._log('B2: Jackson build completes', finished);
+    const said = Bus.events.filter(function(e){ return e.type==='SPEECH_START'; })
+                           .map(function(e){ return (e.data&&(e.data.text||e.data.key||e.data.tag))||''; }).join(' | ');
+    this._log('B2: praise names Jackson', /jackson/i.test(said), said.slice(0,120));
+    this._log('B2: no phoneme milestone fires',
+      document.getElementById('milestone-modal').classList.contains('hidden'));
+    this._log('B2: word engine untouched by names',
+      Reading.readableWords().length===wordsBefore, String(Reading.readableWords().length));
+    /* distractors are never family */
+    showScreen('game');
+    runSession('T', [{title:'Name', run:function(){ Games.findName({id:'lily'}); }}], null);
+    await this._settle(700);
+    const shown = Array.prototype.map.call(document.querySelectorAll('.choice-card'),
+      function(b){ return b.textContent; }).join(' ');
+    const fam = familyDisplays().filter(function(d){ return d!=='LILY'; });
+    const leak = fam.filter(function(d){ return shown.indexOf(d)>=0; });
+    this._log('B2: no family name shown as wrong choice', leak.length===0, leak.join(',')||shown.slice(0,60));
+  },
+
+  /* Test I — the word bank is honest: aligned, resolvable, audio-true. */
+  async testI_wordbank(){
+    this._reset();
+    const badAlign = WORDS.filter(function(w){ return !w.t || w.ph.length!==w.gr.length; });
+    this._log('I: every word has aligned ph/gr', badAlign.length===0,
+      badAlign.slice(0,3).map(function(w){return w.t;}).join(','));
+    const allGraphemes = {};
+    Phonics.catalog.forEach(function(p){ (p.graphemes||[]).forEach(function(g){ allGraphemes[String(g).toLowerCase()]=1; }); });
+    const badGr = [];
+    /* Nine bank entries name the pending /ʌ/ sound (sun bug rug hug cup bun
+       run fun duck). They resolve to nothing today and can never be offered;
+       they are hooks WO-5 re-activates the moment a real /ʌ/ is recorded. */
+    const pendingWords = ['sun','bug','rug','hug','cup','bun','run','fun','duck'];
+    WORDS.forEach(function(w){
+      if(w.heart) return;
+      w.ph.forEach(function(p){
+        if(p==='u_short'){ if(pendingWords.indexOf(w.t)<0) badGr.push(w.t+'/'+p+' (sound)'); return; }
+        if(!Phonics.resolve(p)) badGr.push(w.t+'/'+p+' (sound)');
+      });
+      w.gr.forEach(function(g){ if(!allGraphemes[String(g).toLowerCase()]) badGr.push(w.t+'/'+g+' (spelling)'); });
+    });
+    this._log('I: every sound and spelling resolves in the catalog', badGr.length===0, badGr.slice(0,4).join(','));
+    this._log('I: pending-/ʌ/ words can never be offered today',
+      pendingWords.every(function(t){ return Reading.readableWords().map(function(w){return w.t;}).indexOf(t)<0; }),
+      pendingWords.join(','));
+    this._log('I: bank holds ~160 words', WORDS.length>=150, String(WORDS.length));
+    const audioOnes = WORDS.filter(function(w){ return w.audio; });
+    const checks = await Promise.all(audioOnes.map(function(w){
+      return fetch('audio/words/'+w.t+'.mp3', {method:'HEAD'}).then(function(r){ return r.ok?null:w.t; }).catch(function(){ return w.t; });
+    }));
+    const missing = checks.filter(Boolean);
+    this._log('I: every audio:true word resolves to a real file', missing.length===0, missing.slice(0,5).join(','));
+    const dangling = [];
+    SENTENCES.forEach(function(s){
+      s.w.forEach(function(t){ if(!Reading.byText(t)) dangling.push(s.id+':'+t); });
+    });
+    this._log('I: no sentence names a word outside the bank', dangling.length===0, dangling.slice(0,4).join(','));
+    const stPages = [];
+    STORIES.forEach(function(st){
+      st.pages.forEach(function(p){
+        if(SENTENCES.filter(function(s){ return s.id===p; }).length!==1) stPages.push(st.id+':'+p);
+      });
+    });
+    this._log('I: every story page resolves to exactly one sentence', stPages.length===0, stPages.join(','));
+    const famLeak = [];
+    RHYME_FAMILIES.forEach(function(f){
+      f.words.forEach(function(t){ if(!Reading.byText(t)) famLeak.push(f.rime+':'+t); });
+    });
+    this._log('I: rhyme families name bank words only', famLeak.length===0, famLeak.slice(0,4).join(','));
+    /* fixture approvals: st1 readable, st4 correctly unoffered */
+    this._log('I: finished story reads end to end',
+      Reading.storyReadable(STORIES.filter(function(s){return s.id==='st1';})[0]));
+    this._log('I: unfinished story is not offered',
+      !Reading.storyReadable(STORIES.filter(function(s){return s.id==='st4';})[0]));
+  },
+
+  /* Test J — the booth: keeping /ʌ/ brings the nine words back. */
+  async testJ_booth(){
+    this._reset();
+    const q = boothQueue();
+    this._log('J: booth leads with /ʌ/', q.length>0 && q[0].type==='phoneme' && q[0].id==='u_short', q.length? q[0].id:'empty');
+    this._log('J: sun starts unreadable', !Reading.readableWords().some(w=>w.t==='sun'));
+    const buf = await fetch('audio/phonemes/n.mp3').then(function(r){ return r.arrayBuffer(); });
+    await PhonemeDB.put('u_short', new Blob([buf], {type:'audio/mpeg'}));
+    boothKeep({type:'phoneme', id:'u_short', label:'/ʌ/'});
+    this._log('J: keeping /ʌ/ approves and introduces it',
+      approvalOf('u_short').st==='APPROVED' && S.unlocked.indexOf('u_short')>=0);
+    this._log('J: sun becomes readable', Reading.readableWords().some(w=>w.t==='sun'));
+    /* leave no trace: the test booth is not a human ear */
+    approvalOf('u_short').st='UNREVIEWED'; approvalOf('u_short').custom=false;
+    S.unlocked = S.unlocked.filter(function(id){ return id!=='u_short'; });
+    await PhonemeDB.open().then(function(db){
+      return new Promise(function(res){
+        try{
+          const tx=db.transaction('phonemes','readwrite');
+          tx.objectStore('phonemes').delete('custom:u_short');
+          tx.oncomplete=function(){ res(true); }; tx.onerror=function(){ res(true); };
+        }catch(e){ res(true); }
+      });
+    }).catch(function(){});
+    save();
+    this._log('J: cleanup restores the gate', !isPhonemeUsable('u_short'));
+  },
+
   async runAll(){
     this.results = [];
     const list = ['testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
-                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch'];
+                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
       catch(e){ this._log(list[i]+' THREW', false, e.message); }

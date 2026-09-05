@@ -139,7 +139,102 @@ const WORDS = [
   {t:'cow',  ph:['k','ow'],                 gr:['c','ow'],      emoji:'🐄', art:'cow',  audio:false},
   {t:'coin', ph:['k','oi','n'],             gr:['c','oi','n'],  emoji:'🪙', art:'coin', audio:false},
   {t:'hair', ph:['h','air'],                gr:['h','air'],     emoji:'💇', art:'hair', audio:false},
-  {t:'deer', ph:['d','ear'],                gr:['d','eer'],     emoji:'🦌', art:'deer', audio:false}
+  {t:'deer', ph:['d','ear'],                gr:['d','eer'],     emoji:'🦌', art:'deer', audio:false},
+
+  /* --- round two: core CVC completion (-an/-ap/-ad/-ag/-am/-ab) --- */
+  {t:'ban',  ph:['b','a_short','n'],       gr:['b','a','n'],   emoji:'🚫', art:'ban',  audio:false},
+  {t:'ran',  ph:['r','a_short','n'],       gr:['r','a','n'],   emoji:'🏃', art:'ran',  audio:false},
+  {t:'van',  ph:['v','a_short','n'],       gr:['v','a','n'],   emoji:'🚐', art:'van',  audio:false},
+  {t:'bad',  ph:['b','a_short','d'],       gr:['b','a','d'],   emoji:'👎', art:'bad',  audio:false},
+  {t:'had',  ph:['h','a_short','d'],       gr:['h','a','d'],   emoji:'🤲', art:'had',  audio:false},
+  {t:'lag',  ph:['l','a_short','g'],       gr:['l','a','g'],   emoji:'🐌', art:'lag',  audio:false},
+  {t:'tag',  ph:['t','a_short','g'],       gr:['t','a','g'],   emoji:'🏷️', art:'tag',  audio:false},
+  {t:'ham',  ph:['h','a_short','m'],       gr:['h','a','m'],   emoji:'🍖', art:'ham',  audio:false},
+  {t:'ram',  ph:['r','a_short','m'],       gr:['r','a','m'],   emoji:'🐏', art:'ram',  audio:false},
+  {t:'cab',  ph:['k','a_short','b'],       gr:['c','a','b'],   emoji:'🚕', art:'cab',  audio:false},
+  {t:'lab',  ph:['l','a_short','b'],       gr:['l','a','b'],   emoji:'🧪', art:'lab',  audio:false},
+  /* --- -et/-en/-eg/-it --- */
+  {t:'bet',  ph:['b','e_short','t'],       gr:['b','e','t'],   emoji:'🎲', art:'bet',  audio:false},
+  {t:'get',  ph:['g','e_short','t'],       gr:['g','e','t'],   emoji:'📦', art:'get',  audio:false},
+  {t:'jet',  ph:['j','e_short','t'],       gr:['j','e','t'],   emoji:'🛩️', art:'jet',  audio:false},
+  {t:'let',  ph:['l','e_short','t'],       gr:['l','e','t'],   emoji:'🎫', art:'let',  audio:false},
+  {t:'met',  ph:['m','e_short','t'],       gr:['m','e','t'],   emoji:'🤝', art:'met',  audio:false},
+  {t:'set',  ph:['s','e_short','t'],       gr:['s','e','t'],   emoji:'🍽️', art:'set',  audio:false},
+  {t:'ben',  ph:['b','e_short','n'],       gr:['b','e','n'],   emoji:'🧒', art:'ben',  audio:false},
+  {t:'den',  ph:['d','e_short','n'],       gr:['d','e','n'],   emoji:'🦁', art:'den',  audio:false},
+  {t:'pen',  ph:['p','e_short','n'],       gr:['p','e','n'],   emoji:'🖊️', art:'pen',  audio:false},
+  {t:'beg',  ph:['b','e_short','g'],       gr:['b','e','g'],   emoji:'🙏', art:'beg',  audio:false},
+  {t:'peg',  ph:['p','e_short','g'],       gr:['p','e','g'],   emoji:'🪝', art:'peg',  audio:false},
+  {t:'bit',  ph:['b','i_short','t'],       gr:['b','i','t'],   emoji:'🦷', art:'bit',  audio:false},
+  {t:'fit',  ph:['f','i_short','t'],       gr:['f','i','t'],   emoji:'💪', art:'fit',  audio:false},
+  {t:'hit',  ph:['h','i_short','t'],       gr:['h','i','t'],   emoji:'⚾', art:'hit',  audio:false},
+  {t:'lit',  ph:['l','i_short','t'],       gr:['l','i','t'],   emoji:'🕯️', art:'lit',  audio:false},
+  {t:'pit',  ph:['p','i_short','t'],       gr:['p','i','t'],   emoji:'🍑', art:'pit',  audio:false},
+  /* --- -im plus story words --- */
+  {t:'dim',  ph:['d','i_short','m'],       gr:['d','i','m'],   emoji:'🌑', art:'dim',  audio:false},
+  {t:'him',  ph:['h','i_short','m'],       gr:['h','i','m'],   emoji:'🧑', art:'him',  audio:false},
+  {t:'kim',  ph:['k','i_short','m'],       gr:['k','i','m'],   emoji:'🧑‍🦱', art:'kim',  audio:false},
+  {t:'rim',  ph:['r','i_short','m'],       gr:['r','i','m'],   emoji:'🛞', art:'rim',  audio:false},
+  {t:'pip',  ph:['p','i_short','p'],       gr:['p','i','p'],   emoji:'🐽', art:'pip',  audio:false},
+  {t:'she',  ph:['sh','e_short'],          gr:['sh','e'],      emoji:'👧', art:'she',  audio:false},
+  {t:'swim', ph:['s','w','i_short','m'],   gr:['s','w','i','m'], emoji:'🏊', art:'swim', audio:false},
+  /* --- -ot/-op/-ob --- */
+  {t:'got',  ph:['g','o_short','t'],       gr:['g','o','t'],   emoji:'🛍️', art:'got',  audio:false},
+  {t:'hot',  ph:['h','o_short','t'],       gr:['h','o','t'],   emoji:'🥵', art:'hot',  audio:false},
+  {t:'lot',  ph:['l','o_short','t'],       gr:['l','o','t'],   emoji:'🅿️', art:'lot',  audio:false},
+  {t:'not',  ph:['n','o_short','t'],       gr:['n','o','t'],   emoji:'⛔', art:'not',  audio:false},
+  {t:'hop',  ph:['h','o_short','p'],       gr:['h','o','p'],   emoji:'🐇', art:'hop',  audio:false},
+  {t:'pop',  ph:['p','o_short','p'],       gr:['p','o','p'],   emoji:'🎈', art:'pop',  audio:false},
+  {t:'cop',  ph:['k','o_short','p'],       gr:['c','o','p'],   emoji:'🚓', art:'cop',  audio:false},
+  {t:'bob',  ph:['b','o_short','b'],       gr:['b','o','b'],   emoji:'💇', art:'bob',  audio:false},
+  {t:'cob',  ph:['k','o_short','b'],       gr:['c','o','b'],   emoji:'🌽', art:'cob',  audio:false},
+  {t:'job',  ph:['j','o_short','b'],       gr:['j','o','b'],   emoji:'💼', art:'job',  audio:false},
+  /* --- -ick/-ock/-ng --- */
+  {t:'chick', ph:['ch','i_short','k'],     gr:['ch','i','ck'], emoji:'🐤', art:'chick', audio:false},
+  {t:'click', ph:['k','l','i_short','k'],  gr:['c','l','i','ck'], emoji:'🖱️', art:'click', audio:false},
+  {t:'pick', ph:['p','i_short','k'],       gr:['p','i','ck'],  emoji:'🤏', art:'pick', audio:false},
+  {t:'stick', ph:['s','t','i_short','k'],  gr:['s','t','i','ck'], emoji:'🏒', art:'stick', audio:false},
+  {t:'lock', ph:['l','o_short','k'],       gr:['l','o','ck'],  emoji:'🔒', art:'lock', audio:false},
+  {t:'rock', ph:['r','o_short','k'],       gr:['r','o','ck'],  emoji:'🪨', art:'rock', audio:false},
+  {t:'shock', ph:['sh','o_short','k'],     gr:['sh','o','ck'], emoji:'⚡', art:'shock', audio:false},
+  {t:'rich', ph:['r','i_short','ch'],      gr:['r','i','ch'],  emoji:'💰', art:'rich', audio:false},
+  {t:'sing', ph:['s','i_short','ng'],      gr:['s','i','ng'],  emoji:'🎤', art:'sing', audio:false},
+  {t:'song', ph:['s','o_short','ng'],      gr:['s','o','ng'],  emoji:'🎵', art:'song', audio:false},
+  {t:'wing', ph:['w','i_short','ng'],      gr:['w','i','ng'],  emoji:'🪽', art:'wing', audio:false},
+  /* --- doubled finals ll/ss/ff --- */
+  {t:'bill', ph:['b','i_short','l'],       gr:['b','i','ll'],  emoji:'💵', art:'bill', audio:false},
+  {t:'fill', ph:['f','i_short','l'],       gr:['f','i','ll'],  emoji:'🪣', art:'fill', audio:false},
+  {t:'hill', ph:['h','i_short','l'],       gr:['h','i','ll'],  emoji:'⛰️', art:'hill', audio:false},
+  {t:'will', ph:['w','i_short','l'],       gr:['w','i','ll'],  emoji:'🔮', art:'will', audio:false},
+  {t:'bell', ph:['b','e_short','l'],       gr:['b','e','ll'],  emoji:'🔔', art:'bell', audio:false},
+  {t:'sell', ph:['s','e_short','l'],       gr:['s','e','ll'],  emoji:'💲', art:'sell', audio:false},
+  {t:'tell', ph:['t','e_short','l'],       gr:['t','e','ll'],  emoji:'🗣️', art:'tell', audio:false},
+  {t:'well', ph:['w','e_short','l'],       gr:['w','e','ll'],  emoji:'🪙', art:'well', audio:false},
+  {t:'all',  ph:['a_short','l'],           gr:['a','ll'],      emoji:'🌍', art:'all',  audio:false},
+  {t:'ball', ph:['b','a_short','l'],       gr:['b','a','ll'],  emoji:'⚽', art:'ball', audio:false},
+  {t:'fall', ph:['f','a_short','l'],       gr:['f','a','ll'],  emoji:'🍁', art:'fall', audio:false},
+  {t:'wall', ph:['w','a_short','l'],       gr:['w','a','ll'],  emoji:'🧱', art:'wall', audio:false},
+  {t:'kiss', ph:['k','i_short','s'],       gr:['k','i','ss'],  emoji:'💋', art:'kiss', audio:false},
+  {t:'miss', ph:['m','i_short','s'],       gr:['m','i','ss'],  emoji:'✈️', art:'miss', audio:false},
+  {t:'off',  ph:['o_short','f'],           gr:['o','ff'],      emoji:'🔌', art:'off',  audio:false},
+  {t:'fizz', ph:['f','i_short','z'],       gr:['f','i','zz'],  emoji:'🥤', art:'fizz', audio:false},
+  {t:'jazz', ph:['j','a_short','z'],       gr:['j','a','zz'],  emoji:'🎷', art:'jazz', audio:false},
+  /* --- vowel teams round two --- */
+  {t:'mail', ph:['m','ai','l'],            gr:['m','ai','l'],  emoji:'📬', art:'mail', audio:false},
+  {t:'day',  ph:['d','ai'],                gr:['d','ay'],      emoji:'🌅', art:'day',  audio:false},
+  {t:'light', ph:['l','igh','t'],          gr:['l','igh','t'], emoji:'💡', art:'light', audio:false},
+  {t:'night', ph:['n','igh','t'],          gr:['n','igh','t'], emoji:'🌃', art:'night', audio:false},
+  {t:'coat', ph:['k','oa','t'],            gr:['c','oa','t'],  emoji:'🧥', art:'coat', audio:false},
+  {t:'look', ph:['l','oo_short','k'],      gr:['l','oo','k'],  emoji:'👀', art:'look', audio:false},
+  {t:'soon', ph:['s','oo_long','n'],       gr:['s','oo','n'],  emoji:'⏰', art:'soon', audio:false},
+  {t:'car',  ph:['k','ar'],                gr:['c','ar'],      emoji:'🚗', art:'car',  audio:false},
+  {t:'her',  ph:['h','er'],                gr:['h','er'],      emoji:'💁‍♀️', art:'her',  audio:false},
+  {t:'how',  ph:['h','ow'],                gr:['h','ow'],      emoji:'❓', art:'how',  audio:false},
+  {t:'snow', ph:['s','n','ow'],            gr:['s','n','ow'],  emoji:'❄️', art:'snow', audio:false},
+  {t:'near', ph:['n','ear'],               gr:['n','ear'],     emoji:'🔍', art:'near', audio:false},
+  /* --- rhyme repairs: these families name them, so they must exist --- */
+  {t:'win',  ph:['w','i_short','n'],       gr:['w','i','n'],   emoji:'🏆', art:'win',  audio:false},
+  {t:'big',  ph:['b','i_short','g'],       gr:['b','i','g'],   emoji:'🐘', art:'big',  audio:false}
 ];
 
 /* ---------------- SENTENCES -----------------------------------------
@@ -159,7 +254,14 @@ const SENTENCES = [
   {id:'s11', w:['I','can','hug','my','cat'],   art:'🤗', scene:'cottage'},
   {id:'s12', w:['the','fish','is','in','the','net'], art:'🐟', scene:'meadow'},
   {id:'s13', w:['a','ship','can','tip'],       art:'🚢', scene:'meadow'},
-  {id:'s14', w:['the','moon','is','in','the','sky'], art:'🌙', scene:'sky', needs:['oo_long']}
+  {id:'s14', w:['the','moon','is','in','the','net'], art:'🌙', scene:'sky', needs:['oo_long']},
+  {id:'s15', w:['Sam','can','pat','the','pig'], art:'👋', scene:'cottage'},
+  {id:'s16', w:['pip','sat','on','a','mat'],    art:'🧶', scene:'cottage'},
+  {id:'s17', w:['ben','had','ham'],             art:'🍖', scene:'cottage'},
+  {id:'s18', w:['the','hen','sat'],             art:'🐔', scene:'meadow'},
+  {id:'s19', w:['kim','can','sip'],             art:'🥤', scene:'cottage'},
+  {id:'s20', w:['she','sat'],                   art:'👧', scene:'meadow'},
+  {id:'s21', w:['pip','can','sip'],             art:'🥤', scene:'cottage'}
 ];
 
 /* ---------------- STORIES --------------------------------------------
@@ -174,7 +276,10 @@ const STORIES = [
    reward:'dress-lilac'},
   {id:'st3', title:'The Dog and the Rug', art:'🐶',
    pages:['s8','s9','s10'],
-   reward:'decor-painting'}
+   reward:'decor-painting'},
+  {id:'st4', title:'Pip the Pig', art:'🐽',
+   pages:['s15','s16','s21'],
+   reward:'pet-orange'}
 ];
 
 /* ---------------- RHYME + SYLLABLE DATA ------------------------------
@@ -183,14 +288,27 @@ const STORIES = [
 const RHYME_FAMILIES = [
   {rime:'at',  words:['cat','sat','mat','pat','hat','bat','rat']},
   {rime:'ap',  words:['tap','map','cap','gap','nap']},
+  {rime:'an',  words:['can','man','pan','ran','van','fan']},
+  {rime:'ad',  words:['bad','had','mad','sad','dad']},
+  {rime:'ag',  words:['bag','tag','lag']},
+  {rime:'am',  words:['ham','ram']},
   {rime:'in',  words:['pin','tin','in','win']},
   {rime:'ig',  words:['pig','dig','big']},
-  {rime:'og',  words:['dog','log']},
-  {rime:'ug',  words:['bug','rug','hug']},
-  {rime:'un',  words:['sun','bun','run','fun']},
+  {rime:'it',  words:['sit','bit','fit','hit','lit','pit']},
+  {rime:'ip',  words:['pip','sip','tip']},
+  {rime:'im',  words:['dim','him','kim','rim']},
+  {rime:'et',  words:['bet','get','jet','let','met','set']},
+  {rime:'en',  words:['ben','den','hen','pen','ten']},
   {rime:'ed',  words:['bed','red']},
-  {rime:'op',  words:['mop','top','shop']},
-  {rime:'ot',  words:['pot','dot','cot']}
+  {rime:'ill', words:['bill','fill','hill','will']},
+  {rime:'ell', words:['bell','sell','tell','well']},
+  {rime:'all', words:['all','ball','fall','wall']},
+  {rime:'og',  words:['dog','log']},
+  {rime:'op',  words:['mop','top','shop','pop','hop']},
+  {rime:'ot',  words:['pot','dot','cot','got','hot','lot','not']},
+  {rime:'ob',  words:['bob','cob','job']},
+  {rime:'ock', words:['lock','rock','shock','sock']},
+  {rime:'ick', words:['chick','click','pick','stick']}
 ];
 /* Spoken-only words for syllable clapping. These are HEARD, never read,
    so they are exempt from decodability — they exercise the ear, not the eye. */

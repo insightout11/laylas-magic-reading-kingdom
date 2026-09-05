@@ -133,13 +133,12 @@ const Sound = {
   /* Spoken instruction / feedback. TTS or a recorded clip, one channel. */
   say(text, opts){
     opts = opts || {};
-    Bus.emit('SPEECH_START', {kind:'say', text:String(text).slice(0,60)});
+    /* START/END lifecycle is emitted once, canonically, by Speech itself. */
     return new Promise(resolve=>{
       if(!text){ resolve(false); return; }
       Speech.request(opts.prio||3, 'say:'+String(text).slice(0,24), 'tts', (cancelled, done, track)=>{
         Speech._ttsInto(text, opts, track, cancelled, (why)=>{
           done(why);
-          Bus.emit('SPEECH_END', {kind:'say', why:why});
           resolve(why==='done');
         });
       });
@@ -148,15 +147,14 @@ const Sound = {
   /* Pre-recorded character line, falling back to TTS for the same words. */
   clip(key, fallbackText, opts){
     opts = opts || {};
-    Bus.emit('SPEECH_START', {kind:'clip', key:key});
     return new Promise(resolve=>{
       Speech.request(opts.prio||3, 'clip:'+key, 'clip', (cancelled, done, track)=>{
         Speech.playFile(VOICE_DIR+key+'.mp3', null, track).then(ok=>{
-          if(cancelled()){ done('cancelled'); Bus.emit('SPEECH_END',{kind:'clip',why:'cancelled'}); resolve(false); return; }
-          if(ok){ done('done'); Bus.emit('SPEECH_END',{kind:'clip',key:key,why:'done'}); resolve(true); return; }
+          if(cancelled()){ done('cancelled'); resolve(false); return; }
+          if(ok){ done('done'); resolve(true); return; }
           done('missing');
           if(fallbackText){ Sound.say(fallbackText, opts).then(resolve); }
-          else { Bus.emit('SPEECH_END',{kind:'clip',why:'missing'}); resolve(false); }
+          else { resolve(false); }
         });
       });
     });
@@ -199,13 +197,15 @@ const Sound = {
     return new Promise(resolve=>{
       Speech.request(2, 'word:'+text, 'word', (cancelled, done, track)=>{
         AudioSys.duck(true); AudioSys._ducked=true;
-        Speech.playFile(WORD_DIR+text+'.mp3', null, track).then(ok=>{
-          AudioSys.duck(false); AudioSys._ducked=false;
-          if(cancelled()){ done('cancelled'); resolve(false); return; }
-          done('done');
-          Bus.emit('WORD_END', {word:text, recorded:ok});
-          if(ok) resolve(true);
-          else Sound.say(text, {rate:opts.rate||0.8}).then(resolve);
+        AudioSys.wordRecording(text).then(function(custom){
+          Speech.playFile(custom||WORD_DIR+text+'.mp3', null, track).then(ok=>{
+            AudioSys.duck(false); AudioSys._ducked=false;
+            if(cancelled()){ done('cancelled'); resolve(false); return; }
+            done('done');
+            Bus.emit('WORD_END', {word:text, recorded:ok});
+            if(ok) resolve(true);
+            else Sound.say(text, {rate:opts.rate||0.8}).then(resolve);
+          });
         });
       });
     });
@@ -234,7 +234,8 @@ const Sound = {
           try{ hooks.onBlended && hooks.onBlended(); }catch(e){}
           await new Promise(r=>setTimeout(r,380));
           if(cancelled()){ finish('cancelled'); return; }
-          const okW = await Speech.playFile(WORD_DIR+wordObj.t+'.mp3', null, track);
+          const customW = await AudioSys.wordRecording(wordObj.t);
+          const okW = await Speech.playFile(customW||WORD_DIR+wordObj.t+'.mp3', null, track);
           if(!okW){
             await new Promise(r=>{ AudioSys.speak(wordObj.t,{rate:0.75}); setTimeout(r,900); });
           }

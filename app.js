@@ -149,6 +149,9 @@ function migrateState(st){
       const r = mapId(bits[1]);
       if(!r) return;
       mast[bits[0]+':'+r] = st.mastery[k];
+    } else if(bits.length===2 && bits[0]==='name'){
+      /* old global name keys ('name:find', 'name:build') belonged to Layla. */
+      mast['name:'+bits[1]+':layla'] = st.mastery[k];
     } else mast[k] = st.mastery[k];
   });
   st.mastery = mast;
@@ -357,6 +360,12 @@ function manifestOf(id){
 }
 /* The single gate every game must respect. */
 function isPhonemeUsable(id){
+  /* A human-approved parent recording is usable by definition — this is how
+     sounds with no bundled file (today: /ʌ/) enter the engine. */
+  try{
+    const raw = approvalOf(id);
+    if(raw && raw.st==='APPROVED' && raw.custom) return true;
+  }catch(e){}
   id = Phonics.resolve(id);
   if(!id) return false;
   const man = manifestOf(id);
@@ -414,11 +423,69 @@ function reconcileApprovals(){
   if(lapsed.length) try{ Speech.log('audio', 'approval lapsed: '+lapsed.join(',')); }catch(e){}
   return lapsed;
 }
+/* ---- Shipped baseline (WO-1) -----------------------------------------
+   approvals.json holds decisions a human already made, committed so they
+   survive a new device, a cleared cache, or the other origin. Seeding runs
+   once per load and ONLY fills sounds with no local decision: anything the
+   local save marks APPROVED or REJECTED (including a parent recording) is
+   left strictly alone. Hash binding then applies as usual. */
+function seedApprovalsFromBaseline(){
+  return fetch(PH_DIR+'approvals.json').then(function(r){ if(!r.ok) throw 0; return r.json(); })
+  .then(function(doc){
+    const dec = (doc&&doc.decisions)||{};
+    let changed=false;
+    Object.keys(dec).forEach(function(rawId){
+      const pid = Phonics.resolve(rawId) || rawId;
+      const d = dec[rawId];
+      if(!d || (d.status!=='APPROVED'&&d.status!=='REJECTED')) return;
+      const cur = (S.phonemeApproval||{})[pid];
+      if(cur && (cur.st==='APPROVED'||cur.st==='REJECTED')) return;  // local decision wins
+      S.phonemeApproval[pid] = {st:d.status, custom:false, played:true, hash:d.sha256||null, seeded:true};
+      changed=true;
+    });
+    if(changed) save();
+    return changed;
+  }).catch(function(){ return false; });
+}
+/* ---- Review tiers for future batches (WO-1 Step 4) --------------------
+   'trust': the file IS the provider's recording of exactly this sound
+   (same speaker, same session as sounds already approved by ear).
+   'listen': a mistake is plausible — an inferred file mapping, or a stop
+   consonant that can carry an added "uh". These always need ears. */
+var LISTEN_FIRST_STOPS = ['b','d','g','k'];
+function reviewTier(id){
+  const pid = Phonics.resolve(id);
+  if(!pid) return 'listen';
+  const man = manifestOf(pid);
+  if(man && man.fileURL && man.file){
+    const base = function(s){ s=String(s).split('/').pop(); try{ return decodeURIComponent(s); }catch(e){ return s; } };
+    if(base(man.fileURL) && base(man.file) && base(man.fileURL)!==base(man.file)) return 'listen';
+  }
+  if(LISTEN_FIRST_STOPS.indexOf(pid)>=0) return 'listen';
+  return 'trust';
+}
+/* One tap covers every trust-tier sound still waiting. Listen-tier sounds
+   are never touched by this — they keep needing individual ears. */
+function trustBatchApprove(){
+  let n=0;
+  PHONEME_ORDER.forEach(function(id){
+    const a = approvalOf(id);
+    if(a.st!=='UNREVIEWED') return;
+    if(reviewTier(id)!=='trust') return;
+    const man = manifestOf(id);
+    if(man && man.approvalStatus==='MISSING') return;
+    a.st='APPROVED'; a.dev=false; a.hash=(man&&man.sha256)||null; a.played=true;
+    n++;
+  });
+  if(n) save();
+  return n;
+}
 function loadPhonemeManifest(){
   try{
     return fetch(PH_DIR+'manifest.json').then(r=>{ if(!r.ok) throw 0; return r.json(); })
     .then(m=>{
       PHONEME_MANIFEST = m;
+      return seedApprovalsFromBaseline().catch(function(){ return false; }).then(function(){
       try{
         reconcileApprovals();
         const missing = Object.keys(m.sounds||{}).filter(k=>m.sounds[k].approvalStatus==='MISSING');
@@ -438,6 +505,7 @@ function loadPhonemeManifest(){
         if(scr && scr.classList.contains('active')) renderAudioQA();
       }catch(e){}
       return m;
+      });
     }).catch(()=>null);
   }catch(e){ return Promise.resolve(null); }
 }
@@ -460,8 +528,121 @@ const PhonemeDB = {
       const tx=db.transaction('phonemes','readonly');
       const rq=tx.objectStore('phonemes').get('custom:'+id);
       rq.onsuccess=()=>res(rq.result||null); rq.onerror=()=>res(null);
-    }catch(e){ res(null); } })).catch(()=>null); }
+    }catch(e){ res(null); } })).catch(()=>null); },
+  all(){ return this.open().then(db=>new Promise((res)=>{ try{
+      const tx=db.transaction('phonemes','readonly');
+      const store=tx.objectStore('phonemes');
+      const out={};
+      const rq=store.openCursor();
+      rq.onsuccess=function(){
+        const c=rq.result;
+        if(c){ out[c.key]=c.value; c.continue(); }
+        else res(out);
+      };
+      rq.onerror=function(){ res(out||{}); };
+    }catch(e){ res({}); } })).catch(()=>({})); }
 };
+/* ---- Progress portability (WO-1 Step 3) --------------------------------
+   The ONLY way to move Layla to a new tablet without starting over: a
+   downloaded JSON file plus a file picker. Covers the whole save plus any
+   parent recordings (stored as data URLs, restored into IndexedDB). */
+var PROGRESS_EXPORT_FIELDS = ['v','stars','rainbowColors','firstSessionDone','firstSessionStep',
+  'unlocked','phonemeApproval','mastery','wordsRead','wordsCelebrated','heartWords','gardenFlowers',
+  'sentencesRead','storiesRead','milestones','castleUnlocks','rewards','stickers','equipped','sessions',
+  'minutes','lastPlayDate','streak','blendingUnlocked','sentenceUnlocked','sentenceCelebrated',
+  'blendingCelebrated','currentFocus','settings','lastMilestone'];
+function blobToDataURL(blob){
+  return new Promise(function(res, rej){
+    try{
+      const fr=new FileReader();
+      fr.onload=function(){ res(fr.result); };
+      fr.onerror=function(){ rej(fr.error||'read'); };
+      fr.readAsDataURL(blob);
+    }catch(e){ rej(e); }
+  });
+}
+function dataURLToBlob(url){
+  return fetch(url).then(function(r){ if(!r.ok) throw 0; return r.blob(); });
+}
+function collectRecordings(){
+  return PhonemeDB.all().then(function(map){
+    const keys=Object.keys(map);
+    const jobs=keys.map(function(k){
+      const b=map[k];
+      if(!(b instanceof Blob)) return Promise.resolve(null);
+      return blobToDataURL(b).then(function(u){ return [k,u]; }).catch(function(){ return null; });
+    });
+    return Promise.all(jobs).then(function(pairs){
+      const out={};
+      pairs.forEach(function(p){ if(p) out[p[0]]=p[1]; });
+      return out;
+    });
+  }).catch(function(){ return {}; });
+}
+function buildExportPayload(){
+  const state={};
+  PROGRESS_EXPORT_FIELDS.forEach(function(k){ state[k]=S[k]; });
+  return collectRecordings().then(function(recs){
+    return {app:'laylas-magic-reading-kingdom', format:1, exportedAt:Date.now(), state:state, recordings:recs};
+  });
+}
+function applyImportPayload(payload){
+  if(!payload || payload.app!=='laylas-magic-reading-kingdom' || !payload.state) return Promise.reject('bad-backup');
+  const base=defaultState();
+  Object.keys(payload.state).forEach(function(k){ if(k in base || k==='audioMissing') base[k]=payload.state[k]; });
+  S=base; migrateState(S); save();
+  const recs=payload.recordings||{};
+  const keys=Object.keys(recs);
+  const puts=keys.map(function(k){
+    return dataURLToBlob(recs[k]).then(function(blob){
+      return PhonemeDB.open().then(function(db){
+        return new Promise(function(res){
+          try{
+            const tx=db.transaction('phonemes','readwrite');
+            tx.objectStore('phonemes').put(blob,k);
+            tx.oncomplete=function(){ res(true); }; tx.onerror=function(){ res(false); };
+          }catch(e){ res(false); }
+        });
+      });
+    }).catch(function(){ return false; });
+  });
+  return Promise.all(puts).then(function(rs){
+    refreshAll(); renderParent();
+    return {restored:true, recordings:rs.filter(Boolean).length, of:keys.length};
+  });
+}
+function exportProgress(){
+  buildExportPayload().then(function(payload){
+    const recs=payload.recordings||{};
+    try{
+      const blob=new Blob([JSON.stringify(payload)], {type:'application/json'});
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='layla-reading-progress.json';
+      document.body.appendChild(a); a.click();
+      setTimeout(function(){ try{ URL.revokeObjectURL(a.href); a.remove(); }catch(e){} }, 2000);
+      const n=Object.keys(recs).length;
+      toast('Progress saved! 💾'+(n?' Including '+n+' recording'+(n===1?'':'s')+'.':''));
+    }catch(e){ toast('Export failed on this device.'); }
+  });
+}
+function importProgressFile(file){
+  const status=$('move-status');
+  const say=function(t){ if(status) status.textContent=t; };
+  if(!file){ return; }
+  const rd=new FileReader();
+  rd.onload=function(){
+    try{
+      const payload=JSON.parse(rd.result);
+      applyImportPayload(payload).then(function(r){
+        say('Welcome back! Restored progress'+(r.of?' and '+r.recordings+' of '+r.of+' recordings':'')+'. 💖');
+        toast('Progress restored! 💖');
+      }).catch(function(){ say('That file is not a Reading Kingdom backup.'); });
+    }catch(e){ say('That file is not a Reading Kingdom backup.'); }
+  };
+  rd.onerror=function(){ say('Could not read that file.'); };
+  rd.readAsText(file);
+}
 /* A phonemeId is NOT a filename: 'a_short' lives in a.mp3 (the untouched
    starter asset) and 'oo_long' in oo_long.mp3. Always resolve through the
    catalog rather than concatenating the id. */
@@ -476,6 +657,14 @@ AudioSys.resolvePhoneme = function(id){
   return PhonemeDB.get(pid).then(blob=>{
     if(blob){ try{ return URL.createObjectURL(blob); }catch(e){} }
     return phonemeFile(pid);
+  });
+};
+/* A parent-recorded whole word, if one was kept in the booth. Same rule as
+   phonemes: the human recording in the child's ear beats synthesis. */
+AudioSys.wordRecording = function(word){
+  return PhonemeDB.get('word:'+word).then(function(blob){
+    if(!blob) return null;
+    try{ return URL.createObjectURL(blob); }catch(e){ return null; }
   });
 };
 const PHONEME_WORD = Phonics.catalog.reduce(function(m,p){ m[p.id]=p.word; return m; }, {});
@@ -605,7 +794,8 @@ AudioSys.playWordSlow = function(wordObj, hooks){
       try{ hooks.onBlended && hooks.onBlended(); }catch(e){}
       await new Promise(r=>setTimeout(r,400));
       if(cancelled()){ finish('cancelled'); return; }
-      const okW = await Speech.playFile(WORD_DIR+wordObj.t+'.mp3', null, trackEl);
+      const customW = await AudioSys.wordRecording(wordObj.t);
+      const okW = await Speech.playFile(customW||WORD_DIR+wordObj.t+'.mp3', null, trackEl);
       AudioStat.word[wordObj.t] = okW?'ok':'missing';
       finish('done');
       try{ hooks.onDone && hooks.onDone(!okW); }catch(e){}
@@ -617,12 +807,14 @@ AudioSys.playWord = function(word, slow){
   const track = WORDS.some(w=>w.t===word);
   Speech.request(2, 'word:'+word, 'word', (cancelled, done, trackEl)=>{
     AudioSys.duck(true); AudioSys._ducked=true;
-    Speech.playFile(WORD_DIR+word+'.mp3', null, trackEl).then((ok)=>{
+    AudioSys.wordRecording(word).then(function(custom){
+      Speech.playFile(custom||WORD_DIR+word+'.mp3', null, trackEl).then((ok)=>{
       if(track) AudioStat.word[word] = ok?'ok':'missing';
       AudioSys.duck(false); AudioSys._ducked=false;
       if(cancelled()){ done('cancelled'); return; }
       done('done');
       if(!ok) after(80, ()=> AudioSys.speak(word, {rate: slow?0.7:0.92}));
+      });
     });
   });
 };
@@ -753,7 +945,7 @@ const Speech = {
     try{ return { speaking:!!this.cur, kind:this.cur&&this.cur.kind, tag:this.cur&&this.cur.tag, queued:!!this.queued, music:!!AudioSys.musicOn, scene:AudioSys._scene, ducked:!!AudioSys._ducked }; }
     catch(e){ return { speaking:!!this.cur }; }
   },
-  _stopCur(reason){
+  _stopCur(reason, hold){
     const c=this.cur; this.cur=null; if(!c) return;
     try{
       if(c.kind==='tts'){ try{ speechSynthesis.cancel(); }catch(e){} }
@@ -762,6 +954,12 @@ const Speech = {
     talking(false);
     this._lastStopAt = Date.now();
     this.log('stop', (c.tag||c.kind)+' ← '+reason);
+    /* Complete the killed job's lifecycle so every START is matched by
+       exactly one END on the bus. With hold=true the queued job (if any)
+       stays queued: the preempting request runs next, not the bystander. */
+    const f=c.finishRef;
+    if(hold){ const q=this.queued; this.queued=null; if(f){ try{ f(reason); }catch(e){} } this.queued=q; }
+    else if(f){ try{ f(reason); }catch(e){} }
   },
   cancel(reason){ this.token++; this.queued=null; this._stopCur(reason||'cancel'); this.log('cancel', reason||''); },
   clear(){ this.queued=null; },
@@ -771,8 +969,8 @@ const Speech = {
     this._lastTag=key; this._lastTime=now;
     const job={prio, tag, kind, starter};
     if(!this.cur){ this._run(job); return; }
-    if(prio<this.cur.prio){ this.log('preempt', this.cur.tag+' → '+tag); this._stopCur('preempt'); this._run(job); }
-    else if(prio===this.cur.prio){ this._stopCur('replace'); this._run(job); }
+    if(prio<this.cur.prio){ this.log('preempt', this.cur.tag+' → '+tag); this._stopCur('preempt', true); this._run(job); }
+    else if(prio===this.cur.prio){ this._stopCur('replace', true); this._run(job); }
     else { this.queued=job; this.log('queued', tag); }
   },
   _run(job){
@@ -785,9 +983,10 @@ const Speech = {
     const wait = Math.max(0, gap-sinceStop);
     const begin=()=>{
       if(this.token!==my) return;
-      this.cur={prio:job.prio, tag:job.tag, kind:job.kind, el:null, seq:job.seq};
+      this.cur={prio:job.prio, tag:job.tag, kind:job.kind, el:null, seq:job.seq, finishRef:null};
     talking(true);
     this.log('start', job.tag+' ['+job.kind+' p'+job.prio+']');
+    try{ Bus.emit('SPEECH_START', {kind:job.kind, tag:job.tag}); }catch(e){}
     let finished=false;
     const finish=(why)=>{
       if(finished) return; finished=true;
@@ -795,9 +994,11 @@ const Speech = {
       // preempted jobs must never clear a newer job, even with equal tags).
       if(this.cur && this.cur.seq===job.seq){ this.cur=null; talking(false); }
       this.log('end', job.tag+(why?' ← '+why:''));
+      try{ Bus.emit('SPEECH_END', {kind:job.kind, tag:job.tag, why:why||''}); }catch(e){}
       const q=this.queued; this.queued=null;
       if(q && this.token===my) this._run(q);
     };
+    this.cur.finishRef=finish;
     try{ job.starter(()=>this.token!==my, finish, (el)=>{ if(this.cur&&this.cur.seq===job.seq) this.cur.el=el; }); }
     catch(e){ finish('error'); }
     };
@@ -1119,46 +1320,57 @@ function celebrateRight(skillId, praise){
 const Games = {};
 
 /* 1. Find name */
-Games.findName = function(){
+Games.findName = function(params){
+  params=params||{};
+  const nm = nameById(params.id||'layla');
   const area=$('game-area'); area.innerHTML='';
-  say('find-your-name', 'Can you find Layla?');
+  say('find-your-name', 'Can you find '+nm.spoken+'?');
   $('game-area').dataset.scene='castle';
-  twinkleSay('Can you find Layla? 💖', {silent:true});
+  twinkleSay('Can you find '+nm.spoken+'? 💖', {silent:true});
+  const nameAct = Act.describe({type:'name', targetWord:nm.display, targetLabel:nm.spoken,
+    prompt:'Find '+nm.spoken, masteryKey:'name:find:'+nm.id});
   const wrap=document.createElement('div'); wrap.className='choices center';
   const row=document.createElement('div'); row.className='choices';
-  const opts=shuffle(['LAYLA','MAYA','LUCY']);
+  const distract = shuffle(DISTRACTOR_NAMES.filter(function(d){ return familyDisplays().indexOf(d)<0; })).slice(0,2);
+  const opts=shuffle([nm.display].concat(distract));
   opts.forEach(n=>{
     const b=document.createElement('button'); b.className='choice-card heart-card';
     b.innerHTML='💗<br>'+n;
-    if(n==='LAYLA') b.dataset.correct='1';
+    if(n===nm.display) b.dataset.correct='1';
     b.onclick=()=>{
       AudioSys.ensure();
-      if(n==='LAYLA'){
-        b.classList.add('correct'); AudioSys.sfx('fanfare'); confettiBlast();
-        AudioSys.speak("Yes! That's YOUR name! Layla! You are already a reader!");
-        record('name:find', firstTryFlag&&attemptsThisItem===0);
-        addStars(3); awardSticker('layla-name', true);
-        after(2200, activityDone);
-      } else gentleNo(b, 'Good looking! But where is Layla? Listen... Can you find Layla?');
+      if(n===nm.display){
+        b.classList.add('correct');
+        if(nm.id==='layla'){ awardSticker('layla-name', true); }
+        confettiBlast();
+        Act.finish(nameAct, {praise:function(a){
+          return Sound.say('Yes! That is '+nm.spoken+'! You found '+nm.spoken+'!');
+        }});
+        addStars(3);
+      } else gentleNo(b, 'Good looking! But where is '+nm.spoken+'? Listen... Can you find '+nm.spoken+'?');
     };
-    row.appendChild(b);
   });
   wrap.appendChild(row); area.appendChild(wrap);
 };
 
-/* 2. Build name — tap-to-place (drag optional, forgiving) */
-Games.buildName = function(){
+/* 2. Build name — tap-to-place (drag optional, forgiving). Generalized over
+   the NAMES registry; slot count comes from the name, never a literal. */
+Games.buildName = function(params){
+  params=params||{};
+  const nm = nameById(params.id||'layla');
   const area=$('game-area'); area.innerHTML='';
-  setInstruction('Drag the letters to spell LAYLA.', 'Drag the letters to spell Layla. L. A. Y. L. A.');
-  twinkleSay("Let's build YOUR name! L. A. Y. L. A.! 💖", {silent:true});
-  AudioSys.playVoice('build-name', 'Drag the letters to spell Layla.');
+  const spelled = nm.letters.join('. ') + '.';
+  setInstruction('Drag the letters to spell '+nm.display+'.', 'Drag the letters to spell '+nm.spoken+'. '+spelled);
+  twinkleSay("Let's build "+nm.spoken+"'s name! "+spelled+" 💖", {silent:true});
+  AudioSys.playVoice('build-name', 'Drag the letters to spell '+nm.spoken+'.');
   $('game-area').dataset.scene='castle';
-  const target=['L','A','Y','L','A'];
-  /* This activity OWNS "Layla". Its praise is a function of this object, so
-     no other activity's word can be substituted into the feedback. */
+  const target=nm.letters.slice();
+  /* This activity OWNS this person's name. Its praise is a function of this
+     object, so no other activity's word can be substituted into the feedback. */
   const nameAct = Act.start({
-    type:'name', targetWord:'LAYLA', targetLabel:'Layla',
-    prompt:'Spell your name', masteryKey:'name:build'
+    type:'name', targetWord:nm.display, targetLabel:nm.spoken,
+    prompt:'Spell the name', masteryKey:'name:build:'+nm.id,
+    praise:function(a){ return Sound.say('You spelled '+nm.spoken+'! Amazing!'); }
   });
   const slots=document.createElement('div'); slots.className='slot-row';
   const tiles=document.createElement('div'); tiles.className='tile-row';
@@ -1173,7 +1385,7 @@ Games.buildName = function(){
     const b=document.createElement('button'); b.className='tile'; b.textContent=t.c;
     b.onclick=()=>{
       AudioSys.ensure();
-      if(next>=5) return;
+      if(next>=target.length) return;
       const slot=slotEls[next];
       if(t.c===slot.dataset.want){
         slot.textContent=t.c; slot.classList.add('filled'); b.classList.add('used');
@@ -1184,10 +1396,10 @@ Games.buildName = function(){
         Sound.say(t.c, {rate:0.85});
         slot.classList.remove('next'); next++;
         if(slotEls[next]) slotEls[next].classList.add('next');
-        if(next>=5){
+        if(next>=target.length){
           confettiBlast();
           addStars(4);
-          Act.finish(nameAct, {praise: Praise.word});
+          Act.finish(nameAct, {});
         }
       } else {
         attemptsThisItem++; gentleNo(b,'That letter goes somewhere else. Try a '+slot.dataset.want+'!');
@@ -1213,31 +1425,110 @@ Games.buildName = function(){
   const hint=document.createElement('div'); hint.className='center';
   hint.innerHTML='<button class="magic-btn" id="say-name">🔊 Hear my name</button>';
   area.appendChild(hint);
-  hint.querySelector('#say-name').onclick=()=>AudioSys.speak('Layla. L. A. Y. L. A.');
+  hint.querySelector('#say-name').onclick=()=>AudioSys.speak(nm.spoken+'. '+spelled);
 };
 
-/* 3. Missing letter of name */
-Games.missingLetter = function(){
+/* 3. Missing letter of name — a random middle letter floats away. */
+Games.missingLetter = function(params){
+  params=params||{};
+  const nm = nameById(params.id||'layla');
   const area=$('game-area'); area.innerHTML='';
-  setInstruction('Which letter is missing? L A _ L A', 'Which letter is missing? L. A. ... L. A. ?');
+  const missIdx = 1 + Math.floor(Math.random()*Math.max(1, nm.letters.length-2));
+  const miss = nm.letters[missIdx];
+  const shown = nm.display.split('').map((c,i)=>i===missIdx?'?':c);
+  const spoken = nm.display.split('').map((c,i)=>i===missIdx?'...':c).join('. ') + '.';
+  setInstruction('Which letter is missing? '+shown.join(' '), 'Which letter is missing? '+spoken);
   twinkleSay('A letter floated away! Which one is missing? 💜', {silent:true});
   AudioSys.playVoice('missing-letter', 'Which letter is missing?');
   $('game-area').dataset.scene='castle';
+  const missAct = Act.describe({type:'name', targetWord:nm.display, targetLabel:nm.spoken,
+    prompt:'Missing letter', masteryKey:'name:missing:'+nm.id,
+    praise:function(a){ return Sound.say('Yes! '+miss+'! '+nm.display.split('').join('. ')+'.! '+nm.spoken+'!'); }});
   const row=document.createElement('div'); row.className='slot-row';
-  ['L','A','?','L','A'].forEach(c=>{const d=document.createElement('div'); d.className='slot'+(c==='?'?' next':' filled'); d.textContent=c==='?'?'✨':c; row.appendChild(d);});
+  shown.forEach(c=>{const d=document.createElement('div'); d.className='slot'+(c==='?'?' next':' filled'); d.textContent=c==='?'?'✨':c; row.appendChild(d);});
   area.appendChild(row);
   const ch=document.createElement('div'); ch.className='choices';
-  shuffle(['Y','M','T']).forEach(L=>{
+  const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').filter(c=>c!==miss);
+  shuffle([miss].concat(shuffle(alphabet).slice(0,2))).forEach(L=>{
     const b=document.createElement('button'); b.className='choice-card'; b.innerHTML='<span class="big-letter">'+L+'</span>';
-    if(L==='Y') b.dataset.correct='1';
+    if(L===miss) b.dataset.correct='1';
     b.onclick=()=>{
-      if(L==='Y'){ b.classList.add('correct'); celebrateRight('name:missing','Yes! Y! L. A. Y. L. A.! Layla!'); addStars(2); setTimeout(activityDone,2000); }
+      if(L===miss){
+        b.classList.add('correct');
+        addStars(2);
+        Act.finish(missAct, {});
+      }
       else gentleNo(b);
     };
     ch.appendChild(b);
   });
   area.appendChild(ch);
 };
+
+/* Whole name: LAYLA LILY once both are solid. Two rows with a breathing gap. */
+Games.buildFullName = function(){
+  const area=$('game-area'); area.innerHTML='';
+  const first=nameById('layla'), second=nameById('lily');
+  setInstruction('Spell your whole name!', 'Spell Layla Lily!');
+  twinkleSay('Your WHOLE name! Layla Lily! 💖', {silent:true});
+  $('game-area').dataset.scene='castle';
+  const fullAct = Act.describe({type:'name', targetWord:'LAYLA LILY', targetLabel:'Layla Lily',
+    prompt:'Spell the whole name', masteryKey:'name:build:layla-lily',
+    praise:function(a){ return Sound.say('You spelled Layla Lily! Your whole name! Amazing!'); }});
+  const groups=[first.letters, second.letters];
+  let next={g:0,i:0};
+  const done={count:0, total:first.letters.length+second.letters.length};
+  groups.forEach(function(letters, gi){
+    const slots=document.createElement('div'); slots.className='slot-row';
+    const tiles=document.createElement('div'); tiles.className='tile-row';
+    slots.dataset.group=gi;
+    letters.forEach(function(ch,i){
+      const s=document.createElement('div'); s.className='slot'+((gi===0&&i===0)?' next':'');
+      s.dataset.want=ch; s.dataset.g=gi; s.dataset.i=i; slots.appendChild(s);
+    });
+    shuffle(letters.map(function(c,i){ return {c:c}; })).forEach(function(t){
+      const b=document.createElement('button'); b.className='tile'; b.textContent=t.c;
+      b.onclick=function(){
+        AudioSys.ensure();
+        const slot=slots.querySelectorAll('.slot')[next.i];
+        if(!slot || next.g!==gi) { gentleNo(b, 'Finish this name first! 💖'); return; }
+        if(t.c===slot.dataset.want){
+          slot.textContent=t.c; slot.classList.add('filled'); b.classList.add('used');
+          AudioSys.sfx('pop');
+          Sound.say(t.c, {rate:0.85});
+          slot.classList.remove('next'); next.i++; done.count++;
+          const allSlots=area.querySelectorAll('.slot');
+          const flat=[].slice.call(allSlots);
+          const nextSlot=flat[done.count];
+          if(nextSlot) nextSlot.classList.add('next');
+          if(done.count>=done.total){
+            confettiBlast(); addStars(5);
+            Act.finish(fullAct, {});
+          } else if(slot===slots.querySelectorAll('.slot')[slots.querySelectorAll('.slot').length-1]){
+            next={g:1,i:0};
+          }
+        } else {
+          attemptsThisItem++; gentleNo(b,'That letter goes somewhere else. Try a '+slot.dataset.want+'!');
+        }
+      };
+      tiles.appendChild(b);
+    });
+    area.appendChild(slots); area.appendChild(tiles);
+  });
+};
+
+/* Her-name practice rotates through available family names: find, build,
+   and (once she can build it) trace. The whole name unlocks last. */
+function namePracticeSession(){
+  const nm = currentName();
+  const acts=[
+    {title:'Find '+nm.spoken, run:function(){ Games.findName({id:nm.id}); }},
+    {title:'Build '+nm.spoken, run:function(){ Games.buildName({id:nm.id}); }}
+  ];
+  if(nameSolid(nm.id)) acts.push({title:'Trace '+nm.spoken, run:function(){ Games.traceName(nm.display); }});
+  if(nameSolid('layla') && nameSolid('lily')) acts.push({title:'My whole name', run:function(){ Games.buildFullName(); }});
+  return acts;
+}
 
 /* 4. Magic letter bubbles */
 Games.bubbles = function(params){
@@ -1823,59 +2114,143 @@ Games.rhyme = function(){
 };
 
 /* 13. Tracing */
+/* 13. Tracing — now with real stroke starts, coverage scoring, and
+   routed audio. params: {letter} | {name} | {word}. kind is inferred.
+   Lowercase stroke data first (that is what she reads); capitals only for
+   the name letters she actually traces. Start points are fractions of the
+   320x380 canvas, matching how each letter is really written. */
+const STROKES = {
+  a:{s:[.44,.30],d:[.3,.35],n:2}, b:{s:[.40,.12],d:[0,1],n:2},
+  c:{s:[.60,.32],d:[-.8,.6],n:1}, d:{s:[.44,.32],d:[.3,.4],n:2},
+  e:{s:[.52,.44],d:[.5,-.85],n:1}, f:{s:[.56,.12],d:[-.15,1],n:2},
+  g:{s:[.44,.42],d:[.3,.35],n:2}, h:{s:[.40,.12],d:[0,1],n:2},
+  i:{s:[.50,.32],d:[0,1],n:2}, j:{s:[.55,.32],d:[-.1,1],n:2},
+  k:{s:[.40,.12],d:[0,1],n:3}, l:{s:[.50,.12],d:[0,1],n:1},
+  m:{s:[.32,.34],d:[.7,.7],n:2}, n:{s:[.38,.32],d:[0,1],n:2},
+  o:{s:[.50,.28],d:[-.7,.7],n:1}, p:{s:[.40,.32],d:[0,1],n:2},
+  q:{s:[.60,.32],d:[0,1],n:2}, r:{s:[.40,.34],d:[0,1],n:2},
+  s:{s:[.60,.32],d:[-.85,.5],n:1}, t:{s:[.50,.24],d:[0,1],n:2},
+  u:{s:[.38,.34],d:[0,1],n:2}, v:{s:[.34,.32],d:[.6,.8],n:1},
+  w:{s:[.30,.32],d:[.5,.85],n:1}, x:{s:[.38,.32],d:[.7,.7],n:2},
+  y:{s:[.34,.32],d:[.6,.8],n:2}, z:{s:[.38,.32],d:[1,0],n:3},
+  A:{s:[.38,.14],d:[-.4,.9],n:3}, C:{s:[.62,.20],d:[-.8,.6],n:1},
+  D:{s:[.36,.14],d:[.9,.45],n:2}, G:{s:[.62,.20],d:[-.8,.6],n:2},
+  I:{s:[.50,.14],d:[0,1],n:3}, J:{s:[.58,.14],d:[-.2,1],n:2},
+  K:{s:[.38,.14],d:[0,1],n:3}, L:{s:[.42,.14],d:[0,1],n:2},
+  M:{s:[.32,.14],d:[.5,.85],n:3}, N:{s:[.36,.14],d:[0,1],n:3},
+  O:{s:[.50,.14],d:[-.7,.7],n:1}, S:{s:[.60,.16],d:[-.85,.5],n:1},
+  T:{s:[.36,.14],d:[1,0],n:2}, Y:{s:[.34,.14],d:[.6,.8],n:2}
+};
+/* Forgiving effort score in [0,1]: started near the dot, stayed on the
+   letter, drew enough. Empty trail always fails — "I did it!" with no
+   drawing earns nothing. Pure logic, unit-tested. */
+function traceScore(trail, start, ink){
+  if(!trail || !trail.length) return 0;
+  const dx=trail[0].x-start.x, dy=trail[0].y-start.y;
+  const started=(dx*dx+dy*dy) < 70*70 ? 1 : 0;
+  let inside=0;
+  trail.forEach(function(p){
+    const nx=(p.x-ink.cx)/ink.rx, ny=(p.y-ink.cy)/ink.ry;
+    if(nx*nx+ny*ny <= 1) inside++;
+  });
+  const insideFrac=inside/trail.length;
+  const lenScore=Math.min(1, trail.length/100);
+  return 0.35*started + 0.45*insideFrac + 0.20*lenScore;
+}
 Games.trace = function(params){
   params=params||{};
-  const L=GU(params.letter||S.currentFocus||'s');
+  let text, kind, masteryKey, speakFn;
+  if(params.name){ text=params.name; kind='name'; masteryKey='trace:name:'+text; }
+  else if(params.word){ text=params.word; kind='word'; masteryKey='trace:word:'+text; }
+  else {
+    const raw=String(params.letter||S.currentFocus||'s');
+    if(/^[A-Za-z]$/.test(raw)) text=raw;
+    else { const pid=Phonics.resolve(raw.toLowerCase()); text=pid?GU(pid):raw; }
+    kind='letter'; masteryKey='trace:'+text.toLowerCase();
+  }
   const area=$('game-area'); area.innerHTML='';
-  setInstruction('Trace the sparkly '+L+'!', 'Trace the letter '+L+' with your finger!');
-  twinkleSay('Slow and sparkly! ✨', {silent:true});
-  AudioSys.playVoice('trace-ask', 'Trace the sparkly letter '+L+'!');
+  const act = Act.describe({type:'trace', targetWord:kind==='letter'?null:text, targetLabel:text,
+    targetPhonemes:kind==='letter'?[Phonics.resolve(text.toLowerCase())||text.toLowerCase()]:[],
+    prompt:'Trace '+text, masteryKey:masteryKey,
+    praise:function(a){ return Sound.clip('beautiful', 'Beautiful tracing!'); }});
   $('game-area').dataset.scene='sky';
+  const CW=320, CH=380;
+  const multi = text.length>1;
+  const fontSize = multi ? Math.min(150, Math.floor(300/Math.max(1,text.length*0.72))) : 300;
+  setInstruction('Trace '+text+'!', 'Trace '+text+' with your finger!');
+  twinkleSay('Slow and sparkly! Start at the orange dot! ✨', {silent:true});
+  if(kind==='letter'){
+    const pid = Phonics.resolve(text.toLowerCase());
+    if(pid && isPhonemeUsable(pid)) Sound.phoneme(pid);
+    else Sound.say('Trace the letter '+text+'!');
+  } else if(kind==='name'){
+    Sound.say('Trace the name '+text+'!');
+  } else {
+    Sound.word(text.toLowerCase());
+  }
   const wrap=document.createElement('div'); wrap.className='trace-wrap';
-  const cv=document.createElement('canvas'); cv.id='trace-canvas'; cv.width=320; cv.height=380;
+  const cv=document.createElement('canvas'); cv.id='trace-canvas'; cv.width=CW; cv.height=CH;
   wrap.appendChild(cv);
   const btn=document.createElement('button'); btn.className='magic-btn'; btn.textContent='🌟 I did it!';
   wrap.appendChild(btn);
   area.appendChild(wrap);
   const ctx=cv.getContext('2d');
-  if(!ctx){ btn.onclick=()=>{ addStars(2); after(800, activityDone); }; return; }
+  if(!ctx){ btn.onclick=function(){ addStars(0); after(800, activityDone); }; return; }
+  /* guide glyph */
   ctx.lineWidth=26; ctx.lineCap='round'; ctx.lineJoin='round';
   ctx.strokeStyle='#e9d5ff';
-  ctx.font='700 300px Andika, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.strokeText(L, 160, 200);
-  ctx.fillStyle='#8b5cf6'; ctx.font='700 300px Andika, sans-serif';
-  // dotted guide: draw letter faintly
-  ctx.globalAlpha=0.25; ctx.fillText(L,160,200); ctx.globalAlpha=1;
-  // start dot
-  ctx.fillStyle='#f59e0b'; ctx.beginPath(); ctx.arc(90,90,16,0,7); ctx.fill();
-  ctx.fillStyle='#fff'; ctx.font='800 20px Quicksand'; ctx.fillText('▶',90,91);
-  let drawing=false, covered=0;
+  ctx.font='700 '+fontSize+'px Andika, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.strokeText(text, CW/2, CH/2+10);
+  ctx.globalAlpha=0.25; ctx.fillStyle='#8b5cf6';
+  ctx.fillText(text, CW/2, CH/2+10); ctx.globalAlpha=1;
+  /* start dot + direction arrow from per-letter stroke data */
+  const firstCh = text[0];
+  const st = STROKES[firstCh] || STROKES[firstCh.toLowerCase()] || {s:[.5,.2],d:[0,1],n:1};
+  const sx=st.s[0]*CW, sy=st.s[1]*CH;
+  const dl=Math.hypot(st.d[0],st.d[1])||1, ax=st.d[0]/dl, ay=st.d[1]/dl;
+  ctx.fillStyle='#f59e0b'; ctx.beginPath(); ctx.arc(sx,sy,16,0,7); ctx.fill();
+  ctx.strokeStyle='#f59e0b'; ctx.lineWidth=7;
+  ctx.beginPath(); ctx.moveTo(sx,sy); ctx.lineTo(sx+ax*36, sy+ay*36); ctx.stroke();
+  const hx=sx+ax*36, hy=sy+ay*36;
+  ctx.fillStyle='#f59e0b'; ctx.beginPath();
+  ctx.moveTo(hx+ax*14, hy+ay*14);
+  ctx.lineTo(hx-ay*10-ax*4, hy+ax*10-ay*4);
+  ctx.lineTo(hx+ay*10-ax*4, hy-ax*10-ay*4);
+  ctx.closePath(); ctx.fill();
+  let drawing=false;
   const trail=[];
   function pos(e){
     const r=cv.getBoundingClientRect();
     const p=(e.touches&&e.touches[0])||e;
-    return {x:(p.clientX-r.left)*(cv.width/r.width), y:(p.clientY-r.top)*(cv.height/r.height)};
+    return {x:(p.clientX-r.left)*(CW/r.width), y:(p.clientY-r.top)*(CH/r.height)};
   }
-  cv.addEventListener('pointerdown',e=>{drawing=true; trail.length=0; AudioSys.ensure();});
-  window.addEventListener('pointerup',()=>drawing=false);
-  cv.addEventListener('pointermove',e=>{
+  cv.addEventListener('pointerdown',function(e){ drawing=true; trail.length=0; AudioSys.ensure(); });
+  window.addEventListener('pointerup',function(){ drawing=false; });
+  cv.addEventListener('pointermove',function(e){
     if(!drawing) return; e.preventDefault();
-    const p=pos(e); trail.push(p); covered++;
-    ctx.strokeStyle='#ec4899';
+    const p=pos(e); trail.push(p);
+    ctx.strokeStyle='#ec4899'; ctx.lineWidth=22;
     if(trail.length>1){
       ctx.beginPath(); ctx.moveTo(trail[trail.length-2].x,trail[trail.length-2].y); ctx.lineTo(p.x,p.y); ctx.stroke();
     }
-    // sparkle dot
     ctx.fillStyle='#fbbf24'; ctx.beginPath(); ctx.arc(p.x,p.y,6,0,7); ctx.fill();
-    if(covered%40===0) AudioSys.sfx('twinkle',0.3);
+    if(trail.length%40===0) AudioSys.sfx('twinkle',0.3);
   });
-  btn.onclick=()=>{
-    AudioSys.sfx('fanfare'); sparkles(18);
-    AudioSys.speak('Beautiful tracing! That is '+L+'!');
-    record('trace:'+L.toLowerCase(), true); addStars(2);
-    after(1800, activityDone);
+  btn.onclick=function(){
+    const score=traceScore(trail, {x:sx,y:sy}, {cx:CW/2, cy:CH/2+10, rx:multi?150:100, ry:120});
+    if(score>=0.45){
+      addStars(2);
+      Act.finish(act, {});
+    } else {
+      Act.wrongAnswer(act);
+      twinkleSay('Good try! Start at the orange dot and follow the letter. 💜', {silent:true});
+      Sound.clip('good-try', 'Good try! Start at the orange dot and trace slowly.');
+    }
   };
 };
+/* Thin conveniences used by name practice (WO-3) and word practice. */
+Games.traceName = function(name){ Games.trace({name:name}); };
+Games.traceWord = function(word){ Games.trace({word:word}); };
 
 /* 14. Rainbow painter (delight) */
 Games.painter = function(){
@@ -2524,6 +2899,25 @@ function renderAudioQA(){
       + ', commercial use ' + prov.commercialUse.split(' (')[0] + '.</div>'
       + '<div id="qa-vw" class="qa-note">Checking voice &amp; word clips…</div>';
   }
+  /* ---- trust batch: one tap covers direct 1:1 matches ---- */
+  try{
+    const trustable = PHONEME_ORDER.filter(function(id){
+      return approvalOf(id).st==='UNREVIEWED' && reviewTier(id)==='trust'
+        && !(manifestOf(id)&&manifestOf(id).approvalStatus==='MISSING');
+    });
+    if(trustable.length){
+      const tb=document.createElement('button');
+      tb.className='magic-btn secondary'; tb.style.marginTop='8px';
+      tb.textContent='✓ Trust '+trustable.length+' direct matches (skip individual review)';
+      tb.title='Only sounds whose file IS the provider recording of exactly this sound. Anything that needs ears is never included.';
+      tb.onclick=function(){
+        const n=trustBatchApprove();
+        toast(n+' trusted. The rest still need your ears. 👂');
+        renderAudioQA(); renderParent();
+      };
+      box.appendChild(tb);
+    }
+  }catch(e){}
 
   /* ---- filter chips ---- */
   const bar=document.createElement('div'); bar.className='qa-filters';
@@ -2633,6 +3027,7 @@ function renderAudioQA(){
       else if(a.st==='APPROVED'){ label = a.dev ? '✓ dev-approved (not reviewed)' : '✓ APPROVED'; cls = a.dev?'dev':'ok'; }
       else if(a.st==='REJECTED'){ label='✗ REJECTED'; cls='no'; }
       else { label = qaPlayed[id] ? '◷ heard — decide' : '◷ UNREVIEWED'; cls='un'; }
+      if(!missing && approvalOf(id).st==='UNREVIEWED' && reviewTier(id)==='listen') label += ' · 👂 listen first';
       if(a.custom) label += ' · your recording';
       st.textContent=label;
       st.className='qa-status s-'+cls;
@@ -2908,6 +3303,122 @@ function renderArtStatus(){
     rm.onclick=()=>{ AssetDB.del(s.id).then(()=>{ Art.forget(s.id); renderArtStatus(); }); };
   });
 }
+/* ---- Guided recording booth (WO-5) ------------------------------------
+   One missing item at a time: record / play back / keep / skip. The /ʌ/
+   sound comes first (it unlocks nine words); then every word with no
+   recorded audio, readable-first so each kept recording pays off at once.
+   Keeping a phoneme also approves it and introduces it — the parent just
+   listened to it twice by construction. */
+let boothIdx = 0, boothHeard = {};
+function boothQueue(){
+  const items=[{type:'phoneme', id:'u_short', label:'/ʌ/', hint:'The uh in up. Short and plain.', example:'up · cup · sun'}];
+  try{
+    const missing = WORDS.filter(function(w){ return !w.heart && !w.audio; });
+    const read=[], rest=[];
+    missing.forEach(function(w){ try{ (Reading.wordReadable(w)?read:rest).push(w); }catch(e){ rest.push(w); } });
+    read.concat(rest).forEach(function(w){
+      items.push({type:'word', id:w.t, label:w.t, hint:'Say it naturally, once, like reading aloud.', example:''});
+    });
+  }catch(e){}
+  return items;
+}
+function boothKey(item){ return item.type==='word' ? 'word:'+item.id : item.id; }
+function boothRecordedCount(){
+  const q=boothQueue();
+  return Promise.all(q.map(function(it){
+    return PhonemeDB.get(boothKey(it)).then(function(b){ return !!b; });
+  })).then(function(flags){ return {done:flags.filter(Boolean).length, total:q.length}; });
+}
+function boothKeep(item){
+  if(item.type==='phoneme'){
+    const a=approvalOf(item.id); a.st='APPROVED'; a.custom=true; a.played=true; a.hash=null; save();
+    if((S.unlocked||[]).indexOf(item.id)<0){ S.unlocked.push(item.id); save(); }
+  }
+  boothIdx++; boothHeard={}; save();
+  try{ renderBooth(); renderParent(); }catch(e){}
+}
+function boothRecordToggle(item, btn, timerEl){
+  const doneRec=function(keep){
+    const cur=qaRec; qaRec=null;
+    btn.textContent='● Record'; timerEl.textContent='';
+    if(keep && cur && cur.chunks.length){
+      setTimeout(function(){
+        try{
+          const blob=new Blob(cur.chunks, {type:cur.mime||'audio/webm'});
+          PhonemeDB.put(boothKey(item), blob).then(function(){
+            boothHeard[item.id]=false;
+            toast('Saved. Play it back, then Keep it. 🎙️');
+            renderBooth();
+          }).catch(function(){ toast('Could not save recording.'); });
+        }catch(e){ toast('Could not save recording.'); }
+      }, 350);
+    } else { try{ renderBooth(); }catch(e){} }
+  };
+  if(qaRec && qaRec.id===boothKey(item)){ qaRec.stop(true); return; }
+  if(qaRec){ try{qaRec.stop(false);}catch(e){} }
+  try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder==='undefined'){
+      toast('Microphone not available here.'); return;
+    }
+    const mime=['audio/webm','audio/mp4','audio/ogg'].find(function(m){ try{return MediaRecorder.isTypeSupported(m);}catch(e){return false;} })||'';
+    navigator.mediaDevices.getUserMedia({audio:true}).then(function(stream){
+      try{
+        const rec=new MediaRecorder(stream, mime?{mimeType:mime}:undefined);
+        const chunks=[];
+        rec.ondataavailable=function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop=function(){ try{stream.getTracks().forEach(function(t){t.stop();});}catch(e){} };
+        rec.start();
+        qaRec={id:boothKey(item), rec:rec, chunks:chunks, mime:mime, stop:doneRec};
+        btn.textContent='⏹ Stop'; timerEl.textContent='● recording… say it once, clearly';
+      }catch(e){ toast('Recording failed to start.'); }
+    }).catch(function(){ toast('Microphone blocked.'); });
+  }catch(e){ toast('Recording unavailable here.'); }
+}
+function renderBooth(){
+  const box=$('record-booth'); if(!box) return;
+  box.innerHTML='';
+  const q=boothQueue();
+  if(boothIdx>=q.length) boothIdx=0;
+  const item=q[boothIdx];
+  const prog=document.createElement('div'); prog.className='parent-summary'; prog.textContent='Counting recordings…';
+  box.appendChild(prog);
+  boothRecordedCount().then(function(c){
+    prog.innerHTML='<b>'+c.done+'</b> of '+c.total+' recorded.'
+      +(c.done<c.total?' <span style="font-size:12px">Each kept recording unlocks reading immediately.</span>':' All done! 🌟');
+  });
+  if(!item){ prog.textContent='Nothing to record.'; return; }
+  const card=document.createElement('div'); card.className='booth-card';
+  card.innerHTML='<div class="booth-count">Item '+(boothIdx+1)+' of '+q.length+'</div>'
+    +'<div class="booth-word">'+item.label+'</div>'
+    +'<div class="booth-hint">'+item.hint+'</div>'
+    +(item.example?'<div class="booth-hint">Try: '+item.example+'</div>':'')
+    +'<div class="qa-timer" id="booth-timer"></div>';
+  box.appendChild(card);
+  const row=document.createElement('div'); row.className='practice-grid';
+  const mk=function(label, fn, cls){ const b=document.createElement('button'); if(cls) b.className=cls; b.textContent=label; b.onclick=fn; row.appendChild(b); return b; };
+  const timer=card.querySelector('#booth-timer');
+  const bRec=mk('● Record', function(){ boothRecordToggle(item, bRec, timer); });
+  mk('▶ Play back', function(){
+    PhonemeDB.get(boothKey(item)).then(function(blob){
+      if(!blob){ toast('Record something first. 🎙️'); return; }
+      boothHeard[item.id]=true;
+      try{
+        const url=URL.createObjectURL(blob);
+        Speech.request(2,'booth:'+item.id,'word',function(c,done,tr){ Speech.playFile(url,null,tr).then(function(){ done('done'); }); });
+      }catch(e){}
+    });
+  });
+  mk('✅ Keep', function(){
+    if(!boothHeard[item.id]){ toast('Play it back first, then keep it. 👂'); return; }
+    PhonemeDB.get(boothKey(item)).then(function(blob){
+      if(!blob){ toast('Record and play it back first. 🎙️'); return; }
+      boothKeep(item);
+      toast(item.type==='phoneme' ? 'Kept! Nine words just unlocked. ✅' : 'Kept! Layla will hear your voice. ✅');
+    });
+  });
+  mk('⏭ Skip', function(){ boothIdx++; save(); renderBooth(); });
+  box.appendChild(row);
+}
 function renderAudioDebug(){
   const box=$('audio-debug'); if(!box || typeof Speech==='undefined') return;
   const s=Speech.state();
@@ -2964,7 +3475,7 @@ function renderParent(){
   $('set-motion').checked=S.settings.motion;
   // practice grid
   const pg=$('practice-grid'); pg.innerHTML='';
-  [['Her name',()=>runSession('Her Name',[{title:'Find Layla',run:()=>Games.findName()},{title:'Build Your Name',run:()=>Games.buildName()}],null)],
+  [['Her name',()=>runSession('Her Name', namePracticeSession(), null)],
    ['Sound S',()=>runSession('Practice S',[{title:'Crystals',run:()=>Games.crystals({focus:'s'})},{title:'Bubbles',run:()=>Games.bubbles({focus:'s'})}],null)],
    ['Sound M',()=>runSession('Practice M',[{title:'Crystals',run:()=>Games.crystals({focus:'m'})},{title:'Mirror',run:()=>Games.firstSound()}],null)],
    ['Blending',()=>runSession('Blending',[{title:'Help the Kitten',run:()=>Games.rescue()},{title:'Word Building',run:()=>Games.buildWord()}],null)],
@@ -2984,6 +3495,7 @@ function renderParent(){
   ].forEach(([label,fn])=>{const b=document.createElement('button'); b.textContent=label; b.onclick=fn; tg.appendChild(b);});
   /* The sound library is the point of this screen, so build it every time. */
   try{ renderAudioQA(); }catch(e){}
+  try{ renderBooth(); }catch(e){}
   try{ renderParentInsights(); }catch(e){}
   try{ renderParentPractice(); }catch(e){}
   try{ startActivityDebug(); renderActivityDebug(); }catch(e){}
@@ -2999,6 +3511,10 @@ function renderParent(){
         });
       };
     }
+    const eb=$('btn-export');
+    if(eb && !eb._wired){ eb._wired=true; eb.onclick=function(){ exportProgress(); }; }
+    const fi=$('file-import');
+    if(fi && !fi._wired){ fi._wired=true; fi.onchange=function(){ importProgressFile(fi.files&&fi.files[0]); fi.value=''; }; }
   }catch(e){}
 }
 document.addEventListener('input',e=>{

@@ -500,7 +500,8 @@ function speakSentence(sent){
       for(let i=0;i<words.length;i++){
         if(cancelled()){ done('cancelled'); return; }
         const w=words[i];
-        const ok = w.audio ? await Speech.playFile(WORD_DIR+w.t+'.mp3', null, track) : false;
+        const custom = w.audio ? await AudioSys.wordRecording(w.t) : null;
+        const ok = (custom || w.audio) ? await Speech.playFile(custom||WORD_DIR+w.t+'.mp3', null, track) : false;
         if(!ok) await new Promise(r=>{ AudioSys.speak(w.t,{rate:0.85}); setTimeout(r, 620); });
         await new Promise(r=>setTimeout(r, 90));
       }
