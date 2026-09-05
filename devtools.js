@@ -572,9 +572,59 @@ const Tests = {
     this._log('M: room is usably tall', rb.height>=200, Math.round(rb.height)+'px');
   },
 
+  /* Test N -- no activity may be taller than the screen, and nothing she
+     must tap may sit below the fold. An audit at 894x534 found 11 of 19
+     activities overflowing, four with buttons off-screen. A four-year-old
+     does not scroll to find the answer; she concludes there isn't one. */
+  async testN_activitiesFitTheScreen(){
+    this._reset();
+    const games=['findName','buildName','missingLetter','bubbles','crystals','firstSound',
+                 'matchCase','rescue','buildWord','whichWord','matchPicture','soundSteps',
+                 'rhymeDance','syllableClaps','startsWith','oddOneOut','trace'];
+    const tall=[], offscreen=[];
+    for(const g of games){
+      if(typeof Games[g]!=='function') continue;
+      try{ Sound.cancelAll('fit'); }catch(e){}
+      showScreen('game');
+      runSession('fit',[{title:g, run:function(){ Games[g]({}); }}], null);
+      await this._settle(520);
+      if(document.documentElement.scrollHeight > window.innerHeight + 4) tall.push(g);
+      const area=document.getElementById('game-area');
+      const below=Array.prototype.filter.call(
+        area.querySelectorAll('button,.bubble,.crystal,.tile,.choice-card,.ballet-tile,.clap-btn,.word-card,canvas'),
+        function(e){ const b=e.getBoundingClientRect(); return b.height>0 && b.bottom>window.innerHeight+2; }).length;
+      if(below) offscreen.push(g+'('+below+')');
+    }
+    this._log('N: nothing she must tap is below the fold',
+      offscreen.length===0, offscreen.length ? offscreen.join(' ') : 'all reachable at '+window.innerWidth+'x'+window.innerHeight);
+    this._log('N: no activity forces the page to scroll',
+      tall.length===0, tall.length ? tall.join(' ') : 'all fit');
+  },
+
+  /* Test O -- internal ids must never reach the child's eyes. Matching
+     big and small letters printed the phonemeId "a_short" on a card. */
+  async testO_noRawIdsOnScreen(){
+    this._reset();
+    const ids = PHONICS_CATALOG.map(function(e){ return e.id; })
+                  .filter(function(id){ return /_/.test(id); });
+    const leaks=[];
+    const games=['matchCase','bubbles','crystals','soundSteps','buildWord','whichWord','trace','startsWith'];
+    for(const g of games){
+      if(typeof Games[g]!=='function') continue;
+      try{ Sound.cancelAll('ids'); }catch(e){}
+      showScreen('game');
+      runSession('ids',[{title:g, run:function(){ Games[g]({}); }}], null);
+      await this._settle(450);
+      const txt = document.getElementById('game-area').innerText || '';
+      ids.forEach(function(id){ if(txt.indexOf(id)>=0 && leaks.indexOf(g+':'+id)<0) leaks.push(g+':'+id); });
+    }
+    this._log('O: no phoneme id is shown to the child',
+      leaks.length===0, leaks.length ? leaks.join(' ') : 'checked '+ids.length+' ids across '+games.length+' activities');
+  },
+
   async runAll(){
     this.results = [];
-    const list = ['testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
+    const list = ['testN_activitiesFitTheScreen','testO_noRawIdsOnScreen','testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
                   'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }

@@ -1321,3 +1321,71 @@ font-weight:800; cursor:pointer; min-height:44px;}
   #screen-castle .game-topbar{ padding:4px 8px; }
   .name-plaque{ font-size:16px; padding:2px 12px; top:4px; letter-spacing:2px; }
 }
+
+/* ====================================================================
+   THE GAME SCREEN MUST FIT — no scrolling, ever.
+   An audit at 894x534 (Galaxy Tab A7 Lite, landscape) found 11 of 19
+   activities taller than the screen, four of them with buttons she has to
+   tap sitting below the fold. A four-year-old does not scroll to find the
+   answer; she concludes there isn't one.
+
+   Structure: the screen is a fixed-height column, the game area takes what
+   is left and centres its contents, and every tall piece is capped in dvh
+   so it shrinks instead of pushing the page down.
+   ==================================================================== */
+#screen-game.active{
+  height:100dvh; max-height:100dvh; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+#screen-game .game-area{
+  flex:1 1 auto; min-height:0; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:clamp(2px, 1.2dvh, 12px);
+}
+#screen-game .game-topbar{ flex:0 0 auto; }
+#screen-game .instruction-bar{ flex:0 0 auto; }
+#screen-game .twinkle-mini{ flex:0 0 auto; }
+
+/* --- the tall pieces, capped so they scale rather than overflow --- */
+.ballerina-holder{ width:auto; height:clamp(90px, 30dvh, 190px); }
+.ballerina-holder .ballerina-felt{ height:100%; width:auto; display:block; }
+.ballet-stage-wrap{ gap:2px; }
+.dance-step{ width:clamp(26px, 6dvh, 40px); height:clamp(26px, 6dvh, 40px); font-size:clamp(15px,3.4dvh,26px); }
+.ballet-tile{
+  width:clamp(58px, 15dvh, 104px); height:clamp(58px, 15dvh, 104px);
+  font-size:clamp(26px, 8dvh, 50px);
+}
+.clap-pic{ font-size:clamp(40px, 13dvh, 104px); }
+.clap-btn{ padding:clamp(5px,1.4dvh,12px) clamp(12px,2vw,20px); }
+.cb-n{ font-size:clamp(22px, 6dvh, 38px); }
+.cottage-scene{ width:auto; height:clamp(110px, 30dvh, 260px); }
+.cottage-scene .door-felt{ height:100%; width:auto; }
+.unicorn-holder svg, .uni-holder svg{ max-height:34dvh; width:auto; }
+.trace-wrap{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+#trace-canvas{ height:clamp(150px, 44dvh, 380px); width:auto; max-width:92vw; }
+.wt{ font-size:clamp(20px, 6dvh, 46px); padding:1px clamp(5px,1vw,12px); }
+.wt-row.big .wt{ font-size:clamp(26px, 8dvh, 64px); }
+.pic-emoji{ font-size:clamp(28px, 9dvh, 64px); }
+.pic-emoji svg, .wc-pic svg, .rt-pic svg{ max-height:12dvh; width:auto; }
+.word-pic{ font-size:clamp(30px, 10dvh, 72px); }
+.word-pic svg{ max-height:16dvh; width:auto; }
+.choice-card{ padding:clamp(5px,1.3dvh,12px) clamp(8px,1.4vw,16px); }
+.slot, .tile{
+  min-width:clamp(40px, 11dvh, 72px); min-height:clamp(40px, 11dvh, 72px);
+  font-size:clamp(20px, 6dvh, 42px);
+}
+.garden-row{ min-height:clamp(24px, 6dvh, 42px); }
+.gf{ width:clamp(20px, 5dvh, 34px); height:clamp(20px, 5dvh, 34px); }
+.rt-pic{ font-size:clamp(24px, 7dvh, 42px); }
+.blend-stage{ flex:0 0 auto; }
+
+/* Short screens: give the play area every pixel the chrome doesn't need. */
+@media (max-height: 620px){
+  #screen-game .game-topbar{ padding:3px 8px; }
+  #screen-game .game-topbar .game-title-pill{ font-size:15px; padding:4px 14px; }
+  #screen-game .instruction-bar{ padding:3px 10px; font-size:15px; margin:2px auto; }
+  #screen-game .twinkle-mini{ font-size:12px; padding:2px 8px; }
+  #screen-game .round-btn{ width:42px; height:42px; font-size:19px; }
+  .big-magic-btn{ padding:9px 22px; font-size:16px; min-height:46px; }
+  .magic-btn{ padding:8px 18px; font-size:15px; min-height:42px; }
+}

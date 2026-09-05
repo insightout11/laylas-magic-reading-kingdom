@@ -1854,7 +1854,10 @@ Games.matchCase = function(){
   });
   shuffle(letters).forEach(L=>{
     const b=document.createElement('button'); b.className='choice-card'; b.dataset.low=L;
-    b.innerHTML='<span class="big-letter">'+L.toLowerCase()+'</span>';
+    /* L is a phonemeId, not a letter. Lowercasing it printed the id itself
+       on the card -- "a_short" next to "A" -- instead of the letter she is
+       meant to match. G() returns the grapheme she actually reads. */
+    b.innerHTML='<span class="big-letter">'+G(L)+'</span>';
     b.onclick=()=>{
       if(!selected){ AudioSys.playVoice('big-first', 'First tap a BIG letter!'); return; }
       if(L===selected){
