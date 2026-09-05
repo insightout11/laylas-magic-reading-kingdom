@@ -485,9 +485,63 @@ const Tests = {
       ['a_short','e_short','s'].map(function(x){ return x+'->'+traceLetterFor({letter:x}); }).join(' '));
   },
 
+  /* Test K -- nothing a child must tap may render off-screen.
+     offsetParent!==null is NOT enough: it returns true for an element sitting
+     200px below the fold. This checks real geometry, at the short-tablet
+     height where the reward modal actually broke. */
+  async testK_rewardFitsOnScreen(){
+    this._reset();
+    const onScreen = (id)=>{
+      const e=document.getElementById(id);
+      if(!e) return false;
+      const b=e.getBoundingClientRect();
+      return b.height>0 && b.top>=0 && b.bottom<=window.innerHeight
+                        && b.left>=0 && b.right<=window.innerWidth;
+    };
+    const r = REWARDS.filter(function(x){ return x.id==='dress-rainbow'; })[0] || REWARDS[0];
+    showReward(r);
+    await this._settle(500);
+    this._log('K: an exit exists before opening', onScreen('btn-reward-open'));
+    document.getElementById('btn-reward-open').click();
+    await this._settle(400);
+    this._log('K: an exit exists mid-reveal', onScreen('btn-reward-close'),
+      'the window where the modal used to have no buttons at all');
+    await this._settle(2600);
+    this._log('K: reward art fully on screen', onScreen('reward-item'));
+    this._log('K: reward name on screen', onScreen('reward-name'));
+    this._log('K: "try it on" reachable', onScreen('btn-reward-castle'));
+    this._log('K: "keep playing" reachable', onScreen('btn-reward-close'));
+    document.getElementById('btn-reward-close').click();
+    await this._settle(500);
+    this._log('K: keep-playing actually closes it',
+      document.getElementById('reward-modal').classList.contains('hidden'));
+  },
+
+  /* Test L -- every activity must render something tappable. An empty
+     screen is invisible to the soak, which only clicks [data-correct]. */
+  async testL_activitiesRenderControls(){
+    this._reset();
+    const empties=[];
+    const probes=['findName','buildName','missingLetter','bubbles','crystals',
+                  'firstSound','matchCase','rescue','buildWord','whichWord',
+                  'matchPicture','soundSteps','rhymeDance','syllableClaps',
+                  'startsWith','oddOneOut','trace'];
+    for(const g of probes){
+      if(typeof Games[g]!=='function') continue;
+      showScreen('game');
+      runSession('probe',[{title:g, run:function(){ Games[g]({}); }}], null);
+      await this._settle(500);
+      const area=document.getElementById('game-area');
+      const tappable=area.querySelectorAll('button, .bubble, .crystal, .tile, .choice-card, canvas').length;
+      if(tappable===0) empties.push(g);
+    }
+    this._log('L: every activity renders something tappable',
+      empties.length===0, empties.length ? 'EMPTY: '+empties.join(', ') : 'all '+probes.length+' ok');
+  },
+
   async runAll(){
     this.results = [];
-    const list = ['testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
+    const list = ['testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
                   'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }

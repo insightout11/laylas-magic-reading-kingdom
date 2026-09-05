@@ -2330,6 +2330,8 @@ function showReward(r){
   const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
   ri.innerHTML=''; rn.textContent='';
   ri.classList.remove('revealed'); rn.classList.remove('revealed');
+  const _card=document.querySelector('#reward-modal .reward-card');
+  if(_card) _card.classList.remove('revealed');
   ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'');
   ch.classList.remove('open','shaking','glowing');
   $('btn-reward-open').classList.remove('hidden');
@@ -2387,6 +2389,10 @@ function showReward(r){
       if(rewardState!=='opening') return;
       rn.textContent=r.name;
       rn.classList.add('revealed');                                /* name  */
+      /* Chest recedes, prize grows -- and on a short tablet this is what
+         keeps the name and both buttons on screen. */
+      const card=document.querySelector('#reward-modal .reward-card');
+      if(card) card.classList.add('revealed');
       rewardState='revealed';
       AudioSys.playVoice('look-unlocked', 'Look what you unlocked! '+r.name+'!');
       /* auto-equip wearables so "try it on" is instant */
