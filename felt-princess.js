@@ -275,7 +275,13 @@ function rewardFeltArt(r){
 function feltRoomSVG(){
   /* A little breathing room around the furniture: the extra viewBox margin
      stops a wide tablet from cropping into the wardrobe and the bed. */
-  return '<svg class="room-svg felt" viewBox="-70 -40 1040 620" preserveAspectRatio="xMidYMax slice" '
+  /* "meet", not "slice". slice fills the box by cropping, and xMidYMax
+     anchored it to the FLOOR -- so on a short tablet (1024x600 and
+     anything similar) the crop came off the TOP and took the princess's
+     head, the wardrobe, the mirror and the bed canopy with it. meet
+     guarantees the whole room is always visible; the card's gradient
+     fills any leftover margin, which reads as wall. */
+  return '<svg class="room-svg felt" viewBox="-70 -40 1040 620" preserveAspectRatio="xMidYMid meet" '
     + 'xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'
   + FELT_DEFS
   /* wall + floor */

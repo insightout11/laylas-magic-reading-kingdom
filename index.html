@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260905092141">
+<link rel="stylesheet" href="styles.css?v=20260905120748">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
 </head>
@@ -265,6 +265,10 @@
     <div class="reward-name" id="reward-name">Sparkly Rainbow Dress</div>
     <button class="big-magic-btn" id="btn-reward-open">Open it! ✨</button>
     <button class="magic-btn secondary hidden" id="btn-reward-castle">Let's try it on! 💖</button>
+    <!-- Always-available exit. The reveal runs on epoch-guarded timers; if one
+         is dropped the "try it on" button never appears, and without this the
+         modal has no way out at all. -->
+    <button class="magic-btn ghost hidden" id="btn-reward-close">Keep playing 💫</button>
   </div>
 </div>
 
@@ -293,21 +297,21 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="phonics.js?v=20260905092141"></script>
-<script src="content.js?v=20260905092141"></script>
-<script src="names.js?v=20260905092141"></script>
-<script src="feltkit.js?v=20260905092141"></script>
-<script src="characters.js?v=20260905092141"></script>
-<script src="princess.js?v=20260905092141"></script>
+<script src="phonics.js?v=20260905120748"></script>
+<script src="content.js?v=20260905120748"></script>
+<script src="names.js?v=20260905120748"></script>
+<script src="feltkit.js?v=20260905120748"></script>
+<script src="characters.js?v=20260905120748"></script>
+<script src="princess.js?v=20260905120748"></script>
 <!-- felt-* load last: their declarations replace the older drawings -->
-<script src="felt-characters.js?v=20260905092141"></script>
-<script src="felt-princess.js?v=20260905092141"></script>
-<script src="app.js?v=20260905092141"></script>
-<script src="runtime.js?v=20260905092141"></script>
-<script src="zone-reading.js?v=20260905092141"></script>
-<script src="zone-play.js?v=20260905092141"></script>
-<script src="progress.js?v=20260905092141"></script>
-<script src="devtools.js?v=20260905092141"></script>
+<script src="felt-characters.js?v=20260905120748"></script>
+<script src="felt-princess.js?v=20260905120748"></script>
+<script src="app.js?v=20260905120748"></script>
+<script src="runtime.js?v=20260905120748"></script>
+<script src="zone-reading.js?v=20260905120748"></script>
+<script src="zone-play.js?v=20260905120748"></script>
+<script src="progress.js?v=20260905120748"></script>
+<script src="devtools.js?v=20260905120748"></script>
 
 <script>
 /* Register the service worker: installs to the home screen, and caches the

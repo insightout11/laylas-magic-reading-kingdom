@@ -1349,6 +1349,9 @@ Games.findName = function(params){
         addStars(3);
       } else gentleNo(b, 'Good looking! But where is '+nm.spoken+'? Listen... Can you find '+nm.spoken+'?');
     };
+    /* The card was built and wired but never put on screen, so the round
+       rendered an empty row: "Can you find Layla?" with nothing to tap. */
+    row.appendChild(b);
   });
   wrap.appendChild(row); area.appendChild(wrap);
 };
@@ -2331,7 +2334,23 @@ function showReward(r){
   ch.classList.remove('open','shaking','glowing');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
+  $('btn-reward-close').classList.add('hidden');
   $('reward-modal').classList.remove('hidden');
+
+  /* The one exit that can never go missing. The reveal below runs on three
+     epoch-guarded timers; if the scene changes mid-sequence they are dropped,
+     "Open it!" is already hidden, and the modal is left with no buttons at
+     all -- which is exactly how a four-year-old gets stranded. This closes
+     the modal and hands back to whatever was waiting for it. */
+  const closeReward = ()=>{
+    rewardState='idle';
+    $('reward-modal').classList.add('hidden');
+    Flow.rewardPending = false;
+    const afterFn = rewardAfterCastle; rewardAfterCastle = null;
+    Bus.emit('REWARD_DISMISSED', {id:(rewardCurrent||r||{}).id});
+    if(afterFn) Scene.later(300, afterFn, 'afterReward');
+  };
+  $('btn-reward-close').onclick = closeReward;
   twinkleSay('Something magical is waiting! Tap the chest! 🎁', {silent:true});
   twinklePose('happy');
 
@@ -2339,6 +2358,9 @@ function showReward(r){
     if(rewardState!=='closed') return;
     rewardState='opening';
     $('btn-reward-open').classList.add('hidden');
+    /* Reveal the escape hatch the instant the only other button disappears,
+       so there is never a frame where the modal has no exit. */
+    $('btn-reward-close').classList.remove('hidden');
     ch.classList.add('shaking');                                   /* shake */
     AudioSys.sfx('chest');
 

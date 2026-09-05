@@ -1177,3 +1177,53 @@ font-weight:800; cursor:pointer; min-height:44px;}
   .reward-card::before,.reward-chest.shaking,.reward-chest.open{ animation:none !important; }
   .reward-item,.reward-name{ transition-duration:.2s !important; }
 }
+
+/* ====================================================================
+   TABLET FITTING — the app is used on a tablet, often a short one
+   (1024x600 and similar). Nothing child-facing may be cropped there.
+   ==================================================================== */
+
+/* The reward modal's escape hatch. Quiet next to the main CTA, but always
+   reachable — a child must never be stranded on a screen with no way out. */
+#btn-reward-close{
+  background:transparent; border:2px solid rgba(150,112,217,.45);
+  color:var(--ink-soft, #6E4E7C); box-shadow:none; font-size:15px;
+  padding:9px 20px; margin-top:6px;
+}
+#btn-reward-close:active{ transform:scale(.95); }
+
+/* The room now fits rather than fills, so let it use the height it has and
+   keep the closet from squeezing it off the screen on short tablets. */
+.castle-room{ min-height:0; }
+.room-svg{ width:100%; height:100%; display:block; }
+
+@media (max-height: 700px){
+  /* Short landscape tablet: give the room the room, shrink the drawers. */
+  .castle-layout{ padding:6px; gap:8px; }
+  .castle-room{ min-height:300px; }
+  .closet{ padding:8px; }
+  .closet-tab{ padding:7px 13px; font-size:14px; min-height:40px; }
+  .closet-item{ min-height:74px; font-size:34px; padding:6px; }
+  .closet-item .cname{ font-size:10.5px; }
+  .name-plaque{ font-size:20px; padding:3px 16px; top:6px; }
+}
+@media (max-height: 700px) and (min-width: 860px){
+  /* Side-by-side: hand more width to the room, less to the drawers. */
+  .castle-layout{ grid-template-columns:1.55fr 1fr; }
+}
+
+/* The castle fills the tablet: room takes every pixel the drawers don't need.
+   Stacked (room above, drawers below) is the right shape for touch — the
+   drawers are a tray you reach for, not a sidebar you read. */
+#screen-castle.active{ display:flex; flex-direction:column; height:100dvh; }
+#screen-castle .castle-layout{
+  flex:1; min-height:0;
+  display:grid; grid-template-columns:1fr; grid-template-rows:1fr auto; gap:8px;
+}
+#screen-castle .castle-room{ min-height:0; height:100%; }
+#screen-castle .closet{ flex:0 0 auto; }
+#screen-castle .closet-grid{ grid-template-columns:repeat(4,1fr); }
+@media (max-height: 700px){
+  #screen-castle .closet-grid{ grid-template-columns:repeat(6,1fr); }
+  #screen-castle .closet-item{ min-height:62px; font-size:28px; }
+}
