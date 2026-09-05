@@ -2757,8 +2757,23 @@ function holdLoop(){
   if(p>=1){ closeGate(); openParent(); return; }
   holdTimer=requestAnimationFrame(holdLoop);
 }
-holdBtn.addEventListener('pointerdown',()=>{holdStart=Date.now(); holdLoop();});
-['pointerup','pointerleave','pointercancel'].forEach(ev=>holdBtn.addEventListener(ev,()=>{ if(holdTimer) cancelAnimationFrame(holdTimer); holdTimer=null; $('hold-fill').style.width='0'; }));
+/* Touch-hardened. On Android a long press on a button falls through to
+   Chrome's own long-press menu -- which offered "download" and swallowed the
+   gesture, so the parent could not get in at all. preventDefault plus the
+   CSS guards stop that; pointer capture keeps the hold alive when a finger
+   drifts a few pixels, which was also cancelling it early. */
+holdBtn.addEventListener('contextmenu', e=>e.preventDefault());
+holdBtn.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+  try{ holdBtn.setPointerCapture(e.pointerId); }catch(err){}
+  holdStart=Date.now(); holdLoop();
+});
+/* pointerleave is deliberately NOT a cancel: with capture the finger stays
+   bound to the button, and leave fired on the smallest wobble. */
+['pointerup','pointercancel'].forEach(ev=>holdBtn.addEventListener(ev,()=>{
+  if(holdTimer) cancelAnimationFrame(holdTimer);
+  holdTimer=null; $('hold-fill').style.width='0';
+}));
 function openParent(){
   showScreen('parent'); renderParent();
 }

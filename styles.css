@@ -1389,3 +1389,25 @@ font-weight:800; cursor:pointer; min-height:44px;}
   .big-magic-btn{ padding:9px 22px; font-size:16px; min-height:46px; }
   .magic-btn{ padding:8px 18px; font-size:15px; min-height:42px; }
 }
+
+/* ====================================================================
+   PARENT GATE — the 3-second hold must survive a touchscreen.
+   Without these, Android Chrome treats a long press as its own gesture:
+   the context menu opens ("download..."), the hold never completes, and
+   the parent is locked out of their own settings.
+   ==================================================================== */
+#hold-to-enter{
+  touch-action:none;
+  -webkit-touch-callout:none;
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+/* Nothing in the child's world should offer a long-press menu either. */
+.landmark, .bubble, .crystal, .tile, .slot, .choice-card, .ballet-tile,
+.clap-btn, .word-card, .closet-item, .story-card, .big-magic-btn, .magic-btn,
+.round-btn, .icon-nav-btn, .nav-pill, #trace-canvas{
+  -webkit-touch-callout:none;
+  -webkit-user-select:none; user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+#trace-canvas{ touch-action:none; }
