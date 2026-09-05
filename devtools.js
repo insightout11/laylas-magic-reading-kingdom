@@ -466,10 +466,29 @@ const Tests = {
     this._log('J: cleanup restores the gate', !isPhonemeUsable('u_short'));
   },
 
+  /* Test K — phonics tracing renders lowercase; names keep capitals. */
+  async testK_traceCase(){
+    const saveFocus = S.currentFocus;
+    const bad = [];
+    PHONEME_ORDER.forEach(function(id){
+      const g = (typeof G==='function') ? G(id) : id;
+      if(!g || g.length!==1) return;   // digraphs trace their grapheme, not a case
+      S.currentFocus = id;
+      const t = traceLetterFor({});
+      if(t!==t.toLowerCase() || t.length!==1) bad.push(id+'->'+t);
+      const t2 = traceLetterFor({letter:id});
+      if(t2!==t2.toLowerCase()) bad.push(id+'(param)->'+t2);
+    });
+    S.currentFocus = saveFocus; save();
+    this._log('K: every single-letter sound traces lowercase', bad.length===0, bad.slice(0,5).join(','));
+    this._log('K: spot checks', traceLetterFor({letter:'a_short'})==='a' && traceLetterFor({letter:'e_short'})==='e' && traceLetterFor({letter:'s'})==='s',
+      ['a_short','e_short','s'].map(function(x){ return x+'->'+traceLetterFor({letter:x}); }).join(' '));
+  },
+
   async runAll(){
     this.results = [];
     const list = ['testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
-                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth'];
+                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
       catch(e){ this._log(list[i]+' THREW', false, e.message); }

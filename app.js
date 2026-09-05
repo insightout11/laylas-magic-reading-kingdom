@@ -2157,15 +2157,22 @@ function traceScore(trail, start, ink){
   const lenScore=Math.min(1, trail.length/100);
   return 0.35*started + 0.45*insideFrac + 0.20*lenScore;
 }
+/* Display letter for tracing: phonics always renders lowercase (that is
+   what she reads); capitals stay for names only. */
+function traceLetterFor(params){
+  params=params||{};
+  const raw=String(params.letter||S.currentFocus||'s');
+  if(/^[A-Za-z]$/.test(raw)) return raw;
+  const pid=Phonics.resolve(raw.toLowerCase());
+  return pid?G(pid):raw;
+}
 Games.trace = function(params){
   params=params||{};
   let text, kind, masteryKey, speakFn;
   if(params.name){ text=params.name; kind='name'; masteryKey='trace:name:'+text; }
   else if(params.word){ text=params.word; kind='word'; masteryKey='trace:word:'+text; }
   else {
-    const raw=String(params.letter||S.currentFocus||'s');
-    if(/^[A-Za-z]$/.test(raw)) text=raw;
-    else { const pid=Phonics.resolve(raw.toLowerCase()); text=pid?GU(pid):raw; }
+    text=traceLetterFor(params);
     kind='letter'; masteryKey='trace:'+text.toLowerCase();
   }
   const area=$('game-area'); area.innerHTML='';
