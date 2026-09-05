@@ -1,0 +1,260 @@
+{
+ "_note": "Human approval decisions, captured from the parent's browser on 2026-09-05 and committed so they survive a new device, a cleared cache, or a different origin. The app seeds from this ONLY where the local save has no decision; a local decision always wins. Each entry records the sha256 the file had when the decision was made - if those bytes change, that one sound lapses to UNREVIEWED, exactly as before.",
+ "_capturedFrom": "localStorage layla-kingdom-v1, parent browser",
+ "_capturedAt": "2026-09-05T02:52:18.268Z",
+ "_provider": "s5s5/phonics — instructional phonics recordings (native speaker)",
+ "decisions": {
+  "s": {
+   "status": "APPROVED",
+   "sha256": "32bafcec5399342075f8f629bb8cbf8a9c05c3086ee61960ec210bd543b16dfd",
+   "decidedBy": "parent",
+   "note": "sustained /s/ as in sun"
+  },
+  "a_short": {
+   "status": "APPROVED",
+   "sha256": "747ff82d58278206b5cb63311799e573c064803cad0997085cd79cf5b8e585ce",
+   "decidedBy": "parent",
+   "note": "short a as in sat"
+  },
+  "t": {
+   "status": "APPROVED",
+   "sha256": "6afffa4d47f1011f12fe9288c14a3aadefad356860bc0b3e6bc896865d8e9a81",
+   "decidedBy": "parent",
+   "note": "brief /t/ — no added vowel"
+  },
+  "p": {
+   "status": "APPROVED",
+   "sha256": "cd1443b6d72e7f6a45ad506360aac8b67614fe487ff30f9a5027a5732b8d3d71",
+   "decidedBy": "parent",
+   "note": "brief /p/ — no added vowel"
+  },
+  "i_short": {
+   "status": "APPROVED",
+   "sha256": "b63b10d6fb1bab5e7c1bf0b503548eb7d9d5659db52cba202ae42d55df8e4adb",
+   "decidedBy": "parent",
+   "note": "short i as in sit"
+  },
+  "n": {
+   "status": "APPROVED",
+   "sha256": "20a8593b1b9f45103d79ce49efa244b9e8b26b4a226dd9700a39eeab53ed8a19",
+   "decidedBy": "parent",
+   "note": "sustained /n/"
+  },
+  "m": {
+   "status": "APPROVED",
+   "sha256": "c78d1640421949dc481d2feb39631eb0f70899b2dd96e651b4b7048013984af9",
+   "decidedBy": "parent",
+   "note": "sustained /m/"
+  },
+  "d": {
+   "status": "APPROVED",
+   "sha256": "c9ef1a8ec980eb1bf67b419072afc1c62b6dcf6aaf211729e5f09a8d703b708e",
+   "decidedBy": "parent",
+   "note": "brief /d/ — no added vowel"
+  },
+  "g": {
+   "status": "APPROVED",
+   "sha256": "ce7e88908531ff0236d14fe9ba38e886de8f313e0c094056e13a617422093f72",
+   "decidedBy": "parent",
+   "note": "brief /g/ — no added vowel"
+  },
+  "o_short": {
+   "status": "APPROVED",
+   "sha256": "034847692ce555911847aa625fff4a10db44de84766a37347b79c9453545c434",
+   "decidedBy": "parent",
+   "note": "short o as in hot"
+  },
+  "k": {
+   "status": "APPROVED",
+   "sha256": "fd5ce8190bb39cd21ff42922b6e17a7904962636b2be03702d9611b93964e2cd",
+   "decidedBy": "parent",
+   "note": "brief /k/ as in cat, kite, duck"
+  },
+  "e_short": {
+   "status": "APPROVED",
+   "sha256": "4b0a0106f2565f253775ace129b54da2dce69997eb89c21472aa806f0a68dd60",
+   "decidedBy": "parent",
+   "note": "short e as in bed"
+  },
+  "r": {
+   "status": "APPROVED",
+   "sha256": "bda3bc43816ce4314fdb174c220050b44534335fb4b957fbd7063f967158a90a",
+   "decidedBy": "parent",
+   "note": "/r/ as in rain"
+  },
+  "h": {
+   "status": "APPROVED",
+   "sha256": "f4f55f27e198102f57e5725567fe02accde5520d9cf02be371161bd685a5f665",
+   "decidedBy": "parent",
+   "note": "breathy /h/ as in hat"
+  },
+  "b": {
+   "status": "APPROVED",
+   "sha256": "4a91a1a71af939418c51bd658416b0728c3a302f4ad5351c4cc479535753eae1",
+   "decidedBy": "parent",
+   "note": "brief /b/ — no added vowel"
+  },
+  "f": {
+   "status": "APPROVED",
+   "sha256": "28b9d323d94c565f8cae5ee4918d6b5180607251f3c0f4aac02a81fec727d738",
+   "decidedBy": "parent",
+   "note": "sustained /f/"
+  },
+  "l": {
+   "status": "APPROVED",
+   "sha256": "3ccaced79630d4b2b1f00c569555021c5f7bc4b14fc75ba2683c037788821b3d",
+   "decidedBy": "parent",
+   "note": "sustained /l/"
+  },
+  "j": {
+   "status": "APPROVED",
+   "sha256": "6580199370d1dc55fe26c82c7d8cceb83f6cea0b744dd6f842407068cb8ae298",
+   "decidedBy": "parent",
+   "note": "/j/ as in jam"
+  },
+  "v": {
+   "status": "APPROVED",
+   "sha256": "e51306c51f4176cc89119eb42b1350ec5b66fba776c402007050ad03e11905c1",
+   "decidedBy": "parent",
+   "note": "sustained /v/"
+  },
+  "w": {
+   "status": "APPROVED",
+   "sha256": "89bd4274fc23f1e81a6ccf0e8b33555d5595c84e2e51dc8aa139b49dabdb5304",
+   "decidedBy": "parent",
+   "note": "/w/ as in wing"
+  },
+  "y": {
+   "status": "APPROVED",
+   "sha256": "8e86dd2c71c0f653025153dc10deb9f37e3b1af42c91d3bf22a8e94b677b7c3b",
+   "decidedBy": "parent",
+   "note": "/y/ as in yes"
+  },
+  "z": {
+   "status": "APPROVED",
+   "sha256": "422bf69dedf65e7c6214150f27b08cd22e2abe0c3dcc811ea3f93d9b8394a7bd",
+   "decidedBy": "parent",
+   "note": "sustained /z/"
+  },
+  "x": {
+   "status": "APPROVED",
+   "sha256": "842c496d29f6e0d895d78ababc8f06f2ed508d7eb7a830fdefc265e313baceaa",
+   "decidedBy": "parent",
+   "note": "/ks/ as in fox"
+  },
+  "sh": {
+   "status": "APPROVED",
+   "sha256": "b81b23bce4de552e3af584f77c53b1041b994dec45dcedcbd49b70ac256a40d1",
+   "decidedBy": "parent",
+   "note": "sustained /sh/"
+  },
+  "ch": {
+   "status": "APPROVED",
+   "sha256": "4db9986b2f1ea34874fbb7789c73189026703997193f240b3b2aa487ece6adeb",
+   "decidedBy": "parent",
+   "note": "/ch/ as in chip"
+  },
+  "th_unvoiced": {
+   "status": "REJECTED",
+   "sha256": "2fce4a729897c199c3e4ca4230b7c64c199fb9f38cdec3a192f6682f537d2ab9",
+   "decidedBy": "parent",
+   "note": "UNVOICED /th/ as in thumb — no buzz in the throat"
+  },
+  "th_voiced": {
+   "status": "REJECTED",
+   "sha256": "bd2485d5105f4f59d45567a8daa33548d911c01d402958ed511cce45d18a76cf",
+   "decidedBy": "parent",
+   "note": "VOICED /th/ as in this — buzzy"
+  },
+  "ng": {
+   "status": "APPROVED",
+   "sha256": "323b1101a454d9d5bd554228be606188ba1f9ffb457991cf62654e3b4c4cefbf",
+   "decidedBy": "parent",
+   "note": "/ng/ as in ring"
+  },
+  "qu": {
+   "status": "APPROVED",
+   "sha256": "53e7a51e54619b5560709f246b102f09db40c9d1f3efa61e394fb0d974afa53c",
+   "decidedBy": "parent",
+   "note": "/kw/ as in queen"
+  },
+  "ai": {
+   "status": "APPROVED",
+   "sha256": "687f70d5635e77546be1153db1d1cb444ed38321abc9eecc9b7aac27d09ea5cd",
+   "decidedBy": "parent",
+   "note": "long a as in rain"
+  },
+  "ee": {
+   "status": "APPROVED",
+   "sha256": "d1def8179726063f794f66e0e2344787c0cf551b67152ae103bc63f78a7b1e82",
+   "decidedBy": "parent",
+   "note": "long e as in bee"
+  },
+  "igh": {
+   "status": "APPROVED",
+   "sha256": "c2299c20e58ff1892445fddf9e2662f926c837b5ded1b463751a416c03a9fafd",
+   "decidedBy": "parent",
+   "note": "long i as in light"
+  },
+  "oa": {
+   "status": "APPROVED",
+   "sha256": "f59f5d795fac2e4db247df664ecd3b6f592ee37f16da12dd17a3114f5062fda9",
+   "decidedBy": "parent",
+   "note": "long o as in boat"
+  },
+  "oo_short": {
+   "status": "APPROVED",
+   "sha256": "4b673327978bdc4624f629bf7ce1a62b45f82469e38c56eb108fd56fc5931a8a",
+   "decidedBy": "parent",
+   "note": "SHORT oo as in book — NOT moon"
+  },
+  "oo_long": {
+   "status": "APPROVED",
+   "sha256": "d11759675958f73319643bf5f6874b8d58313d6c31f5fd76a6ba5d938787be51",
+   "decidedBy": "parent",
+   "note": "LONG oo as in moon — NOT book"
+  },
+  "ar": {
+   "status": "APPROVED",
+   "sha256": "a6b62c7d4274b9c0a88f43b1c8565d13f823008485c5e043d87855b2e7a918d3",
+   "decidedBy": "parent",
+   "note": "r-controlled /ar/ as in star"
+  },
+  "or": {
+   "status": "APPROVED",
+   "sha256": "8115fdc25027cd93c2e25201e181a70a18ca60c7a2e997606c8a452f827d6034",
+   "decidedBy": "parent",
+   "note": "r-controlled /or/ as in horn"
+  },
+  "er": {
+   "status": "APPROVED",
+   "sha256": "cdd0d4ca715c92f5cb5258320fce0568e71ca013412032f8bf1b8ad1564d533a",
+   "decidedBy": "parent",
+   "note": "r-controlled /er/ — spelled er, ir or ur"
+  },
+  "ow": {
+   "status": "APPROVED",
+   "sha256": "80d8d8da6824c3a8d5d7960165d92ce31d7dd572d57b1bfb591cf1b349690570",
+   "decidedBy": "parent",
+   "note": "/ow/ as in cow"
+  },
+  "oi": {
+   "status": "APPROVED",
+   "sha256": "13027334415519f3e85f8ba26264773c8c95e41dcd1df0bd6154a429be359a92",
+   "decidedBy": "parent",
+   "note": "/oi/ as in coin"
+  },
+  "ear": {
+   "status": "APPROVED",
+   "sha256": "9b5dbdc46f70dd5acce4b0150b108ccd05b49928b4b5f3550f75b50937f1d408",
+   "decidedBy": "parent",
+   "note": "/ear/ as in deer"
+  },
+  "air": {
+   "status": "APPROVED",
+   "sha256": "3584ebca29d852d4e37452fef7b1b3f855acf7e6dad8a97e9188bea133b34606",
+   "decidedBy": "parent",
+   "note": "/air/ as in chair"
+  }
+ }
+}
