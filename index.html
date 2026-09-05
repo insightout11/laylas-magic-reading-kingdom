@@ -11,7 +11,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260905004200">
+<link rel="stylesheet" href="styles.css?v=20260905092141">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
 </head>
 <body>
@@ -278,19 +279,38 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="phonics.js?v=20260905004200"></script>
-<script src="content.js?v=20260905004200"></script>
-<script src="feltkit.js?v=20260905004200"></script>
-<script src="characters.js?v=20260905004200"></script>
-<script src="princess.js?v=20260905004200"></script>
+<script src="phonics.js?v=20260905092141"></script>
+<script src="content.js?v=20260905092141"></script>
+<script src="feltkit.js?v=20260905092141"></script>
+<script src="characters.js?v=20260905092141"></script>
+<script src="princess.js?v=20260905092141"></script>
 <!-- felt-* load last: their declarations replace the older drawings -->
-<script src="felt-characters.js?v=20260905004200"></script>
-<script src="felt-princess.js?v=20260905004200"></script>
-<script src="app.js?v=20260905004200"></script>
-<script src="runtime.js?v=20260905004200"></script>
-<script src="zone-reading.js?v=20260905004200"></script>
-<script src="zone-play.js?v=20260905004200"></script>
-<script src="progress.js?v=20260905004200"></script>
-<script src="devtools.js?v=20260905004200"></script>
+<script src="felt-characters.js?v=20260905092141"></script>
+<script src="felt-princess.js?v=20260905092141"></script>
+<script src="app.js?v=20260905092141"></script>
+<script src="runtime.js?v=20260905092141"></script>
+<script src="zone-reading.js?v=20260905092141"></script>
+<script src="zone-play.js?v=20260905092141"></script>
+<script src="progress.js?v=20260905092141"></script>
+<script src="devtools.js?v=20260905092141"></script>
+
+<script>
+/* Register the service worker: installs to the home screen, and caches the
+   whole app so it runs with no network.
+
+   Deliberately NO auto-reload. A new build installs quietly in the
+   background and takes over the next time the app is opened. Reloading the
+   moment an update lands would yank the page out from under Layla
+   mid-activity, which is exactly the kind of unreliability this app has
+   just had removed. Scripts are versioned, so the running session stays
+   internally consistent either way. */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){
+      /* Offline support is a bonus; never let it block the app. */
+    });
+  });
+}
+</script>
 </body>
 </html>
