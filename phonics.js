@@ -69,9 +69,12 @@ const PHONICS_CATALOG = [
   {id:'b',       ipa:'b',      src:'b.mp3',      file:'b.mp3',       phase:'single-a', order:15, type:'consonant', graphemes:['b','bb'],      word:'bed',   emoji:'🛏️', cue:'b', target:'brief /b/ — no added vowel'},
   {id:'f',       ipa:'f',      src:'f.mp3',      file:'f.mp3',       phase:'single-a', order:16, type:'consonant', graphemes:['f','ff','ph'], word:'fan',   emoji:'🪭', cue:'ffff', target:'sustained /f/'},
   {id:'l',       ipa:'ɫ', src:'ɫ.mp3', file:'l.mp3',       phase:'single-a', order:17, type:'consonant', graphemes:['l','ll'],      word:'lion',  emoji:'🦁', cue:'llll', target:'sustained /l/'},
-  {id:'u_short', ipa:'ə', src:'ə.mp3', file:'u_short.mp3', phase:'single-a', order:18, type:'vowel',     graphemes:['u'],           word:'up',    emoji:'⬆️', cue:'u as in up', target:'short u as in cup'},
 
-  /* ---- PHASE: single-b (completes the alphabet) ---- */
+    /* u (short u as in cup) is DELIBERATELY ABSENT: the provider has no /ʌ/ recording
+     (their u maps to schwa). Do not substitute another vowel. A parent can
+     supply /ʌ/ via Parent > Sound Library > record/upload, which creates
+     a custom approved asset. */
+/* ---- PHASE: single-b (completes the alphabet) ---- */
   {id:'j', ipa:'dʒ', src:'dʒ.mp3', file:'j.mp3', phase:'single-b', order:19, type:'consonant', graphemes:['j','ge','dge'], word:'jam',   emoji:'🍓', cue:'j',   target:'/j/ as in jam'},
   {id:'v', ipa:'v',       src:'v.mp3',       file:'v.mp3', phase:'single-b', order:20, type:'consonant', graphemes:['v','ve'],       word:'van',   emoji:'🚐', cue:'vvv', target:'sustained /v/'},
   {id:'w', ipa:'w',       src:'w.mp3',       file:'w.mp3', phase:'single-b', order:21, type:'consonant', graphemes:['w'],            word:'wing',  emoji:'🪽', cue:'w',   target:'/w/ as in wing'},

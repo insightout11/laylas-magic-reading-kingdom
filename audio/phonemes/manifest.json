@@ -1,6 +1,6 @@
 {
  "_schema": 2,
- "_generated": "2026-09-04T12:46:58.450Z",
+ "_generated": "2026-09-05T01:59:36.372Z",
  "_provider": {
   "id": "s5s5-phonics",
   "provider": "s5s5/phonics — instructional phonics recordings (native speaker)",
@@ -237,12 +237,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from m.mp3; silence-trimmed and normalised -4 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "c78d1640421949dc481d2feb39631eb0f70899b2dd96e651b4b7048013984af9",
    "bytes": 8821,
    "duration": 0.52,
    "peakDb": -1.5,
-   "sourceBytes": 10901,
    "truePeakDb": -1.494806
   },
   "d": {
@@ -269,12 +268,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from d.mp3; silence-trimmed and normalised -4.06 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "c9ef1a8ec980eb1bf67b419072afc1c62b6dcf6aaf211729e5f09a8d703b708e",
    "bytes": 7149,
    "duration": 0.42,
    "peakDb": -1.6,
-   "sourceBytes": 8240,
    "truePeakDb": -1.550736
   },
   "g": {
@@ -301,12 +299,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɡ.mp3; silence-trimmed and normalised -3.99 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "ce7e88908531ff0236d14fe9ba38e886de8f313e0c094056e13a617422093f72",
    "bytes": 8403,
    "duration": 0.5,
    "peakDb": -1.5,
-   "sourceBytes": 10537,
    "truePeakDb": -1.512974
   },
   "o_short": {
@@ -332,12 +329,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɑ.mp3; silence-trimmed and normalised -4.19 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "034847692ce555911847aa625fff4a10db44de84766a37347b79c9453545c434",
    "bytes": 10075,
    "duration": 0.6,
    "peakDb": -1.5,
-   "sourceBytes": 12181,
    "truePeakDb": -1.526344
   },
   "k": {
@@ -365,12 +361,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from k.mp3; silence-trimmed and normalised -4.12 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "fd5ce8190bb39cd21ff42922b6e17a7904962636b2be03702d9611b93964e2cd",
    "bytes": 2969,
    "duration": 0.16,
    "peakDb": -1.5,
-   "sourceBytes": 3860,
    "truePeakDb": -1.516267
   },
   "e_short": {
@@ -396,12 +391,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɛ.mp3; silence-trimmed and normalised -2.73 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "4b0a0106f2565f253775ace129b54da2dce69997eb89c21472aa806f0a68dd60",
    "bytes": 7149,
    "duration": 0.42,
    "peakDb": -1.5,
-   "sourceBytes": 8501,
    "truePeakDb": -1.497989
   },
   "r": {
@@ -428,12 +422,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɹ.mp3; silence-trimmed and normalised -4.07 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "bda3bc43816ce4314fdb174c220050b44534335fb4b957fbd7063f967158a90a",
    "bytes": 10911,
    "duration": 0.65,
    "peakDb": -1.5,
-   "sourceBytes": 11315,
    "truePeakDb": -1.519395
   },
   "h": {
@@ -459,12 +452,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from h.mp3; silence-trimmed and normalised +6.43 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "f4f55f27e198102f57e5725567fe02accde5520d9cf02be371161bd685a5f665",
    "bytes": 7567,
    "duration": 0.44,
    "peakDb": -1.6,
-   "sourceBytes": 9600,
    "truePeakDb": -1.605571
   },
   "b": {
@@ -491,12 +483,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from b.mp3; silence-trimmed and normalised -4.08 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "4a91a1a71af939418c51bd658416b0728c3a302f4ad5351c4cc479535753eae1",
    "bytes": 7149,
    "duration": 0.42,
    "peakDb": -1.5,
-   "sourceBytes": 8501,
    "truePeakDb": -1.508287
   },
   "f": {
@@ -524,12 +515,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from f.mp3; silence-trimmed and normalised +11.59 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "28b9d323d94c565f8cae5ee4918d6b5180607251f3c0f4aac02a81fec727d738",
    "bytes": 9239,
    "duration": 0.55,
    "peakDb": -1.4,
-   "sourceBytes": 12887,
    "truePeakDb": -1.364069
   },
   "l": {
@@ -556,44 +546,12 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɫ.mp3; silence-trimmed and normalised -4.04 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "3ccaced79630d4b2b1f00c569555021c5f7bc4b14fc75ba2683c037788821b3d",
    "bytes": 10911,
    "duration": 0.65,
    "peakDb": -1.5,
-   "sourceBytes": 12047,
    "truePeakDb": -1.458092
-  },
-  "u_short": {
-   "phonemeId": "u_short",
-   "ipa": "ə",
-   "target": "short u as in cup",
-   "graphemes": [
-    "u"
-   ],
-   "primaryGrapheme": "u",
-   "exampleWord": "up",
-   "phase": "single-a",
-   "introducedOrder": 18,
-   "type": "vowel",
-   "audioFile": "audio/phonemes/u_short.mp3",
-   "provider": "s5s5/phonics — instructional phonics recordings (native speaker)",
-   "source": "s5s5-phonics",
-   "sourceURL": "https://github.com/s5s5/phonics",
-   "fileURL": "https://raw.githubusercontent.com/s5s5/phonics/main/public/sound/%C9%99.mp3",
-   "license": "MIT",
-   "licenseURL": "https://github.com/s5s5/phonics/blob/main/LICENSE",
-   "attribution": "Phonics audio by Xiaochao Liu (s5s5/phonics), MIT License",
-   "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
-   "commercialUse": "permitted (MIT)",
-   "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ə.mp3; silence-trimmed and normalised -4.15 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
-   "sha256": "f5065f835a4f7292f4de994e9b249b6ce2b4b14563f151ec747ebe3a10f7c137",
-   "bytes": 7149,
-   "duration": 0.42,
-   "peakDb": -1.5,
-   "sourceBytes": 7665,
-   "truePeakDb": -1.519128
   },
   "j": {
    "phonemeId": "j",
@@ -620,12 +578,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from dʒ.mp3; silence-trimmed and normalised -4.35 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "6580199370d1dc55fe26c82c7d8cceb83f6cea0b744dd6f842407068cb8ae298",
    "bytes": 7567,
    "duration": 0.44,
    "peakDb": -1.6,
-   "sourceBytes": 8503,
    "truePeakDb": -1.554542
   },
   "v": {
@@ -652,12 +609,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from v.mp3; silence-trimmed and normalised -4.05 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "e51306c51f4176cc89119eb42b1350ec5b66fba776c402007050ad03e11905c1",
    "bytes": 11328,
    "duration": 0.68,
    "peakDb": -1.5,
-   "sourceBytes": 14661,
    "truePeakDb": -1.525819
   },
   "w": {
@@ -683,12 +639,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from w.mp3; silence-trimmed and normalised -4 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "89bd4274fc23f1e81a6ccf0e8b33555d5595c84e2e51dc8aa139b49dabdb5304",
    "bytes": 8821,
    "duration": 0.52,
    "peakDb": -1.5,
-   "sourceBytes": 9649,
    "truePeakDb": -1.515236
   },
   "y": {
@@ -714,12 +669,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from j.mp3; silence-trimmed and normalised -4.08 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "8e86dd2c71c0f653025153dc10deb9f37e3b1af42c91d3bf22a8e94b677b7c3b",
    "bytes": 5059,
    "duration": 0.29,
    "peakDb": -1.5,
-   "sourceBytes": 6991,
    "truePeakDb": -1.493172
   },
   "z": {
@@ -746,12 +700,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from z.mp3; silence-trimmed and normalised -4.01 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "422bf69dedf65e7c6214150f27b08cd22e2abe0c3dcc811ea3f93d9b8394a7bd",
    "bytes": 8821,
    "duration": 0.52,
    "peakDb": -1.6,
-   "sourceBytes": 12574,
    "truePeakDb": -1.646914
   },
   "x": {
@@ -777,12 +730,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ks.mp3; silence-trimmed and normalised -3.8 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "842c496d29f6e0d895d78ababc8f06f2ed508d7eb7a830fdefc265e313baceaa",
    "bytes": 7567,
    "duration": 0.44,
    "peakDb": -1.5,
-   "sourceBytes": 12944,
    "truePeakDb": -1.534818
   },
   "sh": {
@@ -808,12 +760,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ʃ.mp3; silence-trimmed and normalised -1.28 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "b81b23bce4de552e3af584f77c53b1041b994dec45dcedcbd49b70ac256a40d1",
    "bytes": 11328,
    "duration": 0.68,
    "peakDb": -1.6,
-   "sourceBytes": 19412,
    "truePeakDb": -1.577083
   },
   "ch": {
@@ -840,12 +791,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from tʃ.mp3; silence-trimmed and normalised -3.25 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "4db9986b2f1ea34874fbb7789c73189026703997193f240b3b2aa487ece6adeb",
    "bytes": 8403,
    "duration": 0.5,
    "peakDb": -1.4,
-   "sourceBytes": 14716,
    "truePeakDb": -1.413706
   },
   "th_unvoiced": {
@@ -871,12 +821,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from θ.mp3; silence-trimmed and normalised +7.51 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "2fce4a729897c199c3e4ca4230b7c64c199fb9f38cdec3a192f6682f537d2ab9",
    "bytes": 6313,
    "duration": 0.37,
    "peakDb": -1.4,
-   "sourceBytes": 9916,
    "truePeakDb": -1.410374
   },
   "th_voiced": {
@@ -902,12 +851,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ð.mp3; silence-trimmed and normalised -4.07 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "bd2485d5105f4f59d45567a8daa33548d911c01d402958ed511cce45d18a76cf",
    "bytes": 10075,
    "duration": 0.6,
    "peakDb": -1.5,
-   "sourceBytes": 12337,
    "truePeakDb": -1.51897
   },
   "ng": {
@@ -933,12 +881,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ŋ.mp3; silence-trimmed and normalised -4.07 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "323b1101a454d9d5bd554228be606188ba1f9ffb457991cf62654e3b4c4cefbf",
    "bytes": 12582,
    "duration": 0.76,
    "peakDb": -1.5,
-   "sourceBytes": 11940,
    "truePeakDb": -1.499235
   },
   "qu": {
@@ -964,12 +911,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from kw.mp3; silence-trimmed and normalised -4.06 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "53e7a51e54619b5560709f246b102f09db40c9d1f3efa61e394fb0d974afa53c",
    "bytes": 4641,
    "duration": 0.26,
    "peakDb": -1.5,
-   "sourceBytes": 5842,
    "truePeakDb": -1.476823
   },
   "ai": {
@@ -997,12 +943,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from eɪ.mp3; silence-trimmed and normalised -3.98 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "687f70d5635e77546be1153db1d1cb444ed38321abc9eecc9b7aac27d09ea5cd",
    "bytes": 11328,
    "duration": 0.68,
    "peakDb": -1.5,
-   "sourceBytes": 12936,
    "truePeakDb": -1.509825
   },
   "ee": {
@@ -1030,12 +975,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from i.mp3; silence-trimmed and normalised -4.13 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "d1def8179726063f794f66e0e2344787c0cf551b67152ae103bc63f78a7b1e82",
    "bytes": 14254,
    "duration": 0.86,
    "peakDb": -1.5,
-   "sourceBytes": 16223,
    "truePeakDb": -1.481563
   },
   "igh": {
@@ -1064,12 +1008,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from aɪ.mp3; silence-trimmed and normalised -4.05 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "c2299c20e58ff1892445fddf9e2662f926c837b5ded1b463751a416c03a9fafd",
    "bytes": 14672,
    "duration": 0.89,
    "peakDb": -1.5,
-   "sourceBytes": 15488,
    "truePeakDb": -1.505218
   },
   "oa": {
@@ -1097,12 +1040,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from oʊ.mp3; silence-trimmed and normalised -4.07 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "f59f5d795fac2e4db247df664ecd3b6f592ee37f16da12dd17a3114f5062fda9",
    "bytes": 14672,
    "duration": 0.89,
    "peakDb": -1.5,
-   "sourceBytes": 16483,
    "truePeakDb": -1.503034
   },
   "oo_short": {
@@ -1129,12 +1071,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ʊ.mp3; silence-trimmed and normalised -4.01 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "4b673327978bdc4624f629bf7ce1a62b45f82469e38c56eb108fd56fc5931a8a",
    "bytes": 9239,
    "duration": 0.55,
    "peakDb": -1.5,
-   "sourceBytes": 8242,
    "truePeakDb": -1.498814
   },
   "oo_long": {
@@ -1162,12 +1103,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from u.mp3; silence-trimmed and normalised -4.04 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "d11759675958f73319643bf5f6874b8d58313d6c31f5fd76a6ba5d938787be51",
    "bytes": 15090,
    "duration": 0.91,
    "peakDb": -1.5,
-   "sourceBytes": 15645,
    "truePeakDb": -1.48976
   },
   "ar": {
@@ -1193,12 +1133,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɑɹ.mp3; silence-trimmed and normalised -4.05 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "a6b62c7d4274b9c0a88f43b1c8565d13f823008485c5e043d87855b2e7a918d3",
    "bytes": 14254,
    "duration": 0.86,
    "peakDb": -1.5,
-   "sourceBytes": 13454,
    "truePeakDb": -1.511667
   },
   "or": {
@@ -1226,12 +1165,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɔɹ.mp3; silence-trimmed and normalised -4.01 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "8115fdc25027cd93c2e25201e181a70a18ca60c7a2e997606c8a452f827d6034",
    "bytes": 11746,
    "duration": 0.71,
    "peakDb": -1.5,
-   "sourceBytes": 11707,
    "truePeakDb": -1.500609
   },
   "er": {
@@ -1259,12 +1197,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɝ.mp3; silence-trimmed and normalised -4.07 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "cdd0d4ca715c92f5cb5258320fce0568e71ca013412032f8bf1b8ad1564d533a",
    "bytes": 14672,
    "duration": 0.89,
    "peakDb": -1.5,
-   "sourceBytes": 14027,
    "truePeakDb": -1.549792
   },
   "ow": {
@@ -1291,12 +1228,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from aʊ.mp3; silence-trimmed and normalised -4.05 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "80d8d8da6824c3a8d5d7960165d92ce31d7dd572d57b1bfb591cf1b349690570",
    "bytes": 12582,
    "duration": 0.76,
    "peakDb": -1.5,
-   "sourceBytes": 14814,
    "truePeakDb": -1.493772
   },
   "oi": {
@@ -1323,12 +1259,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɔɪ.mp3; silence-trimmed and normalised -4.1 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "13027334415519f3e85f8ba26264773c8c95e41dcd1df0bd6154a429be359a92",
    "bytes": 8821,
    "duration": 0.52,
    "peakDb": -1.5,
-   "sourceBytes": 8083,
    "truePeakDb": -1.49498
   },
   "ear": {
@@ -1355,12 +1290,11 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɪɹ.mp3; silence-trimmed and normalised -4.11 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "9b5dbdc46f70dd5acce4b0150b108ccd05b49928b4b5f3550f75b50937f1d408",
    "bytes": 12582,
    "duration": 0.76,
    "peakDb": -1.5,
-   "sourceBytes": 12571,
    "truePeakDb": -1.507298
   },
   "air": {
@@ -1387,18 +1321,24 @@
    "redistribution": "permitted (MIT — copy, modify, merge, publish, distribute, sublicense)",
    "commercialUse": "permitted (MIT)",
    "approvalStatus": "UNREVIEWED",
-   "notes": "Imported from ɛɹ.mp3; silence-trimmed and normalised -4.1 dB over 2 encode pass(es) so the encoded file peaks at -1.5 dBFS, matching the starter six. Human approval required before child use.",
+   "notes": "",
    "sha256": "3584ebca29d852d4e37452fef7b1b3f855acf7e6dad8a97e9188bea133b34606",
    "bytes": 8821,
    "duration": 0.52,
    "peakDb": -1.5,
-   "sourceBytes": 10433,
    "truePeakDb": -1.495009
   }
  },
+ "_retired": {
+  "files": [
+   "u_short.mp3"
+  ],
+  "movedTo": "audio/phonemes/_retired/",
+  "reason": "Not part of the current single-provider catalogue (previously sourced from Wikimedia IPA demonstration audio). Kept on disk for reference only; the app never loads this directory."
+ },
  "_summary": {
-  "total": 43,
-  "imported": 37,
+  "total": 42,
+  "imported": 0,
   "lockedKept": 6,
   "failed": 0
  }
