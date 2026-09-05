@@ -1288,3 +1288,36 @@ font-weight:800; cursor:pointer; min-height:44px;}
   #reward-modal .reward-card.revealed .reward-item{ max-height:30dvh; }
   #reward-modal .reward-card.revealed .reward-item svg{ max-height:30dvh; }
 }
+
+/* ====================================================================
+   GALAXY TAB A7 LITE and anything else short (~534px of usable height).
+   The princess is an absolutely-positioned doll layered over the room
+   scenery, and she was sized by WIDTH alone -- so her height fell out of
+   the aspect ratio at 344px inside a 256px room, and overflow:hidden took
+   her head. Nothing in the room may be taller than the room.
+   ==================================================================== */
+#princess-mount{
+  height:min(88%, 360px);
+  width:auto;
+  max-width:min(34vw, 210px);
+}
+#princess-mount .princess-svg,
+#princess-mount svg{
+  height:100%; width:auto; max-width:100%; display:block;
+}
+/* Belt and braces: no child of the room may exceed the room. */
+.castle-room > *{ max-height:100%; }
+
+/* Give the room the height it needs on a short tablet by making the
+   drawers a compact tray rather than a panel. */
+@media (max-height: 620px){
+  #screen-castle .castle-layout{ grid-template-rows:1fr auto; gap:6px; padding:5px; }
+  #screen-castle .closet{ padding:6px; }
+  #screen-castle .closet-tabs{ gap:5px; margin-bottom:6px; }
+  #screen-castle .closet-tab{ padding:5px 11px; font-size:12.5px; min-height:34px; }
+  #screen-castle .closet-grid{ grid-template-columns:repeat(7,1fr); gap:6px; }
+  #screen-castle .closet-item{ min-height:54px; font-size:24px; padding:4px; }
+  #screen-castle .closet-item .cname{ font-size:9px; line-height:1.15; }
+  #screen-castle .game-topbar{ padding:4px 8px; }
+  .name-plaque{ font-size:16px; padding:2px 12px; top:4px; letter-spacing:2px; }
+}

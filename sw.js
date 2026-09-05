@@ -8,14 +8,14 @@
    - navigation  -> network first, cache as fallback. A new deploy is picked
                     up immediately when online; the app still opens on a
                     plane or in a car when not.
-   - static      -> cache first. Scripts and styles carry ?v=20260905121656, so a
+   - static      -> cache first. Scripts and styles carry ?v=20260905122601, so a
                     new build simply asks for different URLs and can never
                     pair a new script with a stale one.
    - old caches  -> deleted on activate.
    ============================================================ */
 'use strict';
 
-const VERSION = '20260905121656';
+const VERSION = '20260905122601';
 const CACHE = 'layla-kingdom-' + VERSION;
 
 /* Everything needed to run with no network at all. */

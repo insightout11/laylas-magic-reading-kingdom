@@ -539,9 +539,42 @@ const Tests = {
       empties.length===0, empties.length ? 'EMPTY: '+empties.join(', ') : 'all '+probes.length+' ok');
   },
 
+  /* Test M -- the castle must fit the device, including the doll.
+     The princess is an absolutely-positioned layer over the scenery, sized
+     by width alone, so her height fell out of the aspect ratio: 344px in a
+     256px room on a Galaxy Tab A7 Lite, with overflow:hidden taking her
+     head. Fixing the scenery SVG did nothing for her, because she is not
+     in it. This asserts geometry for every child of the room. */
+  async testM_castleFitsDevice(){
+    this._reset();
+    openCastle();
+    await this._settle(1800);
+    const room=document.getElementById('castle-room');
+    if(!room){ this._log('M: castle room exists', false); return; }
+    const rb=room.getBoundingClientRect();
+    const over=[];
+    Array.prototype.forEach.call(room.children, function(c){
+      const b=c.getBoundingClientRect();
+      if(b.height===0) return;
+      if(b.top < rb.top-2 || b.bottom > rb.bottom+2 || b.left < rb.left-2 || b.right > rb.right+2){
+        over.push((c.id||c.className||'child')+' by '+Math.round(Math.max(rb.top-b.top, b.bottom-rb.bottom))+'px');
+      }
+    });
+    this._log('M: nothing in the room overflows the room', over.length===0,
+      over.length ? over.join('; ') : 'room '+Math.round(rb.height)+'px, all children inside');
+    const doll=document.getElementById('princess-mount');
+    if(doll){
+      const db=doll.getBoundingClientRect();
+      this._log('M: the princess fits head to toe',
+        db.top>=rb.top-2 && db.bottom<=rb.bottom+2,
+        'doll '+Math.round(db.height)+'px in room '+Math.round(rb.height)+'px');
+    }
+    this._log('M: room is usably tall', rb.height>=200, Math.round(rb.height)+'px');
+  },
+
   async runAll(){
     this.results = [];
-    const list = ['testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
+    const list = ['testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
                   'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
