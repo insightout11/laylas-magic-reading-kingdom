@@ -1288,6 +1288,9 @@ font-weight:800; cursor:pointer; min-height:44px;}
   #reward-modal .reward-card.revealed .reward-item{ max-height:30dvh; }
   #reward-modal .reward-card.revealed .reward-item svg{ max-height:30dvh; }
 }
+/* Encore reward art is an emoji, not an svg: restore font size
+   (.reward-item is font-size:0 for svg packing) so it actually paints. */
+.encore-emoji{font-size:min(34vw,150px); line-height:1.25; display:inline-block; filter:drop-shadow(0 10px 20px rgba(222,116,156,.45));}
 
 /* ====================================================================
    GALAXY TAB A7 LITE and anything else short (~534px of usable height).

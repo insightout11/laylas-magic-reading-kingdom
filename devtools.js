@@ -622,10 +622,72 @@ const Tests = {
       leaks.length===0, leaks.length ? leaks.join(' ') : 'checked '+ids.length+' ids across '+games.length+' activities');
   },
 
+  /* Test P — the loop never ends: with a full collection, sessions still
+     open a chest, and the chest never pretends to be a new unlock. */
+  async testP_encoreChest(){
+    this._reset();
+    showScreen('game');
+    REWARDS.forEach(function(r){ if(S.rewards.indexOf(r.id)<0) S.rewards.push(r.id); });
+    save();
+    const nRewards = S.rewards.length, nStickers = S.stickers.length, stars = S.stars;
+    sessionReward = null; sessionName = 'Test';
+    endSession();
+    await this._settle(500);
+    this._log('P: chest still appears with a full collection',
+      !$('reward-modal').classList.contains('hidden'));
+    this._log('P: encore adds no collection item', S.rewards.length===nRewards);
+    $('btn-reward-open').click();
+    await this._settle(2600);
+    const banner = document.querySelector('#reward-modal .reward-banner').textContent;
+    this._log('P: encore never claims a new unlock',
+      !/treasure/i.test(banner) && (/sticker for your book|star shower/i.test(banner)), banner.slice(0,60));
+    const gainedSticker = S.stickers.length===nStickers+1, gainedStars = S.stars>stars;
+    this._log('P: encore gives a sticker or stars', gainedSticker||gainedStars,
+      'stickers +'+(S.stickers.length-nStickers)+', stars +'+(S.stars-stars));
+    this._log('P: no try-it-on without something new',
+      $('btn-reward-castle').classList.contains('hidden'));
+    const firstNew = S.stickers[S.stickers.length-1];
+    $('btn-reward-close').click();
+    await this._settle(800);
+    endSession();
+    await this._settle(500);
+    $('btn-reward-open').click();
+    await this._settle(2600);
+    const dupes = S.stickers.filter(function(x,i){ return S.stickers.indexOf(x)!==i; });
+    this._log('P: stickers never duplicate', dupes.length===0 &&
+      (S.stickers.indexOf(firstNew)===S.stickers.lastIndexOf(firstNew)), 'dupes: '+dupes.join(','));
+    this._log('P: rewards still untouched', S.rewards.length===nRewards);
+    $('btn-reward-close').click();
+    await this._settle(500);
+    // star-shower path: own every encore sticker too
+    ENCORE_STICKERS.forEach(function(s){ if(S.stickers.indexOf(s.id)<0) S.stickers.push(s.id); });
+    save();
+    const stars2 = S.stars;
+    showEncoreReward();
+    await this._settle(500);
+    $('btn-reward-open').click();
+    await this._settle(2600);
+    this._log('P: exhausted stickers fall back to a star shower',
+      S.stars>stars2 && /star shower/i.test(document.querySelector('#reward-modal .reward-banner').textContent));
+    $('btn-reward-close').click();
+    await this._settle(500);
+    // unlock path intact: a missing item still gets the treasure chest
+    S.rewards = S.rewards.slice(0,5); save();
+    sessionReward = REWARDS.filter(function(r){ return S.rewards.indexOf(r.id)<0; })[0]||null;
+    sessionName='Test';
+    endSession();
+    await this._settle(500);
+    this._log('P: unlock chest still shows for missing items',
+      !$('reward-modal').classList.contains('hidden') &&
+      /treasure/i.test(document.querySelector('#reward-modal .reward-banner').textContent));
+    $('btn-reward-close').click();
+    await this._settle(500);
+  },
+
   async runAll(){
     this.results = [];
     const list = ['testN_activitiesFitTheScreen','testO_noRawIdsOnScreen','testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
-                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase'];
+                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase','testP_encoreChest'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
       catch(e){ this._log(list[i]+' THREW', false, e.message); }

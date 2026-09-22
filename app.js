@@ -2335,6 +2335,8 @@ function showReward(r){
   ri.classList.remove('revealed'); rn.classList.remove('revealed');
   const _card=document.querySelector('#reward-modal .reward-card');
   if(_card) _card.classList.remove('revealed');
+  const _banner=document.querySelector('#reward-modal .reward-banner');
+  if(_banner) _banner.textContent='You earned a treasure! 🎁';
   ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'');
   ch.classList.remove('open','shaking','glowing');
   $('btn-reward-open').classList.remove('hidden');
@@ -2417,6 +2419,91 @@ function awardSticker(id, silent){
   if(S.stickers.includes(id)) return;
   S.stickers.push(id); save(); refreshStickers();
   if(!silent){ toast('New sticker! ⭐'); AudioSys.sfx('sparkle'); }
+}
+/* Encore chest: the collection is complete, but the loop goes on. Same
+   chest ceremony Layla loves; the prize is always an honest repeatable
+   treat, never a re-gifted unlock. A sticker while any remain unowned,
+   otherwise a star shower. Nothing here touches S.rewards, the closet,
+   or the equipped outfit. */
+function showEncoreReward(){
+  const nextSticker = ENCORE_STICKERS.find(s=>!S.stickers.includes(s.id));
+  const isSticker = !!nextSticker;
+  /* Sticker is claimed up front (like unlocks) but stays invisible until
+     the reveal timers run; stars land with the reveal itself, below. */
+  if(isSticker){ S.stickers.push(nextSticker.id); save(); refreshStickers(); }
+  const itemEmoji = isSticker ? nextSticker.e : '⭐';
+  const itemName = isSticker ? nextSticker.n : 'Star shower!';
+  const bannerText = isSticker ? 'A sticker for your book! ✨' : 'A star shower for you! ✨';
+  const voiceFallback = isSticker ? 'A new sticker for your book!' : 'A star shower for you! Beautiful playing!';
+  rewardState='closed'; rewardCurrent=null;
+  const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
+  const _banner=document.querySelector('#reward-modal .reward-banner');
+  if(_banner) _banner.textContent=bannerText;
+  ri.innerHTML=''; rn.textContent='';
+  ri.classList.remove('revealed'); rn.classList.remove('revealed');
+  const _card=document.querySelector('#reward-modal .reward-card');
+  if(_card) _card.classList.remove('revealed');
+  ch.innerHTML=(typeof chestHTML==='function')?chestHTML(false):((typeof chestSVG==='function')?chestSVG(false):'');
+  ch.classList.remove('open','shaking','glowing');
+  $('btn-reward-open').classList.remove('hidden');
+  $('btn-reward-castle').classList.add('hidden');
+  $('btn-reward-close').classList.add('hidden');
+  $('reward-modal').classList.remove('hidden');
+
+  /* Same escape hatch as the unlock chest: never strand her without an exit. */
+  const closeReward = ()=>{
+    rewardState='idle';
+    $('reward-modal').classList.add('hidden');
+    Flow.rewardPending = false;
+    const afterFn = rewardAfterCastle; rewardAfterCastle = null;
+    Bus.emit('REWARD_DISMISSED', {encore:true});
+    if(afterFn) Scene.later(300, afterFn, 'afterReward');
+  };
+  $('btn-reward-close').onclick = closeReward;
+  twinkleSay('Something magical is waiting! Tap the chest! 🎁', {silent:true});
+  twinklePose('happy');
+
+  $('btn-reward-open').onclick=()=>{
+    if(rewardState!=='closed') return;
+    rewardState='opening';
+    $('btn-reward-open').classList.add('hidden');
+    /* Reveal the escape hatch the instant the only other button disappears. */
+    $('btn-reward-close').classList.remove('hidden');
+    ch.classList.add('shaking');                                   /* shake */
+    AudioSys.sfx('chest');
+
+    after(700, ()=>{
+      if(rewardState!=='opening') return;
+      /* pop open */
+      if(typeof chestHTML==='function') ch.innerHTML=chestHTML(true);
+      else if(typeof chestSVG==='function') ch.innerHTML=chestSVG(true);
+      ch.classList.remove('shaking');
+      ch.classList.add('open','glowing');                          /* glow  */
+      AudioSys.sfx('sparkle');
+    });
+
+    after(1150, ()=>{
+      if(rewardState!=='opening') return;
+      /* only NOW does the treat exist */
+      ri.innerHTML='<span class="encore-emoji">'+itemEmoji+'</span>';
+      requestAnimationFrame(()=>ri.classList.add('revealed'));     /* rises */
+      AudioSys.sfx('fanfare'); confettiBlast();
+      if(typeof stickerBurst==='function') stickerBurst(ri, 16); else sparkles(24);
+    });
+
+    after(1600, ()=>{
+      if(rewardState!=='opening') return;
+      rn.textContent=itemName;
+      rn.classList.add('revealed');                                /* name  */
+      const card=document.querySelector('#reward-modal .reward-card');
+      if(card) card.classList.add('revealed');
+      rewardState='revealed';
+      Sound.clip('you-did-it', voiceFallback);
+      if(isSticker) addStars(2); else addStars(5);
+      /* No try-it-on: there is nothing new to wear. Keep playing exits. */
+      const b=$('btn-reward-close'); b.classList.remove('hidden');
+    });
+  };
 }
 function showMilestone(title, word, text, opts){
   opts = opts||{};
@@ -2552,6 +2639,30 @@ function renderRoom(){
     }
   }
 }
+/* Encore stickers: the repeatable half of the treasure loop. The 23
+   closet items are one-time unlocks; once they are all owned these keep
+   chests coming. Each is awarded at most once and never presented as a
+   new unlock — the reveal always says sticker or star shower. */
+const ENCORE_STICKERS=[
+  {id:'enc-butterfly', e:'🦋', n:'Butterfly Friend'},
+  {id:'enc-bunny', e:'🐰', n:'Bunny Hop'},
+  {id:'enc-chick', e:'🐣', n:'Baby Chick'},
+  {id:'enc-star', e:'🌟', n:'Superstar'},
+  {id:'enc-heart', e:'💜', n:'Purple Heart'},
+  {id:'enc-shooting', e:'🌠', n:'Shooting Star'},
+  {id:'enc-bow', e:'🎀', n:'Pretty Bow'},
+  {id:'enc-berry', e:'🍓', n:'Strawberry Sweet'},
+  {id:'enc-cupcake', e:'🧁', n:'Cupcake Treat'},
+  {id:'enc-carousel', e:'🎠', n:'Carousel Ride'},
+  {id:'enc-ballet', e:'🩰', n:'Ballet Twirl'},
+  {id:'enc-princess', e:'👸', n:'Little Princess'},
+  {id:'enc-pony', e:'🐴', n:'Pony Pal'},
+  {id:'enc-swan', e:'🦢', n:'Swan Lake'},
+  {id:'enc-tulip', e:'🌷', n:'Tulip Garden'},
+  {id:'enc-candy', e:'🍭', n:'Lollipop Joy'},
+  {id:'enc-music', e:'🎵', n:'Music Magic'},
+  {id:'enc-sparkle', e:'✨', n:'Sparkle Shine'}
+];
 function refreshStickers(){
   const book=$('sticker-book'); if(!book) return; book.innerHTML='';
   const all=[
@@ -2568,7 +2679,7 @@ function refreshStickers(){
     {id:'kitten', e:'🐱', n:'Kitten rescuer'},
     {id:'princess', e:'👑', n:'Castle star'},
     {id:'story', e:'📚', n:'Sentence reader!'}
-  ];
+  ].concat(ENCORE_STICKERS);
   // dynamic: mark earned based on mastery/words
   const earned=new Set(S.stickers);
   if((S.mastery['sound:s']||{score:0}).score>0.4) earned.add('sound-s');
@@ -2669,7 +2780,8 @@ function endSession(){
   }
   if(!S.firstSessionDone){ S.firstSessionDone=true; save(); }
   logSession();
-  showSessionChoice();
+  showEncoreReward();
+  rewardAfterCastle=showSessionChoice;
 }
 function logSession(){
   const today=new Date().toDateString();
