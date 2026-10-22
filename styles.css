@@ -1563,3 +1563,66 @@ font-weight:800; cursor:pointer; min-height:44px;}
 .garden-nest.solo{ left:50%; top:80%; width:clamp(150px, 24vw, 230px); }
 .garden-nest.solo .nest-label{ font-size:clamp(14px,2vw,18px); }
 .garden-nest.solo .nest-egg{ animation:eggWiggle 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 90%; }
+
+/* ============================================================
+   STORY ROAD
+   ============================================================ */
+#screen-road.active{ display:flex; flex-direction:column; height:100vh; height:100dvh; padding-bottom:0; overflow:hidden; }
+#screen-road .game-topbar{ flex-shrink:0; padding:8px 12px; }
+.road-count{ font-size:.75em; background:#fff; border-radius:999px; padding:2px 12px; margin-left:8px; vertical-align:middle; }
+.road-wrap{ flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:0 12px 20px; }
+.road{ max-width:760px; margin:0 auto; }
+.road-land{ position:relative; border-radius:30px; margin:0 0 14px; padding:12px 0 0; border:4px solid #fff;
+  background:linear-gradient(180deg, var(--c1), var(--c2)); box-shadow:var(--shadow); overflow:hidden; }
+.road-land.asleep{ filter:saturate(.55) brightness(1.03); }
+.road-land.awake::before{ content:'✨'; position:absolute; right:16px; top:8px; font-size:30px; animation:shimmer 1s ease-in-out infinite alternate; }
+.land-banner{ display:flex; align-items:center; gap:10px; margin:0 auto; width:max-content; max-width:92%;
+  background:#FFFDF8; border-radius:999px; padding:6px 18px; border:2px dashed rgba(169,140,224,.6); box-shadow:0 4px 10px rgba(120,86,140,.2); position:relative; z-index:2; }
+.lb-emoji{ font-size:30px; }
+.lb-name{ font-family:'Baloo 2',cursive; font-size:clamp(20px,3.6vw,26px); color:#5B4368; font-weight:800; }
+.lb-count{ font-weight:800; color:#fff; background:rgba(122,92,134,.75); border-radius:999px; padding:2px 10px; font-size:14px; }
+.road-land.awake .lb-count{ background:linear-gradient(90deg,#F7A6C4,#FBD881); color:#5B4368; }
+.land-stops{ position:relative; }
+.road-path{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.rp-base{ fill:none; stroke:#FFFDF8; stroke-width:30; stroke-linecap:round; opacity:.9; }
+.rp-dash{ fill:none; stroke:#E8C9A0; stroke-width:4; stroke-dasharray:10 12; stroke-linecap:round; }
+.road-book{ position:absolute; transform:translate(-50%,-50%); background:none; border:none; padding:0; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; width:132px; font-family:inherit; z-index:3; }
+.rb-cover{ width:96px; display:block; transition:transform .2s cubic-bezier(.34,1.56,.64,1); }
+.rb-cover svg{ width:100%; height:auto; display:block; filter:drop-shadow(0 6px 8px rgba(120,86,140,.3)); }
+.road-book:active .rb-cover{ transform:scale(.92); }
+.rb-title{ font-family:'Baloo 2',cursive; font-weight:800; font-size:15px; color:#5B4368; background:#FFFDF8; border-radius:999px;
+  padding:1px 10px; margin-top:-4px; white-space:nowrap; box-shadow:0 2px 6px rgba(120,86,140,.22); max-width:150px; overflow:hidden; text-overflow:ellipsis; }
+.rb-star{ position:absolute; right:14px; top:-6px; font-size:30px; filter:drop-shadow(0 2px 3px rgba(0,0,0,.2)); }
+.road-book.locked .rb-cover{ filter:grayscale(.75) brightness(1.08); opacity:.8; }
+.rb-need{ position:absolute; top:62%; left:50%; transform:translate(-50%,-50%); background:#FFFDF8; border-radius:999px; padding:3px 10px;
+  font-size:15px; font-weight:800; color:#6E4E7C; white-space:nowrap; box-shadow:0 3px 8px rgba(120,86,140,.3); border:2px solid #E7DDFB; }
+.rb-need b{ font-family:'Andika',sans-serif; font-size:19px; color:#9670D9; }
+.road-book.next .rb-cover{ animation:markBob 1.4s ease-in-out infinite; }
+.road-book.next::before{ content:''; position:absolute; left:50%; top:38%; width:150px; height:150px; transform:translate(-50%,-50%); border-radius:50%;
+  background:radial-gradient(circle, rgba(251,226,160,.95) 0%, rgba(251,226,160,0) 66%); z-index:-1; animation:feltHalo 1.9s ease-in-out infinite; }
+.rb-ribbon{ position:absolute; top:-18px; left:50%; transform:translateX(-50%) rotate(-4deg); background:linear-gradient(180deg,#F9A8D4,#EC4899); color:#fff;
+  font-family:'Baloo 2',cursive; font-weight:800; font-size:15px; border-radius:999px; padding:1px 12px; white-space:nowrap; box-shadow:0 3px 0 #BE185D; z-index:4; }
+.road-book.nope .rb-cover{ animation:wobble .45s ease; }
+.road-book.just-read .rb-star{ animation:starLand .9s cubic-bezier(.34,1.56,.64,1); }
+@keyframes starLand{ 0%{transform:scale(0) rotate(-180deg);} 70%{transform:scale(1.6) rotate(15deg);} 100%{transform:scale(1) rotate(0);} }
+.road-end{ text-align:center; font-weight:800; color:var(--ink-soft); padding:10px 0 30px; line-height:1.8; }
+
+/* story page picture */
+.story-art{ font-size:0; }
+.page-scene{ position:relative; height:clamp(120px, 24vh, 200px); border-radius:22px; overflow:hidden; margin:6px auto 4px; max-width:520px;
+  background:linear-gradient(180deg, var(--c1,#FFE9CE), var(--c2,#FCCFE0)); border:3px solid #fff; box-shadow:inset 0 -6px 0 rgba(255,255,255,.4); }
+.ps-hills{ position:absolute; left:0; right:0; bottom:0; width:100%; height:45%; }
+.ps-row{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:4%; padding-top:4%; }
+.ps-sticker{ font-size:clamp(54px, 10vh, 92px); line-height:1; display:inline-block;
+  filter:drop-shadow(0 3px 0 #fff) drop-shadow(0 -3px 0 #fff) drop-shadow(3px 0 0 #fff) drop-shadow(-3px 0 0 #fff) drop-shadow(0 8px 8px rgba(120,86,140,.3));
+  animation:stickerPop .6s cubic-bezier(.34,1.56,.64,1) var(--d,0s) both, petHop 1.6s ease-in-out calc(var(--d,0s) + .6s) infinite; transform-origin:50% 100%; }
+@keyframes stickerPop{ from{ transform:scale(0) rotate(-20deg); opacity:0; } to{ transform:scale(1) rotate(0); opacity:1; } }
+.heart-scene{ background:linear-gradient(180deg,#FCE7F3,#FDF2F8); }
+.heart-card{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+.hc-word{ font-family:'Andika',sans-serif; font-size:clamp(64px,12vw,110px); color:#DE749C; background:#fff; border-radius:28px; padding:0 34px;
+  border:4px dashed #F7A6C4; line-height:1.25; animation:petGrow .6s cubic-bezier(.34,1.56,.64,1); }
+.hc-note{ font-family:'Quicksand',sans-serif; font-size:18px; color:var(--ink-soft); font-weight:700; }
+@media (max-width:600px){
+  .road-book{ width:110px; } .rb-cover{ width:80px; } .rb-title{ font-size:13px; }
+}

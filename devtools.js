@@ -756,10 +756,70 @@ const Tests = {
     Sound.cancelAll('test');
   },
 
+  /* Test S — the Story Road: every page is real text, books open in
+     sound order, reading one pays out, and finishing a land lays a
+     golden egg. */
+  async testS_storyRoad(){
+    this._reset();
+    const byT={}; Reading.all().forEach(function(w){ byT[w.t]=w; });
+    const badTok=[]; SENTENCES.forEach(function(se){ se.w.forEach(function(t){ if(!byT[t]) badTok.push(se.id+':'+t); }); });
+    this._log('S: every story word exists', badTok.length===0, badTok.slice(0,6).join(' '));
+    const badLen=Reading.all().filter(function(w){ return w.ph.length!==w.gr.length; }).map(function(w){ return w.t; });
+    this._log('S: every word has one letter group per sound', badLen.length===0, badLen.join(','));
+    const seen={}, dup=[]; WORDS.forEach(function(w){ if(seen[w.t]) dup.push(w.t); seen[w.t]=1; });
+    this._log('S: no word is listed twice', dup.length===0, dup.join(','));
+    this._log('S: at least 30 books', STORIES.length>=30, STORIES.length+' books');
+    /* approve everything the family approved (all but th), unlock nothing new */
+    PHONEME_ORDER.forEach(function(id){ if(/th_/.test(id)) return; const ap=approvalOf(id); ap.st='APPROVED'; ap.hash=(manifestOf(id)||{}).sha256||null; qaPlayed[id]=true; });
+    S.unlocked=['s','a_short','t','p','i_short','n','m','d','g','o_short','k'];
+    S.sentencesRead=['s1']; S.sentenceUnlocked=true; S.firstSessionDone=true;
+    save();
+    const books=StoryRoad.books();
+    this._log('S: books needing th or the missing u stay off the road',
+      books.every(function(b){ return !b.st.pages.some(function(pid){ return SENTENCES.find(function(x){return x.id===pid;}).w.some(function(t){ const w=byT[t]; return !w.heart && w.ph.some(function(p){ return /th_|u_short/.test(p); }); }); }); }),
+      books.length+' on the road');
+    const ready=books.filter(function(b){ return StoryRoad.status(b)==='ready'; });
+    this._log('S: early books are ready, later ones wait', ready.length>=4 && books.some(function(b){ return StoryRoad.status(b)==='locked'; }),
+      ready.length+' ready of '+books.length);
+    this._log('S: road follows sound order', books.every(function(b,i){ return i===0 || books[i-1].key<=b.key; }));
+    /* a ready book becomes fully readable once its heart words are taught */
+    const nb=StoryRoad.nextStory();
+    StoryRoad.info(nb).hearts.forEach(function(t){ if(S.heartWords.indexOf(t)<0) S.heartWords.push(t); });
+    this._log('S: the next book is readable end to end', Reading.storyReadable(nb), nb.title);
+    /* finish all but one cottage book, then read the last one for real */
+    const cottage=books.filter(function(b){ return b.land.id==='cottage'; });
+    const last=cottage[cottage.length-1].st;
+    S.storiesRead=cottage.slice(0,-1).map(function(b){ return b.st.id; });
+    Pets.ensure(); S.egg.warmth=0; const stars0=S.stars;
+    save();
+    StoryRoad.openBook(last);
+    await this._settle(500);
+    for(let i=0;i<30 && $('milestone-modal').classList.contains('hidden'); i++){
+      const b=$('btn-story-read'); if(b && b.offsetParent!==null) b.click();
+      await this._settle(1500);
+    }
+    this._log('S: finishing a book records it', S.storiesRead.indexOf(last.id)>=0, last.title);
+    this._log('S: a new book pays stars', S.stars>=stars0+15, '+'+(S.stars-stars0));
+    $('btn-milestone-ok').click();
+    await this._settle(600);
+    this._log('S: finishing a land wakes it', !$('milestone-modal').classList.contains('hidden') && /awake/i.test($('milestone-title').textContent), $('milestone-title').textContent);
+    this._log('S: a woken land lays a golden egg', !!S.egg.gold && Pets.hatchReady());
+    $('btn-milestone-ok').click();
+    await this._settle(800);
+    this._log('S: back on the Story Road afterwards', document.getElementById('screen-road').classList.contains('active'));
+    /* the adventure uses the road for its reading task */
+    S.storiesRead=[]; save();
+    let titles=[];
+    const real=runSession; runSession=function(n, acts){ titles=acts.map(function(a){ return a.title; }); };
+    try{ adventure(); } finally { runSession=real; }
+    this._log('S: adventures end with the next book', titles[titles.length-1]==='Read a Story', titles.join(' > '));
+    Sound.cancelAll('test');
+  },
+
   async runAll(){
     this.results = [];
     const list = ['testN_activitiesFitTheScreen','testO_noRawIdsOnScreen','testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
-                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase','testP_encoreChest','testQ_petsAndDaily','testR_noLetterNames'];
+                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase','testP_encoreChest','testQ_petsAndDaily','testR_noLetterNames','testS_storyRoad'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
       catch(e){ this._log(list[i]+' THREW', false, e.message); }

@@ -2577,7 +2577,7 @@ function showMilestone(title, word, text, opts){
   if(opts.clip){
     AudioSys.playVoice(opts.clip, title);
     after(2600, ()=> AudioSys.playWord(word));
-  } else {
+  } else if(!opts.silent){
     AudioSys.speak(title+' '+word+'! '+text);
   }
   addStars(5);
@@ -2776,6 +2776,15 @@ function refreshKingdom(speak){
   if(!S.firstSessionDone) rec='land-castle';
   else if(S.wordsRead.length>=2) rec='land-kitten';
   else if((S.mastery['sound:'+S.currentFocus]||{score:0}).score<0.5) rec='land-unicorn';
+  /* A new storybook on the road beats the usual suggestion; a ready egg beats both. */
+  try{
+    const storyOpen = S.sentenceUnlocked||S.wordsRead.length>=3;
+    if(typeof StoryRoad!=='undefined' && storyOpen){
+      const c=StoryRoad.counts();
+      const n=$('story-lock-note'); if(n) n.textContent='⭐ '+c.read+'/'+c.total;
+      if(S.firstSessionDone && StoryRoad.nextStory()) rec='land-story';
+    }
+  }catch(e){}
   try{ if(typeof Pets!=='undefined'){ refreshPetMark(); if(S.firstSessionDone && Pets.hatchReady()) rec='land-pets'; } }catch(e){}
   const el=document.getElementById(rec); if(el) el.classList.add('recommended');
   const msgs={
@@ -2783,7 +2792,8 @@ function refreshKingdom(speak){
     'land-rainbow':"The rainbow lost its colors! Can you help? 🌈",
     'land-unicorn':"A unicorn needs a sound crystal! Can you help? 🦄",
     'land-kitten':"A kitten is stuck! Let's sound out a word! 🐱",
-    'land-pets':"Your magic egg is wiggling! Let's go and see! 🥚"
+    'land-pets':"Your magic egg is wiggling! Let's go and see! 🥚",
+    'land-story':"A new storybook is waiting on the Story Road! 📖"
   };
   const label={ 'land-castle':'castle','land-rainbow':'rainbow','land-unicorn':'unicorn','land-kitten':'kitten' }[rec];
   const msg = msgs[rec]||'Where shall we go today? 💖';
@@ -2793,7 +2803,10 @@ function refreshKingdom(speak){
   else { $('twinkle-speech').textContent=msg; $('twinkle-mini-text').textContent=msg; }
   // story unlock visual
   const story=document.getElementById('land-story');
-  if(S.sentenceUnlocked||S.wordsRead.length>=3){ story.classList.remove('locked'); story.style.opacity='1'; $('story-lock-note').textContent='🎉'; }
+  if(S.sentenceUnlocked||S.wordsRead.length>=3){ story.classList.remove('locked'); story.style.opacity='1';
+    let note='🎉';
+    try{ if(typeof StoryRoad!=='undefined'){ const c=StoryRoad.counts(); note='⭐ '+c.read+'/'+c.total; } }catch(e){}
+    $('story-lock-note').textContent=note; }
 }
 function refreshAll(){ refreshKingdom(); refreshStickers(); renderRoom(); const sc=$('star-count'); if(sc) sc.textContent=S.stars; }
 

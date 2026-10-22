@@ -340,6 +340,21 @@ const Pets = {
     return growing.length ? growing[growing.length-1] : null;
   },
   hatchReady(){ this.ensure(); return S.egg.warmth >= S.egg.need; },
+  /* Reading a new storybook warms the egg too. */
+  warm(n){
+    this.ensure();
+    S.egg.warmth = Math.min(S.egg.need, S.egg.warmth + (n||1));
+    save(); this.renderChip(true);
+    try{ refreshPetMark(); }catch(e){}
+  },
+  /* A land woke up: the egg in the nest turns golden and is ready to hatch. */
+  goldenEgg(){
+    this.ensure();
+    const sp = PET_SPECIES.find(s=>!this.owned(s.id,0,true)) || PET_SPECIES[Math.floor(Math.random()*PET_SPECIES.length)];
+    S.egg = {sp:sp.id, v:0, gold:true, warmth:this.EGG_NEED, need:this.EGG_NEED};
+    save();
+    try{ refreshPetMark(); }catch(e){}
+  },
   eggLeft(){ this.ensure(); return Math.max(0, S.egg.need - S.egg.warmth); },
 
   /* Called once per finished activity (from activityDone). */
@@ -721,6 +736,7 @@ function gardenBackdropSVG(){
 /* Keep the map nest in step with the egg. */
 function refreshPetMark(){
   try{
+    Pets.ensure();
     const mark=document.getElementById('land-pets'); if(!mark) return;
     const e=mark.querySelector('.land-emoji');
     if(e) e.innerHTML = nestSVG(S.egg, Pets.hatchReady()).replace('class="felt nest-svg"','class="felt nest-svg mark-svg"');

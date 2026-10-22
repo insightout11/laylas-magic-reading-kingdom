@@ -176,7 +176,6 @@ const WORDS = [
   {t:'kim',  ph:['k','i_short','m'],       gr:['k','i','m'],   emoji:'🧑‍🦱', art:'kim',  audio:false},
   {t:'rim',  ph:['r','i_short','m'],       gr:['r','i','m'],   emoji:'🛞', art:'rim',  audio:false},
   {t:'pip',  ph:['p','i_short','p'],       gr:['p','i','p'],   emoji:'🐽', art:'pip',  audio:false},
-  {t:'she',  ph:['sh','e_short'],          gr:['sh','e'],      emoji:'👧', art:'she',  audio:false},
   {t:'swim', ph:['s','w','i_short','m'],   gr:['s','w','i','m'], emoji:'🏊', art:'swim', audio:false},
   /* --- -ot/-op/-ob --- */
   {t:'got',  ph:['g','o_short','t'],       gr:['g','o','t'],   emoji:'🛍️', art:'got',  audio:false},
@@ -210,10 +209,6 @@ const WORDS = [
   {t:'sell', ph:['s','e_short','l'],       gr:['s','e','ll'],  emoji:'💲', art:'sell', audio:false},
   {t:'tell', ph:['t','e_short','l'],       gr:['t','e','ll'],  emoji:'🗣️', art:'tell', audio:false},
   {t:'well', ph:['w','e_short','l'],       gr:['w','e','ll'],  emoji:'🪙', art:'well', audio:false},
-  {t:'all',  ph:['a_short','l'],           gr:['a','ll'],      emoji:'🌍', art:'all',  audio:false},
-  {t:'ball', ph:['b','a_short','l'],       gr:['b','a','ll'],  emoji:'⚽', art:'ball', audio:false},
-  {t:'fall', ph:['f','a_short','l'],       gr:['f','a','ll'],  emoji:'🍁', art:'fall', audio:false},
-  {t:'wall', ph:['w','a_short','l'],       gr:['w','a','ll'],  emoji:'🧱', art:'wall', audio:false},
   {t:'kiss', ph:['k','i_short','s'],       gr:['k','i','ss'],  emoji:'💋', art:'kiss', audio:false},
   {t:'miss', ph:['m','i_short','s'],       gr:['m','i','ss'],  emoji:'✈️', art:'miss', audio:false},
   {t:'off',  ph:['o_short','f'],           gr:['o','ff'],      emoji:'🔌', art:'off',  audio:false},
@@ -230,7 +225,7 @@ const WORDS = [
   {t:'car',  ph:['k','ar'],                gr:['c','ar'],      emoji:'🚗', art:'car',  audio:false},
   {t:'her',  ph:['h','er'],                gr:['h','er'],      emoji:'💁‍♀️', art:'her',  audio:false},
   {t:'how',  ph:['h','ow'],                gr:['h','ow'],      emoji:'❓', art:'how',  audio:false},
-  {t:'snow', ph:['s','n','ow'],            gr:['s','n','ow'],  emoji:'❄️', art:'snow', audio:false},
+  {t:'snow', ph:['s','n','oa'],            gr:['s','n','ow'],  emoji:'❄️', art:'snow', audio:false},
   {t:'near', ph:['n','ear'],               gr:['n','ear'],     emoji:'🔍', art:'near', audio:false},
   /* --- rhyme repairs: these families name them, so they must exist --- */
   {t:'win',  ph:['w','i_short','n'],       gr:['w','i','n'],   emoji:'🏆', art:'win',  audio:false},
@@ -302,7 +297,6 @@ const RHYME_FAMILIES = [
   {rime:'ed',  words:['bed','red']},
   {rime:'ill', words:['bill','fill','hill','will']},
   {rime:'ell', words:['bell','sell','tell','well']},
-  {rime:'all', words:['all','ball','fall','wall']},
   {rime:'og',  words:['dog','log']},
   {rime:'op',  words:['mop','top','shop','pop','hop']},
   {rime:'ot',  words:['pot','dot','cot','got','hot','lot','not']},
@@ -384,7 +378,7 @@ const Reading = {
     return SENTENCES.filter(function(s){ return self.sentenceReadable(s); });
   },
   sentenceText: function(sent){
-    return sent.w.join(' ').replace(/^./, function(c){ return c.toUpperCase(); }) + '.';
+    return sent.w.join(' ').replace(/^./, function(c){ return c.toUpperCase(); }) + (sent.end||'.');
   },
 
   /* --- stories --- */

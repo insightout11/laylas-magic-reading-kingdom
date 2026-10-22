@@ -89,8 +89,15 @@ function adventure(){
   }
 
   /* 4. the reading task — always the most advanced thing she can do */
-  if(stage==='stories' || stage==='sentences'){
-    acts.push({title:'Read a Story', run:()=>{ activityDone(); after(400, openStorybook); }});
+  const nextBook = (typeof StoryRoad!=='undefined' && stage!=='name' && stage!=='sounds') ? StoryRoad.nextStory() : null;
+  if(nextBook && (stage==='stories' || stage==='sentences' || S.wordsRead.length>=6)){
+    /* The next book on the Story Road is the reading task. Finishing it
+       ends the adventure properly: egg, chest and all. */
+    if(stage==='words') acts.push({title:'Which Word?', run:()=>Games.whichWord()});
+    acts.push({title:'Read a Story', run:()=>StoryRoad.openBook(nextBook, {fromAdventure:true})});
+  } else if(stage==='stories' || stage==='sentences'){
+    acts.push({title:'Which Word?', run:()=>Games.whichWord()});
+    acts.push({title:'Help the Kitten', run:()=>Games.rescue()});
   } else if(stage==='words'){
     acts.push({title:'Which Word?', run:()=>Games.whichWord()});
     acts.push({title:'Help the Kitten', run:()=>Games.rescue()});
