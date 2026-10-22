@@ -92,7 +92,7 @@ Games.soundSteps = function(params){
     after(700, ()=>AudioSys.playPhoneme(target));
     let locked=false;
     choices.forEach(id=>{
-      const b=document.createElement('button'); b.className='ballet-tile'; b.textContent=GU(id);
+      const b=document.createElement('button'); b.className='ballet-tile'+(GU(id).length>2?' long':''); b.textContent=GU(id);
       if(id===target) b.dataset.correct='1';
       b.onclick=()=>{
         if(locked) return;

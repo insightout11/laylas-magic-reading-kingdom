@@ -1266,6 +1266,8 @@ function nextActivity(){
      object, even the ones that never learned about the runtime. */
   Act.start({type:'activity', targetLabel:act.title||sessionName, prompt:act.title||''});
   $('game-title-pill').textContent=act.title||sessionName;
+  /* each new activity pops in */
+  try{ const ga=$('game-area'); ga.classList.remove('act-in'); void ga.offsetWidth; ga.classList.add('act-in'); }catch(e){}
   /* Full-bleed is opt-in per activity — reset before each one runs. */
   try{
     $('screen-game').classList.remove('screen-full');
@@ -1838,7 +1840,7 @@ Games.firstSound = function(params){
   twinkleSay('Look in the magic mirror! 🪞', {silent:true});
   after(2100, ()=> AudioSys.playPhoneme(sound));
   const hear=document.createElement('div'); hear.className='center';
-  hear.innerHTML='<button class="magic-btn">🔊 Hear '+PHONEMES[sound].cue+'</button>';
+  hear.innerHTML='<button class="magic-btn">🔊 Hear the sound</button>';
   hear.querySelector('button').onclick=()=>AudioSys.playPhoneme(sound);
   area.appendChild(hear);
   const row=document.createElement('div'); row.className='choices mirror-frame';
@@ -2099,7 +2101,7 @@ Games.ballet = function(){
   let idx=0, target=steps[0];
   const floor=document.createElement('div'); floor.className='ballet-floor';
   steps.forEach(s=>{
-    const b=document.createElement('button'); b.className='ballet-tile'; b.textContent=GU(s); b.dataset.s=s;
+    const b=document.createElement('button'); b.className='ballet-tile'+(GU(s).length>2?' long':''); b.textContent=GU(s); b.dataset.s=s;
     b.onclick=()=>{
       if(s===target){
         b.style.background='linear-gradient(180deg,#fef3c7,#fcd34d)'; AudioSys.sfx('success');
@@ -2326,7 +2328,7 @@ Games.painter = function(){
   });
   area.appendChild(grid);
   const note=document.createElement('div'); note.className='center'; note.style.marginTop='10px';
-  note.innerHTML='<i>Can you find the things beginning with /c/? (crown, cat...) — just for fun! 💜</i>';
+  note.innerHTML='<i>Tap the sparkles to paint the picture! 💜</i>';
   area.appendChild(note);
 };
 

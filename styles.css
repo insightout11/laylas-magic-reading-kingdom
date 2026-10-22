@@ -1626,3 +1626,60 @@ font-weight:800; cursor:pointer; min-height:44px;}
 @media (max-width:600px){
   .road-book{ width:110px; } .rb-cover{ width:80px; } .rb-title{ font-size:13px; }
 }
+
+/* ============================================================
+   SCENERY — felt worlds behind every game
+   ============================================================ */
+#screen-game{ position:relative; }
+.scene-backdrop{ position:absolute; inset:0; z-index:0; overflow:hidden; pointer-events:none; }
+.scene-backdrop .scene-svg{ width:100%; height:100%; display:block; }
+#screen-game > *:not(.scene-backdrop){ position:relative; z-index:1; }
+#screen-game.screen-full .scene-backdrop{ display:none; }
+/* The panel used to collapse to its content's width (auto margins in a
+   flex column). Now it spans the screen and lets the world show through. */
+#screen-game .game-area:not(.scene-full){
+  width:min(1100px, calc(100% - 24px)); margin:0 auto 4px; align-self:center;
+  background:rgba(255,253,248,.48); border:4px solid rgba(255,255,255,.8); border-radius:30px;
+  box-shadow:0 10px 30px rgba(120,86,140,.22);
+}
+#screen-game .game-area[data-scene]:not(.scene-full){ background:rgba(255,253,248,.48); }
+#screen-game .game-area[data-scene="stage"]:not(.scene-full){ background:rgba(60,20,90,.28); border-color:rgba(255,255,255,.35); }
+#screen-game .instruction-bar{ background:#FFFDF8; box-shadow:0 4px 12px rgba(120,86,140,.25); }
+.twinkle-mini{ background:#FFFDF8; border-radius:999px; padding:4px 18px 4px 8px; width:max-content; max-width:92%; margin:4px auto 8px;
+  box-shadow:0 4px 12px rgba(120,86,140,.25); border:2px dashed rgba(169,140,224,.55); font-size:15px; }
+#twinkle-mini-cat{ width:46px; }
+#screen-game .game-area.act-in > *{ animation:actIn .5s cubic-bezier(.34,1.56,.64,1) both; }
+#screen-game .game-area.act-in > *:nth-child(2){ animation-delay:.06s; }
+#screen-game .game-area.act-in > *:nth-child(3){ animation-delay:.12s; }
+#screen-game .game-area.act-in > *:nth-child(4){ animation-delay:.18s; }
+@keyframes actIn{ from{ opacity:0; transform:translateY(18px) scale(.94); } to{ opacity:1; transform:none; } }
+.sc-cloud-a{ animation:cloudDrift 20s ease-in-out infinite alternate; }
+.sc-cloud-b{ animation:cloudDrift 26s ease-in-out infinite alternate-reverse; }
+.sc-twinkle, .sc-fireflies{ animation:shimmer 1.4s ease-in-out infinite alternate; }
+.sc-bfly{ animation:bfly 9s ease-in-out infinite; }
+.sc-beam{ animation:sway 4s ease-in-out infinite alternate; transform-origin:500px 0; }
+/* bigger targets now there is room for them */
+.bubble{ width:clamp(104px, 22dvh, 168px); height:clamp(104px, 22dvh, 168px); font-size:clamp(48px, 10dvh, 80px); }
+.choices{ gap:clamp(12px, 2.4vw, 26px); }
+.choice-card{ min-width:clamp(110px, 16vw, 170px); min-height:clamp(110px, 20dvh, 170px); }
+@media (prefers-reduced-motion: reduce){
+  .sc-cloud-a, .sc-cloud-b, .sc-twinkle, .sc-fireflies, .sc-bfly, .sc-beam{ animation:none !important; }
+  #screen-game .game-area.act-in > *{ animation:none !important; }
+}
+#screen-game .game-area[data-scene]:not(.scene-full){ background:rgba(255,253,248,.34); }
+.ballet-tile.long{ font-size:clamp(20px, 5.4dvh, 34px); }
+.wt{ font-size:clamp(24px, 7.5dvh, 56px); }
+.slot, .tile{ min-width:clamp(46px, 13dvh, 88px); min-height:clamp(46px, 13dvh, 88px); font-size:clamp(24px, 7dvh, 52px); }
+.pic-emoji{ font-size:clamp(34px, 11dvh, 80px); }
+.pic-emoji svg, .wc-pic svg, .rt-pic svg{ max-height:14dvh; }
+.word-pic{ font-size:clamp(36px, 12dvh, 90px); }
+.rainbow-bar{ width:min(420px, 80%); flex-shrink:0; }
+@media (max-height: 620px){
+  .slot, .tile{ min-width:clamp(38px, 10.5dvh, 70px); min-height:clamp(38px, 10.5dvh, 70px); font-size:clamp(20px, 6dvh, 40px); }
+  .wt{ font-size:clamp(20px, 6dvh, 44px); }
+  .bubble{ width:clamp(90px, 19dvh, 140px); height:clamp(90px, 19dvh, 140px); font-size:clamp(40px, 9dvh, 64px); }
+  .choice-card{ min-height:clamp(86px, 17dvh, 140px); }
+  .twinkle-mini{ margin:2px auto 3px; padding:1px 12px 1px 4px; }
+  #twinkle-mini-cat{ width:30px; }
+  #screen-game .game-area:not(.scene-full){ margin-bottom:2px; border-width:3px; }
+}
