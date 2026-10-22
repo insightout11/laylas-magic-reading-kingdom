@@ -430,13 +430,14 @@ const Praise = {
       await Sound.say('You made the word '+label+'!', {prio:4});
     }
   },
-  /* Sound praise: say the letter, then PLAY the real phoneme. */
+  /* Sound praise: "Yes!", then PLAY the real phoneme. */
   async sound(a){
     const id = a.targetPhonemes[0];
     if(!id){ await this.generic(a); return; }
-    const letter = GU(id);
-    const ok = await Sound.clip('yes-'+G(id), null, {prio:4});
-    if(!ok) await Sound.say('Yes! '+letter+'!', {prio:4});
+    /* Never a letter NAME from speech synthesis: a recorded "Yes!", then
+       the real sound. */
+    const ok = await Sound.clip('yes', null, {prio:4});
+    if(!ok) await Sound.clip('you-did-it', null, {prio:4});
     await Sound.idle();
     await new Promise(r=>setTimeout(r, 260));
     await Sound.phoneme(id);
@@ -479,6 +480,8 @@ const Flow = {
     try{ if(Speech.isSpeaking()) reasons.push('speech active'); }catch(e){}
     try{
       if(!document.getElementById('reward-modal').classList.contains('hidden')) reasons.push('reward modal open');
+      const hm=document.getElementById('hatch-modal');
+      if(hm && !hm.classList.contains('hidden')) reasons.push('hatch modal open');
       if(!document.getElementById('milestone-modal').classList.contains('hidden')) reasons.push('milestone modal open');
     }catch(e){}
     if(reasons.length){ Bus.emit('SESSION_MODAL_BLOCKED', {reasons:reasons}); return false; }

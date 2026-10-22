@@ -1414,3 +1414,152 @@ font-weight:800; cursor:pointer; min-height:44px;}
   -webkit-tap-highlight-color:transparent;
 }
 #trace-canvas{ touch-action:none; }
+
+/* ============================================================
+   MAGIC PETS — garden, eggs, hatching
+   ============================================================ */
+.pets-land .mark-svg{ width:clamp(70px, 11vw, 116px); }
+.pets-land .nest-egg > g{ transform-box:fill-box; }
+.pets-land.egg-ready .nest-egg, .garden-nest.ready .nest-egg{ animation:eggWiggle 1.4s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 90%; }
+.nest-egg.wiggle{ animation:eggWiggle .5s ease-in-out 2; transform-box:fill-box; transform-origin:50% 90%; }
+@keyframes eggWiggle{ 0%,100%{transform:rotate(0);} 20%{transform:rotate(-9deg);} 40%{transform:rotate(8deg);} 60%{transform:rotate(-5deg);} 80%{transform:rotate(3deg);} }
+
+/* egg progress chip in the game bar */
+.egg-chip{ display:flex; align-items:center; gap:4px; background:linear-gradient(180deg,#FDE7F3,#EDE4FF); border-radius:999px; padding:3px 10px 3px 4px;
+  box-shadow:var(--shadow); border:2px solid #fff; flex-shrink:0; }
+.egg-chip:empty{ display:none; }
+.egg-chip-art{ width:34px; height:40px; display:block; filter:drop-shadow(0 2px 3px rgba(120,86,140,.35)); }
+.egg-chip-art svg{ width:100%; height:100%; display:block; }
+.egg-chip-bar{ width:50px; height:12px; border-radius:999px; background:#fff; overflow:hidden; display:block; }
+.egg-chip-bar > span{ display:block; height:100%; background:linear-gradient(90deg,#FBD881,#F7A6C4); border-radius:999px; transition:width .6s cubic-bezier(.34,1.56,.64,1); }
+.egg-chip.pulse .egg-chip-art{ animation:eggWiggle .7s ease-in-out; transform-origin:50% 90%; }
+.egg-chip.ready{ animation:hearPulse 1.2s infinite; border-color:#FBD881; }
+#screen-game.screen-full .egg-chip{ pointer-events:none; }
+
+/* garden screen */
+#screen-pets.active{ display:flex; flex-direction:column; height:100vh; height:100dvh; padding-bottom:0; overflow:hidden; }
+#screen-pets .game-topbar{ padding:8px 12px; flex-shrink:0; }
+.pet-garden{ position:relative; flex:1; min-height:200px; margin:0 12px; border-radius:28px; overflow:hidden;
+  border:4px solid #fff; box-shadow:var(--shadow); }
+.garden-bg, .garden-decor, .garden-pets{ position:absolute; inset:0; }
+.garden-svg{ width:100%; height:100%; display:block; }
+.g-cloud-a{ animation:cloudDrift 18s ease-in-out infinite alternate; }
+.g-cloud-b{ animation:cloudDrift 24s ease-in-out infinite alternate-reverse; }
+@keyframes cloudDrift{ from{transform:translateX(-30px);} to{transform:translateX(40px);} }
+.garden-item{ position:absolute; transform:translate(-50%,-50%); font-size:clamp(30px,5vw,54px); line-height:1;
+  filter:drop-shadow(0 4px 0 #fff) drop-shadow(0 6px 8px rgba(120,86,140,.3)); cursor:pointer; }
+.garden-item.new-item{ animation:itemArrive 1.1s cubic-bezier(.34,1.56,.64,1), itemGlow 1.6s ease-in-out 1.1s 3; }
+@keyframes itemArrive{ from{transform:translate(-50%,-50%) scale(0) rotate(-30deg);} to{transform:translate(-50%,-50%) scale(1) rotate(0);} }
+@keyframes itemGlow{ 50%{ filter:drop-shadow(0 4px 0 #fff) drop-shadow(0 0 22px #FBD881); } }
+.garden-item.boing{ animation:boing .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes boing{ 0%{transform:translate(-50%,-50%) scale(1);} 40%{transform:translate(-50%,-50%) scale(1.3,.8);} 70%{transform:translate(-50%,-50%) scale(.9,1.15);} 100%{transform:translate(-50%,-50%) scale(1);} }
+
+.garden-pet{ position:absolute; transform:translate(-50%,-88%); background:none; border:none; padding:0; cursor:pointer;
+  width:clamp(96px, 14vw, 150px); -webkit-tap-highlight-color:transparent; }
+.garden-pet.stage-0{ width:clamp(64px, 9vw, 96px); }
+.garden-pet.stage-1{ width:clamp(80px, 11.5vw, 122px); }
+.garden-pet .pet-svg{ width:100%; height:auto; display:block; overflow:visible; }
+.pet-roam{ display:block; animation:petWander var(--dur,5s) ease-in-out infinite alternate; }
+.pet-body{ display:block; animation:petHop var(--hop,1.1s) ease-in-out infinite; transform-origin:50% 100%; }
+@keyframes petWander{ from{transform:translateX(calc(var(--range,24px) * -1));} to{transform:translateX(var(--range,24px));} }
+@keyframes petHop{ 0%,100%{transform:translateY(0) scale(1,1);} 45%{transform:translateY(-9px) scale(.97,1.03);} 90%{transform:translateY(0) scale(1.04,.96);} }
+.garden-pet.selected::after{ content:''; position:absolute; left:50%; bottom:-6px; width:70%; height:14px; transform:translateX(-50%);
+  border-radius:50%; background:radial-gradient(closest-side, rgba(251,216,129,.95), rgba(251,216,129,0)); z-index:-1; }
+.garden-pet.joy .pet-body{ animation:petJoy .8s cubic-bezier(.34,1.56,.64,1); }
+@keyframes petJoy{ 0%{transform:translateY(0);} 35%{transform:translateY(-38px) rotate(-12deg) scale(1.08);} 60%{transform:translateY(-30px) rotate(12deg);} 100%{transform:translateY(0) rotate(0);} }
+.garden-pet.munch .pet-body{ animation:petMunch .9s ease-in-out; }
+@keyframes petMunch{ 0%,100%{transform:scale(1);} 20%,60%{transform:scale(1.08,.92);} 40%,80%{transform:scale(.96,1.05);} }
+.garden-pet.grow-up .pet-body{ animation:petGrow 1s cubic-bezier(.34,1.56,.64,1); }
+@keyframes petGrow{ 0%{transform:scale(.7);} 60%{transform:scale(1.25);} 100%{transform:scale(1);} }
+.pet-eyes{ animation:blink 4.5s infinite; transform-box:fill-box; transform-origin:center; }
+.pet-wag{ animation:wag .45s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:10% 90%; }
+@keyframes wag{ from{transform:rotate(-14deg);} to{transform:rotate(14deg);} }
+.pet-flap{ animation:flap 1.1s ease-in-out infinite alternate; transform-box:fill-box; transform-origin:90% 60%; }
+.pet-flap-r{ transform-origin:10% 60%; animation-direction:alternate-reverse; }
+@keyframes flap{ from{transform:rotate(-6deg);} to{transform:rotate(10deg);} }
+.pet-gold-sparkle{ animation:shimmer 1s ease-in-out infinite alternate; }
+.treat-fly{ position:absolute; left:50%; top:-10px; font-size:34px; transform:translate(-50%,-80px); animation:treatFly .8s ease-in forwards; pointer-events:none; }
+@keyframes treatFly{ from{transform:translate(-50%,-90px) scale(1.2); opacity:1;} 85%{opacity:1;} to{transform:translate(-50%,30px) scale(.4); opacity:0;} }
+.float-heart{ position:fixed; font-size:28px; pointer-events:none; animation:heartUp 1.4s ease-out forwards; z-index:9999; }
+@keyframes heartUp{ from{transform:translate(-50%,0) scale(.4); opacity:0;} 20%{opacity:1;} to{transform:translate(-50%,-110px) scale(1.2); opacity:0;} }
+
+.garden-nest{ position:absolute; left:89%; top:90%; transform:translate(-50%,-70%); background:none; border:none; padding:0; cursor:pointer;
+  width:clamp(96px, 13vw, 140px); z-index:120; display:flex; flex-direction:column; align-items:center; }
+.garden-nest .nest-svg{ width:100%; height:auto; display:block; filter:drop-shadow(0 6px 10px rgba(120,86,140,.28)); }
+.nest-label{ font-family:'Baloo 2',cursive; font-weight:800; font-size:clamp(11px,1.5vw,14px); color:#5B4368; background:#FFFDF8;
+  border-radius:999px; padding:1px 10px; margin-top:-8px; white-space:nowrap; border:2px dashed rgba(169,140,224,.55); }
+.garden-nest.ready .nest-label{ background:#FEF3C7; border-color:#FBD881; }
+.garden-stars{ position:absolute; left:12px; top:10px; background:#fff; border-radius:999px; padding:5px 14px; font-weight:800;
+  font-size:18px; box-shadow:var(--shadow); z-index:200; }
+
+.pet-panel{ flex-shrink:0; margin:8px 12px 0; background:var(--card); border-radius:22px; border:3px solid #fff; box-shadow:var(--shadow);
+  display:flex; align-items:center; gap:12px; padding:6px 14px; min-height:96px; }
+.pet-panel:empty{ display:none; }
+.pp-portrait{ width:82px; flex-shrink:0; }
+.pp-portrait svg{ width:100%; height:auto; display:block; }
+.pp-portrait.boing{ animation:petGrow .5s cubic-bezier(.34,1.56,.64,1); }
+.pp-info{ flex:1; min-width:0; }
+.pp-name{ font-family:'Baloo 2',cursive; font-size:clamp(22px,3.4vw,30px); color:var(--pink-deep); line-height:1.05; }
+.pp-stage{ font-weight:800; color:var(--ink-soft); font-size:15px; }
+.pp-bar{ height:14px; border-radius:999px; background:#FCE7F3; overflow:hidden; margin:5px 0 2px; max-width:320px; border:2px solid #fff; }
+.pp-bar > span{ display:block; height:100%; background:linear-gradient(90deg,#F7A6C4,#E879F9); border-radius:999px; transition:width .7s cubic-bezier(.34,1.56,.64,1); }
+.pp-bar.warm > span{ background:linear-gradient(90deg,#FBD881,#FFB98D); }
+.pp-note{ font-size:13px; font-weight:700; color:var(--ink-soft); }
+.pp-actions{ display:flex; gap:8px; flex-shrink:0; }
+.pp-actions .magic-btn{ padding:10px 18px; font-size:18px; min-height:52px; }
+.pp-actions small{ font-size:13px; opacity:.9; }
+
+.pet-book{ flex-shrink:0; padding:6px 12px 10px; }
+.pet-book-title{ font-family:'Baloo 2',cursive; font-weight:700; color:var(--lilac-deep); font-size:16px; margin-left:4px; }
+.pet-book-row{ display:flex; gap:8px; overflow-x:auto; padding:2px 2px 6px; scrollbar-width:none; }
+.pet-book-row::-webkit-scrollbar{ display:none; }
+.pet-card{ flex-shrink:0; width:84px; background:#fff; border:3px solid #F3E8FF; border-radius:18px; padding:4px 4px 2px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; font-family:inherit; }
+.pet-card svg{ width:62px; height:auto; display:block; }
+.pet-card span{ font-size:12px; font-weight:800; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.pet-card.on{ border-color:#FBD881; background:#FFFBEB; }
+.pet-card.mystery{ width:128px; border-style:dashed; justify-content:center; cursor:default; }
+.pet-card.mystery .q{ font-family:'Baloo 2',cursive; font-size:38px; color:#C4B5FD; line-height:1.1; }
+.pet-card.mystery span:last-child{ white-space:normal; text-align:center; font-size:11px; color:var(--ink-soft); }
+
+/* hatching */
+.hatch-card{ border-color:#FBE2A0; background:linear-gradient(180deg,#FFFDF8,#FDF2F8); position:relative; overflow:hidden; }
+.hatch-banner{ font-family:'Baloo 2',cursive; font-size:clamp(24px,5vw,32px); color:var(--pink-deep); }
+.hatch-stage{ position:relative; width:min(62vw,250px); margin:6px auto 0; aspect-ratio:120/140; display:flex; align-items:center; justify-content:center; }
+.hatch-rays{ position:absolute; inset:-30%; border-radius:50%; opacity:0;
+  background:repeating-conic-gradient(from 0deg, rgba(251,216,129,.55) 0 10deg, rgba(251,216,129,0) 10deg 24deg);
+  -webkit-mask:radial-gradient(circle, #000 20%, transparent 68%); mask:radial-gradient(circle, #000 20%, transparent 68%);
+  transition:opacity .5s; }
+.hatch-card.hatched .hatch-rays{ opacity:1; animation:spinSlow 9s linear infinite; }
+.hatch-egg{ background:none; border:none; padding:0; width:100%; cursor:pointer; position:relative; z-index:1; transform-origin:50% 90%; }
+.hatch-egg svg, .hatch-pet svg{ width:100%; height:auto; display:block; }
+.hatch-egg.wobble{ animation:eggWiggle 1.3s ease-in-out infinite; }
+.hatch-egg.jolt{ animation:eggJolt .45s ease-in-out; }
+@keyframes eggJolt{ 0%,100%{transform:rotate(0) scale(1);} 25%{transform:rotate(-12deg) scale(1.06,.94);} 60%{transform:rotate(10deg) scale(.97,1.05);} }
+.hatch-egg.bursting{ animation:eggBurst .65s ease-in forwards; }
+@keyframes eggBurst{ 0%{transform:scale(1);} 40%{transform:scale(1.15,.85);} 70%{transform:scale(.9,1.2); filter:brightness(1.4);} 100%{transform:scale(1.4); opacity:0; filter:brightness(2.2);} }
+.hatch-pet{ width:100%; position:relative; z-index:1; animation:petPop .7s cubic-bezier(.34,1.56,.64,1); }
+.hatch-pet .pet-body, .hatch-pet .pet-svg{ animation:petHop 1s ease-in-out .7s infinite; transform-origin:50% 100%; }
+@keyframes petPop{ from{transform:scale(.2) translateY(40px); opacity:0;} to{transform:scale(1) translateY(0); opacity:1;} }
+.hatch-hint{ position:absolute; bottom:-6px; left:0; right:0; font-weight:800; color:var(--ink-soft); z-index:2; }
+.hatch-name{ font-family:'Baloo 2',cursive; font-size:clamp(20px,4.4vw,26px); color:var(--lilac-deep); line-height:1.2; min-height:1em;
+  opacity:0; transform:scale(.6); transition:opacity .35s, transform .4s cubic-bezier(.34,1.56,.64,1); }
+.hatch-name b{ font-size:1.4em; color:var(--pink-deep); }
+.hatch-name.revealed{ opacity:1; transform:scale(1); }
+
+@media (max-height:700px){
+  .pet-panel{ min-height:80px; }
+  .pp-portrait{ width:64px; }
+  .pet-card{ width:70px; } .pet-card svg{ width:50px; }
+}
+@media (max-width:640px){
+  .pp-actions{ flex-direction:column; }
+  .pp-actions .magic-btn{ padding:6px 12px; font-size:15px; min-height:44px; }
+}
+@media (prefers-reduced-motion: reduce){
+  .pet-roam, .pet-body, .g-cloud-a, .g-cloud-b{ animation:none !important; }
+}
+
+.garden-nest.solo{ left:50%; top:80%; width:clamp(150px, 24vw, 230px); }
+.garden-nest.solo .nest-label{ font-size:clamp(14px,2vw,18px); }
+.garden-nest.solo .nest-egg{ animation:eggWiggle 2.4s ease-in-out infinite; transform-box:fill-box; transform-origin:50% 90%; }

@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Quicksand:wght@500;600;700&family=Andika:wght@400;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20260905133123">
+<link rel="stylesheet" href="styles.css?v=20261022063233">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👑</text></svg>">
 </head>
@@ -46,6 +46,7 @@
       <button class="icon-nav-btn" id="nav-home" title="Kingdom">🏠</button>
       <div class="stars-pill">⭐ <span id="star-count">0</span></div>
       <div class="header-spacer"></div>
+      <button class="icon-nav-btn" id="nav-pets-top" title="My Pets">🐾</button>
       <button class="icon-nav-btn" id="nav-stickers-top" title="Stickers">⭐</button>
       <button class="icon-nav-btn" id="nav-castle-top" title="My Castle">👑</button>
       <button class="icon-nav-btn parent-lock" id="nav-parent-top" title="Parents">⚙️</button>
@@ -71,6 +72,10 @@
       <span class="land-emoji">🐱</span><span class="land-label">Kitten Cottage</span>
       <span class="land-glow" aria-hidden="true"></span>
       <span class="land-progress" id="prog-kitten"></span>
+    </button>
+    <button class="landmark scene-mark pets-land" data-land="pets" id="land-pets" data-px="37" data-py="47">
+      <span class="land-emoji">🥚</span><span class="land-label">Pet Garden</span>
+      <span class="land-glow" aria-hidden="true"></span>
     </button>
     <div class="landmark scene-mark locked" data-land="ballet" id="land-ballet" data-px="88" data-py="70">
       <span class="land-emoji">🩰</span><span class="land-label">Ballet Stage 🔒</span>
@@ -105,6 +110,7 @@
     <button id="btn-kingdom" class="round-btn" aria-label="Back to kingdom">🏠</button>
     <div class="game-title-pill" id="game-title-pill">Find Layla</div>
     <div class="game-progress-dots" id="game-dots"></div>
+    <div class="egg-chip" id="egg-chip" aria-hidden="true"></div>
     <button id="btn-hear" class="round-btn hear-btn" aria-label="Hear instruction">🔊</button>
   </header>
   <div class="instruction-bar">
@@ -137,6 +143,24 @@
       <div class="closet-grid" id="closet-grid"></div>
     </div>
   </div>
+</section>
+
+<!-- PET GARDEN -->
+<section id="screen-pets" class="screen">
+  <header class="game-topbar">
+    <button class="round-btn back-to-kingdom" aria-label="Back">🏠</button>
+    <div class="game-title-pill">🐾 Layla's Pet Garden 🐾</div>
+    <button class="round-btn hear-btn pets-hear" aria-label="Hear">🔊</button>
+  </header>
+  <div class="pet-garden" id="pet-garden">
+    <div class="garden-bg" id="garden-bg"></div>
+    <div class="garden-decor" id="garden-decor"></div>
+    <div class="garden-pets" id="garden-pets"></div>
+    <button class="garden-nest" id="garden-nest" aria-label="Magic egg"></button>
+    <div class="garden-stars">⭐ <span id="garden-stars">0</span></div>
+  </div>
+  <div class="pet-panel" id="pet-panel"></div>
+  <div class="pet-book" id="pet-book"></div>
 </section>
 
 <!-- STICKERS -->
@@ -272,6 +296,16 @@
   </div>
 </div>
 
+<!-- HATCHING -->
+<div id="hatch-modal" class="modal hidden">
+  <div class="modal-card hatch-card">
+    <div class="hatch-banner" id="hatch-banner">Your egg is wiggling! 🥚</div>
+    <div class="hatch-stage" id="hatch-stage"></div>
+    <div class="hatch-name" id="hatch-name"></div>
+    <button class="big-magic-btn hidden" id="btn-hatch-hello">Hello! 💖</button>
+  </div>
+</div>
+
 <!-- CELEBRATION MODAL -->
 <div id="milestone-modal" class="modal hidden">
   <div class="modal-card milestone-card">
@@ -290,6 +324,7 @@
     <p id="session-text">You helped the kingdom!</p>
     <div class="session-choices">
       <button class="big-magic-btn" id="btn-again">🌟 Another adventure!</button>
+      <button class="magic-btn secondary" id="btn-to-pets">🐾 Visit my pets</button>
       <button class="magic-btn secondary" id="btn-to-castle">🏰 Play in my castle</button>
     </div>
   </div>
@@ -297,21 +332,22 @@
 
 <div id="toast" class="toast hidden"></div>
 
-<script src="phonics.js?v=20260905133123"></script>
-<script src="content.js?v=20260905133123"></script>
-<script src="names.js?v=20260905133123"></script>
-<script src="feltkit.js?v=20260905133123"></script>
-<script src="characters.js?v=20260905133123"></script>
-<script src="princess.js?v=20260905133123"></script>
+<script src="phonics.js?v=20261022063233"></script>
+<script src="content.js?v=20261022063233"></script>
+<script src="names.js?v=20261022063233"></script>
+<script src="feltkit.js?v=20261022063233"></script>
+<script src="characters.js?v=20261022063233"></script>
+<script src="princess.js?v=20261022063233"></script>
 <!-- felt-* load last: their declarations replace the older drawings -->
-<script src="felt-characters.js?v=20260905133123"></script>
-<script src="felt-princess.js?v=20260905133123"></script>
-<script src="app.js?v=20260905133123"></script>
-<script src="runtime.js?v=20260905133123"></script>
-<script src="zone-reading.js?v=20260905133123"></script>
-<script src="zone-play.js?v=20260905133123"></script>
-<script src="progress.js?v=20260905133123"></script>
-<script src="devtools.js?v=20260905133123"></script>
+<script src="felt-characters.js?v=20261022063233"></script>
+<script src="felt-princess.js?v=20261022063233"></script>
+<script src="app.js?v=20261022063233"></script>
+<script src="runtime.js?v=20261022063233"></script>
+<script src="zone-reading.js?v=20261022063233"></script>
+<script src="zone-play.js?v=20261022063233"></script>
+<script src="progress.js?v=20261022063233"></script>
+<script src="pets.js?v=20261022063233"></script>
+<script src="devtools.js?v=20261022063233"></script>
 
 <script>
 /* Register the service worker: installs to the home screen, and caches the

@@ -829,8 +829,10 @@ AudioSys.praiseSound = function(id){
     return;
   }
   Speech.request(4, 'praise:'+id, 'clip', (cancelled, done, trackEl)=>{
-    Speech.playFile(VOICE_DIR+'yes-'+G(id)+'.mp3', null, trackEl).then((ok)=>{
-      AudioStat.voice['yes-'+G(id)] = ok?'ok':'missing';
+    /* One shared recorded "Yes!", then the real phoneme. The old per-letter
+       clips were synthesised from cue text and said "es es es es". */
+    Speech.playFile(VOICE_DIR+'yes.mp3', null, trackEl).then((ok)=>{
+      AudioStat.voice['yes'] = ok?'ok':'missing';
       if(cancelled()){ done('cancelled'); return; }
       if(!ok){
         /* No recorded "Yes, B!" clip for this sound yet. Do NOT let TTS say
@@ -921,6 +923,7 @@ AudioSys.startMusic = function(){
 /* Say: instruction-bar speech that prefers the Twinkle voice clip. */
 let currentClip = null;
 function say(clip, text, speakText){
+  currentPhoneme = null;
   currentInstruction = speakText||text;
   $('instruction-text').textContent = text;
   currentClip = clip||null;
@@ -1098,7 +1101,7 @@ function showScreen(name){
     requestAnimationFrame(()=>{ try{window.__posMarks();}catch(e){} });
     setTimeout(()=>{ try{ if($('screen-kingdom').classList.contains('active')) window.__posMarks(); }catch(e){} }, 350);
   }
-  const fx = name==='game'?'enter-zoom':name==='castle'?'enter-door':name==='story'?'enter-page':null;
+  const fx = name==='game'?'enter-zoom':(name==='castle'||name==='pets')?'enter-door':name==='story'?'enter-page':null;
   if(fx){ void el.offsetWidth; el.classList.add(fx); }
   window.scrollTo(0,0);
 }
@@ -1135,17 +1138,46 @@ function confettiBlast(){
   }
 }
 let currentInstruction='';
+/* When an instruction is about a letter, the voice must never say the
+   letter's NAME ("es"). Instead a recorded line plays, then the real sound.
+   currentPhoneme makes the 🔊 replay button do the same. */
+let currentPhoneme=null;
+function clipThenSound(clip, text, id, acrossActivities){
+  /* Dies with its scene: a sound must never play on the next screen. */
+  const tok = Scene.epoch, gen = ActivityGen;
+  const live = ()=> tok===Scene.epoch && (acrossActivities || gen===ActivityGen);
+  (async ()=>{
+    if(clip){ const ok = await Sound.clip(clip, text); if(!ok && !live()) return; }
+    if(!live()) return;
+    await Sound.idle();
+    await new Promise(r=>setTimeout(r, 200));
+    if(!live()) return;
+    await Sound.phoneme(id);
+  })();
+}
+/* text is what she SEES ("Find S!"); spoken is what the voice says if the
+   recorded clip cannot play, so it must never contain the letter itself. */
+function instructWithSound(clip, text, id, spoken){
+  spoken = spoken || 'Listen to this sound!';
+  currentInstruction = spoken; currentClip = clip||null; currentPhoneme = id;
+  $('instruction-text').textContent = text;
+  clipThenSound(clip, spoken, id);
+}
 function setInstruction(text, speakText){
+  currentPhoneme = null;
   currentInstruction = speakText||text;
   $('instruction-text').textContent=text;
   if(S.settings.autoplay) AudioSys.speak(currentInstruction);
 }
 function hearInstruction(){
+  if(currentPhoneme){ clipThenSound(currentClip, currentInstruction, currentPhoneme); return; }
   if(currentClip){ AudioSys.playVoice(currentClip, currentInstruction); }
   else if(currentInstruction) AudioSys.speak(currentInstruction);
 }
+let twinklePhoneme=null;
 function twinkleSay(text, opts){
   opts = opts||{};
+  twinklePhoneme = opts.phoneme||null;
   $('twinkle-speech').textContent=text;
   $('twinkle-mini-text').textContent=text;
   twinklePose(opts.pose||null);
@@ -1216,6 +1248,7 @@ function runSession(name, activities, reward){
   nextActivity();
 }
 function renderDots(){
+  try{ if(typeof Pets!=='undefined') Pets.renderChip(false); }catch(e){}
   const d=$('game-dots'); d.innerHTML='';
   sessionQueue.forEach((_,i)=>{
     const s=document.createElement('div'); s.className='dot'+(i<sessionIdx?' done':i===sessionIdx?' now':'');
@@ -1259,6 +1292,8 @@ function activityDone(){
     if(!a.done) Act.closeCurrent('activityDone');
   }
   sessionIdx++;
+  /* Every finished activity warms the pet egg. */
+  try{ if(typeof Pets!=='undefined') Pets.onActivityDone(); }catch(e){}
   Bus.emit('TRANSITION_WAIT', {nextIndex:sessionIdx});
   Sound.idle().then(()=>{
     if(tok !== Scene.epoch){ Bus.emit('CALLBACK_DROPPED',{label:'activityDone'}); return; }
@@ -1309,7 +1344,10 @@ function celebrateRight(skillId, praise){
   }
   const unlocked = maybeUnlockNext();
   if(unlocked && PHONEMES[unlocked]){
-    Scene.later(1400, ()=>{ twinkleSay('New magic sound! '+GU(unlocked)+'! '+PHONEMES[unlocked].emoji); }, 'unlock-toast');
+    Scene.later(1400, ()=>{
+      twinkleSay('New magic sound! '+GU(unlocked)+'! '+PHONEMES[unlocked].emoji, {silent:true, phoneme:unlocked});
+      clipThenSound('new-sound', 'A new magic sound!', unlocked, true);
+    }, 'unlock-toast');
   }
   /* Milestones are QUEUED, never shown here. Showing them mid-activity is
      what made building "at" announce "You spelled your name!" — the
@@ -1554,9 +1592,8 @@ Games.bubbles = function(params){
     replay.querySelector('button').onclick=()=>AudioSys.playPhoneme(focus);
     area.appendChild(replay);
   } else {
-    setInstruction('Find '+GU(focus)+'!', 'Find '+GU(focus)+'!');
-    twinkleSay('Can you find '+GU(focus)+'? 🫧', {silent:true});
-    AudioSys.speak('Find '+GU(focus)+'!');
+    twinkleSay('Can you find this letter? 🫧', {silent:true});
+    instructWithSound('find-sound', 'Find '+GU(focus)+'!', focus, 'Which letter makes this sound?');
   }
   const row=document.createElement('div'); row.className='choices';
   /* One correct answer ends the round. Without this latch the popped
@@ -1848,7 +1885,7 @@ Games.matchCase = function(){
       AudioSys.sfx('flip');
       top.querySelectorAll('.choice-card').forEach(x=>x.style.borderColor='#f0abfc');
       b.style.borderColor='#fbbf24'; selected=L;
-      AudioSys.speak('Big '+GU(L)+'.');
+      AudioSys.playPhoneme(L);
     };
     top.appendChild(b);
   });
@@ -1863,7 +1900,7 @@ Games.matchCase = function(){
       if(L===selected){
         b.classList.add('correct');
         const up=top.querySelector('[data-up="'+L+'"]'); if(up) up.classList.add('correct');
-        AudioSys.sfx('success'); AudioSys.speak('Yes! '+GU(L)+' and '+G(L)+' match!');
+        AudioSys.sfx('success'); AudioSys.playPhoneme(L);
         record('case:'+L, firstTryFlag&&attemptsThisItem===0);
         pairs++; addStars(1); sparkles(10);
         selected=null;
@@ -2190,15 +2227,16 @@ Games.trace = function(params){
   const CW=320, CH=380;
   const multi = text.length>1;
   const fontSize = multi ? Math.min(150, Math.floor(300/Math.max(1,text.length*0.72))) : 300;
-  setInstruction('Trace '+text+'!', 'Trace '+text+' with your finger!');
   twinkleSay('Slow and sparkly! Start at the orange dot! ✨', {silent:true});
   if(kind==='letter'){
     const pid = Phonics.resolve(text.toLowerCase());
-    if(pid && isPhonemeUsable(pid)) Sound.phoneme(pid);
-    else Sound.say('Trace the letter '+text+'!');
+    if(pid && isPhonemeUsable(pid)) instructWithSound('trace-ask', 'Trace '+text+'!', pid, 'Trace this letter with your finger!');
+    else setInstruction('Trace '+text+'!', 'Trace this letter with your finger!');
   } else if(kind==='name'){
+    setInstruction('Trace '+text+'!', 'Trace '+text+' with your finger!');
     Sound.say('Trace the name '+text+'!');
   } else {
+    setInstruction('Trace '+text+'!', 'Trace '+text+' with your finger!');
     Sound.word(text.toLowerCase());
   }
   const wrap=document.createElement('div'); wrap.className='trace-wrap';
@@ -2341,6 +2379,7 @@ function showReward(r){
   ch.classList.remove('open','shaking','glowing');
   $('btn-reward-open').classList.remove('hidden');
   $('btn-reward-castle').classList.add('hidden');
+  $('btn-reward-castle').textContent="Let's try it on! 💖";
   $('btn-reward-close').classList.add('hidden');
   $('reward-modal').classList.remove('hidden');
 
@@ -2425,16 +2464,25 @@ function awardSticker(id, silent){
    treat, never a re-gifted unlock. A sticker while any remain unowned,
    otherwise a star shower. Nothing here touches S.rewards, the closet,
    or the equipped outfit. */
-function showEncoreReward(){
-  const nextSticker = ENCORE_STICKERS.find(s=>!S.stickers.includes(s.id));
-  const isSticker = !!nextSticker;
-  /* Sticker is claimed up front (like unlocks) but stays invisible until
-     the reveal timers run; stars land with the reveal itself, below. */
-  if(isSticker){ S.stickers.push(nextSticker.id); save(); refreshStickers(); }
-  const itemEmoji = isSticker ? nextSticker.e : '⭐';
-  const itemName = isSticker ? nextSticker.n : 'Star shower!';
-  const bannerText = isSticker ? 'A sticker for your book! ✨' : 'A star shower for you! ✨';
-  const voiceFallback = isSticker ? 'A new sticker for your book!' : 'A star shower for you! Beautiful playing!';
+function showEncoreReward(prize){
+  /* With no prize given: a sticker while any remain, then a treasure for
+     the pet garden, then a star shower. Prizes are claimed up front but
+     stay invisible until the reveal timers run. */
+  if(!prize){
+    const nextSticker = ENCORE_STICKERS.find(s=>!S.stickers.includes(s.id));
+    if(nextSticker){
+      S.stickers.push(nextSticker.id); save(); refreshStickers();
+      prize = {emoji:nextSticker.e, name:nextSticker.n, banner:'A sticker for your book! ✨', voice:'A new sticker for your book!', stars:2};
+    } else if(typeof Pets!=='undefined' && Pets.nextGardenItem()){
+      prize = Pets.claimGardenPrize();
+    } else {
+      prize = {emoji:'⭐', name:'Star shower!', banner:'A star shower for you! ✨', voice:'A star shower for you! Beautiful playing!', stars:5};
+    }
+  }
+  const itemEmoji = prize.emoji;
+  const itemName = prize.name;
+  const bannerText = prize.banner;
+  const voiceFallback = prize.voice || prize.say || 'You did it!';
   rewardState='closed'; rewardCurrent=null;
   const ri=$('reward-item'), rn=$('reward-name'), ch=$('reward-chest');
   const _banner=document.querySelector('#reward-modal .reward-banner');
@@ -2498,10 +2546,23 @@ function showEncoreReward(){
       const card=document.querySelector('#reward-modal .reward-card');
       if(card) card.classList.add('revealed');
       rewardState='revealed';
-      Sound.clip('you-did-it', voiceFallback);
-      if(isSticker) addStars(2); else addStars(5);
+      Sound.clip('you-did-it', voiceFallback).then(function(){ if(prize.say) Sound.say(prize.say); });
+      if(prize.stars) addStars(prize.stars);
       /* No try-it-on: there is nothing new to wear. Keep playing exits. */
       const b=$('btn-reward-close'); b.classList.remove('hidden');
+      if(prize.cta){
+        const c=$('btn-reward-castle');
+        c.textContent=prize.cta.label; c.classList.remove('hidden');
+        c.onclick=()=>{
+          /* Going to look at the prize ends the session there: no
+             "another adventure?" popup on top of the garden. */
+          rewardAfterCastle=null;
+          rewardState='idle';
+          $('reward-modal').classList.add('hidden');
+          Flow.rewardPending=false;
+          prize.cta.go();
+        };
+      }
     });
   };
 }
@@ -2715,12 +2776,14 @@ function refreshKingdom(speak){
   if(!S.firstSessionDone) rec='land-castle';
   else if(S.wordsRead.length>=2) rec='land-kitten';
   else if((S.mastery['sound:'+S.currentFocus]||{score:0}).score<0.5) rec='land-unicorn';
+  try{ if(typeof Pets!=='undefined'){ refreshPetMark(); if(S.firstSessionDone && Pets.hatchReady()) rec='land-pets'; } }catch(e){}
   const el=document.getElementById(rec); if(el) el.classList.add('recommended');
   const msgs={
     'land-castle':"Layla! I found something magical in your castle! Come see! 💖",
     'land-rainbow':"The rainbow lost its colors! Can you help? 🌈",
     'land-unicorn':"A unicorn needs a sound crystal! Can you help? 🦄",
-    'land-kitten':"A kitten is stuck! Let's sound out a word! 🐱"
+    'land-kitten':"A kitten is stuck! Let's sound out a word! 🐱",
+    'land-pets':"Your magic egg is wiggling! Let's go and see! 🥚"
   };
   const label={ 'land-castle':'castle','land-rainbow':'rainbow','land-unicorn':'unicorn','land-kitten':'kitten' }[rec];
   const msg = msgs[rec]||'Where shall we go today? 💖';
@@ -2758,6 +2821,14 @@ function namePlaqueIntro(){
 }
 function endSession(){
   renderDots();
+  /* A warm egg hatches before any chest: it is the best moment there is. */
+  if(typeof Pets!=='undefined' && Pets.hatchReady()){
+    Pets.hatchCeremony(endSessionRewards);
+    return;
+  }
+  endSessionRewards();
+}
+function endSessionRewards(){
   const rew=sessionReward;
   if(rew && !S.rewards.includes(rew.id)){
     S.rewards.push(rew.id); save();
@@ -2766,6 +2837,14 @@ function endSession(){
     rewardAfterCastle=showSessionChoice;
     sessionReward=null;
     logSession();
+    return;
+  }
+  /* Once a day the first finished adventure opens the daily treasure. */
+  if(typeof Pets!=='undefined' && Pets.dailyReady()){
+    if(!S.firstSessionDone){ S.firstSessionDone=true; save(); }
+    logSession();
+    Pets.showDailyChest();
+    rewardAfterCastle=showSessionChoice;
     return;
   }
   // small reward chance — chain the session choice AFTER the reward is enjoyed
@@ -2806,6 +2885,7 @@ function showSessionChoice(){
 }
 $('btn-again').onclick=()=>{ $('session-modal').classList.add('hidden'); adventure(); };
 $('btn-to-castle').onclick=()=>{ $('session-modal').classList.add('hidden'); openCastle(); };
+$('btn-to-pets').onclick=()=>{ $('session-modal').classList.add('hidden'); if(typeof Pets!=='undefined') Pets.open(); };
 
 /* adventure() now lives in progress.js — it is adaptive. */
 
@@ -2833,6 +2913,7 @@ document.querySelectorAll('.landmark').forEach(l=>{
     else if(land==='ballet') balletSession();
     else if(land==='story') openStorybook();
     else if(land==='fairy') fairySession();
+    else if(land==='pets' && typeof Pets!=='undefined') Pets.open();
   });
 });
 
@@ -2845,7 +2926,10 @@ $('nav-castle').onclick=openCastle; $('nav-castle-top').onclick=openCastle;
 $('nav-stickers').onclick=()=>{showScreen('stickers'); refreshStickers(); AudioSys.playVoice('sticker-hello', 'Your sticker book! You earned so many!');};
 $('nav-stickers-top').onclick=()=>{showScreen('stickers'); refreshStickers();};
 $('btn-hear').onclick=hearInstruction; $('btn-hear2').onclick=hearInstruction;
-$('btn-replay-twinkle').onclick=()=>{ const t=$('twinkle-speech').textContent; if(t) AudioSys.speak(t); };
+$('btn-replay-twinkle').onclick=()=>{
+  if(twinklePhoneme){ clipThenSound('new-sound', 'A new magic sound!', twinklePhoneme); return; }
+  const t=$('twinkle-speech').textContent; if(t) AudioSys.speak(t);
+};
 document.querySelectorAll('.castle-hear').forEach(b=>b.onclick=()=>AudioSys.speak('Welcome to your castle, Layla! Tap something to try it on!'));
 document.querySelectorAll('.sticker-hear').forEach(b=>b.onclick=()=>AudioSys.speak('Your sticker book!'));
 document.querySelectorAll('.story-hear').forEach(b=>b.onclick=()=>AudioSys.speak(currentInstruction));
@@ -2890,7 +2974,7 @@ function openParent(){
   showScreen('parent'); renderParent();
 }
 $('btn-parent-close').onclick=goKingdom;
-const VOICE_KEYS = ['hi-layla','welcome-back','found-name','find-your-name','build-name','missing-letter','listen-carefully','hear-again','find-sound','first-sound','match-letters','sound-it-out','blend-together','you-did-it','you-read-a-word','sentence-win','look-unlocked','unicorn-help','go-castle','try-it-on','beautiful','bravo','oops','good-try','another-adventure','kitten-free','new-sound','rhyme-ask','trace-ask','paint-fun','story-help','castle-hello','sticker-hello','land-sleeping','big-first','name-spelled','rainbow-help','kitten-stuck','yes-s','yes-a','yes-t','yes-p','yes-i','yes-n','yes-m','yes-d','yes-g','yes-o','yes-c','yes-k'];
+const VOICE_KEYS = ['hi-layla','welcome-back','found-name','find-your-name','build-name','missing-letter','listen-carefully','hear-again','find-sound','first-sound','match-letters','sound-it-out','blend-together','you-did-it','you-read-a-word','sentence-win','look-unlocked','unicorn-help','go-castle','try-it-on','beautiful','bravo','oops','good-try','another-adventure','kitten-free','new-sound','rhyme-ask','trace-ask','paint-fun','story-help','castle-hello','sticker-hello','land-sleeping','big-first','name-spelled','rainbow-help','kitten-stuck','yes'];
 const WORD_KEYS = ['sun','apple','tap','pan','igloo','net','moon','dog','gap','otter','cat','kite','sat','mat','pat','tip','sip','man','tin','pin','Sam','can','cap','mop','pot','am','at','it','in','on','sit','map'];
 AudioSys._inspectCache={};
 AudioSys.inspect = function(src){

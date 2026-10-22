@@ -628,6 +628,8 @@ const Tests = {
     this._reset();
     showScreen('game');
     REWARDS.forEach(function(r){ if(S.rewards.indexOf(r.id)<0) S.rewards.push(r.id); });
+    /* today's daily treasure is already claimed: this test is about encores */
+    if(typeof Pets!=='undefined'){ Pets.ensure(); S.lastDaily = Pets.today(); }
     save();
     const nRewards = S.rewards.length, nStickers = S.stickers.length, stars = S.stars;
     sessionReward = null; sessionName = 'Test';
@@ -659,8 +661,9 @@ const Tests = {
     this._log('P: rewards still untouched', S.rewards.length===nRewards);
     $('btn-reward-close').click();
     await this._settle(500);
-    // star-shower path: own every encore sticker too
+    // star-shower path: own every encore sticker and garden treasure too
     ENCORE_STICKERS.forEach(function(s){ if(S.stickers.indexOf(s.id)<0) S.stickers.push(s.id); });
+    if(typeof GARDEN_ITEMS!=='undefined') S.garden = GARDEN_ITEMS.map(function(g){ return g.id; });
     save();
     const stars2 = S.stars;
     showEncoreReward();
@@ -684,10 +687,79 @@ const Tests = {
     await this._settle(500);
   },
 
+  /* Test Q — the pet loop: activities warm the egg, the session ends with
+     a hatch, then the once-a-day treasure, and never a second one. */
+  async testQ_petsAndDaily(){
+    this._reset();
+    Pets.ensure();
+    const need = S.egg.need;
+    this._log('Q: first egg hatches quickly', need<=Pets.FIRST_EGG_NEED, 'needs '+need);
+    for(let i=0;i<need;i++) Pets.onActivityDone();
+    this._log('Q: finished activities warm the egg', Pets.hatchReady(), S.egg.warmth+'/'+need);
+    showScreen('game');
+    REWARDS.forEach(function(r){ if(S.rewards.indexOf(r.id)<0) S.rewards.push(r.id); });
+    sessionReward=null; sessionName='Test';
+    endSession();
+    await this._settle(400);
+    this._log('Q: session end opens the hatching', !$('hatch-modal').classList.contains('hidden'));
+    this._log('Q: no chest on top of the hatching', $('reward-modal').classList.contains('hidden'));
+    for(let k=0;k<3;k++){ const e=document.getElementById('hatch-egg'); if(e) e.click(); await this._settle(250); }
+    await this._settle(900);
+    this._log('Q: three taps hatch a pet', S.pets.length===1, S.pets.map(function(p){return p.sp+':'+p.name;}).join(','));
+    this._log('Q: a new egg is waiting', !!S.egg && S.egg.warmth===0 && S.egg.sp!==S.pets[0].sp, S.egg.sp);
+    $('btn-hatch-hello').click();
+    await this._settle(900);
+    this._log('Q: hatching closes', $('hatch-modal').classList.contains('hidden'));
+    const banner = document.querySelector('#reward-modal .reward-banner').textContent;
+    this._log('Q: daily treasure follows the hatch', !$('reward-modal').classList.contains('hidden') && /today/i.test(banner), banner);
+    const g0 = S.garden.length;
+    $('btn-reward-open').click();
+    await this._settle(2600);
+    this._log('Q: daily treasure adds a garden item', S.garden.length===1 && g0===1, S.garden.join(','));
+    $('btn-reward-close').click();
+    await this._settle(800);
+    $('session-modal').classList.add('hidden');
+    endSession();
+    await this._settle(500);
+    const banner2 = document.querySelector('#reward-modal .reward-banner').textContent;
+    this._log('Q: only one daily treasure per day', !/today/i.test(banner2), banner2);
+    $('btn-reward-close').click();
+    await this._settle(400);
+    $('session-modal').classList.add('hidden');
+    const pet=S.pets[0]; S.stars=20; const st0=S.stars, l0=pet.love;
+    Pets.feed(pet);
+    this._log('Q: a treat costs stars and gives love', S.stars===st0-Pets.TREAT_COST && pet.love===l0+Pets.TREAT_LOVE);
+    S.stars=0;
+    this._log('Q: no treat without stars', Pets.feed(pet).ok===false);
+  },
+
+  /* Test R — no activity may say a letter's NAME ("es") out loud. */
+  async testR_noLetterNames(){
+    this._reset();
+    Bus.clear();
+    showScreen('game');
+    runSession('T', [
+      {title:'Bubbles', run:function(){ Games.bubbles({focus:'s', mode:'name'}); }},
+    ], null);
+    await this._settle(2500);
+    hearInstruction();
+    await this._settle(2500);
+    const said = Bus.events.filter(function(e){ return e.type==='SPEECH_START'; })
+                           .map(function(e){ return (e.data&&e.data.tag)||''; });
+    const tts = said.filter(function(t){ return /^(tts|say):/.test(t); });
+    const letterNamed = tts.filter(function(t){ return /\b[A-Z]\b/.test(t.replace(/^(tts|say):/,'').replace(/\bI\b/g,'')); });
+    this._log('R: warm-up bubbles never speak a letter name', letterNamed.length===0, letterNamed.join(' | ') || said.join(' | ').slice(0,140));
+    this._log('R: warm-up bubbles play the real sound', said.some(function(t){ return /^phoneme:s$/.test(t); }), said.join(' | ').slice(0,140));
+    let yesOk=false;
+    try{ const r=await fetch(VOICE_DIR+'yes.mp3', {method:'HEAD'}); yesOk=r.ok; }catch(e){}
+    this._log('R: shared "Yes!" clip exists', yesOk);
+    Sound.cancelAll('test');
+  },
+
   async runAll(){
     this.results = [];
     const list = ['testN_activitiesFitTheScreen','testO_noRawIdsOnScreen','testM_castleFitsDevice','testK_rewardFitsOnScreen','testL_activitiesRenderControls','testA_atPraise','testB_laylaPraise','testC_phonemeN','testD_castleNarration',
-                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase','testP_encoreChest'];
+                  'testE_rapidTapping','testF_noUnapprovedAudio','testG_sceneEpoch','testH_baselineAndPortability','testH2_traceScoring','testB2_names','testI_wordbank','testJ_booth','testK_traceCase','testP_encoreChest','testQ_petsAndDaily','testR_noLetterNames'];
     for(let i=0;i<list.length;i++){
       try{ await this[list[i]](); }
       catch(e){ this._log(list[i]+' THREW', false, e.message); }
@@ -785,7 +857,7 @@ const Soak = {
         const readBtn=document.getElementById('btn-story-read');
         if(readBtn && readBtn.offsetParent!==null){ try{ readBtn.click(); }catch(e){} }
         /* dismiss whatever modal is up, the way a child mashes buttons */
-        ['btn-milestone-ok','btn-reward-open','btn-again'].forEach(id=>{
+        ['btn-milestone-ok','btn-reward-open','hatch-egg','btn-hatch-hello','btn-reward-close','btn-again'].forEach(id=>{
           const b=document.getElementById(id);
           if(b && b.offsetParent!==null){ try{ b.click(); }catch(e){} }
         });
